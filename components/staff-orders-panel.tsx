@@ -68,6 +68,8 @@ export function StaffOrdersPanel({ mode }: Props) {
   const activeOrders = useMemo(() => orders.filter((order) => order.status !== "delivered"), [orders]);
   const readyOrders = activeOrders.filter((order) => order.status === "ready");
   const preparingOrders = activeOrders.filter((order) => order.status === "preparing" || order.status === "new");
+  const newOrders = activeOrders.filter((order) => order.status === "new");
+  const preparingOnlyOrders = activeOrders.filter((order) => order.status === "preparing");
 
   if (mode === "display") {
     return (
@@ -113,6 +115,25 @@ export function StaffOrdersPanel({ mode }: Props) {
           <span className="live-pill">Canlı yenileniyor</span>
         </div>
 
+        <div className="staff-summary">
+          <article>
+            <span>Aktif sipariş</span>
+            <strong>{activeOrders.length}</strong>
+          </article>
+          <article>
+            <span>Yeni</span>
+            <strong>{newOrders.length}</strong>
+          </article>
+          <article>
+            <span>Hazırlanıyor</span>
+            <strong>{preparingOnlyOrders.length}</strong>
+          </article>
+          <article>
+            <span>Hazır</span>
+            <strong>{readyOrders.length}</strong>
+          </article>
+        </div>
+
         {mode === "cashier" ? (
           <div className="table-wrap">
             <table className="orders-table">
@@ -148,34 +169,38 @@ export function StaffOrdersPanel({ mode }: Props) {
           </div>
         ) : (
           <div className="kitchen-grid">
-            {preparingOrders.map((order) => (
-              <article className="kitchen-card" key={order.orderNo}>
-                <div className="kitchen-card-top">
-                  <strong>#{order.orderNo}</strong>
-                  <span>{formatTime(order.createdAt)}</span>
-                </div>
-                <p>Masa {order.tableNo}</p>
-                <ul>
-                  {order.items.map((item) => (
-                    <li key={`${order.orderNo}-${item.productId}`}>
-                      <strong>
-                        {item.productName} x{item.quantity}
-                      </strong>
-                      <span>{item.options.join(", ") || "Standart"}</span>
-                    </li>
-                  ))}
-                </ul>
-                {order.note ? <small>Not: {order.note}</small> : null}
-                <button
-                  className="button success wide"
-                  disabled={isUpdating === order.orderNo}
-                  onClick={() => updateStatus(order.orderNo, "ready")}
-                  type="button"
-                >
-                  Hazır
-                </button>
-              </article>
-            ))}
+            {preparingOrders.length === 0 ? (
+              <div className="empty-state kitchen-empty">Hazırlanacak sipariş yok.</div>
+            ) : (
+              preparingOrders.map((order) => (
+                <article className="kitchen-card" key={order.orderNo}>
+                  <div className="kitchen-card-top">
+                    <strong>#{order.orderNo}</strong>
+                    <span>{formatTime(order.createdAt)}</span>
+                  </div>
+                  <p>Masa {order.tableNo}</p>
+                  <ul>
+                    {order.items.map((item) => (
+                      <li key={`${order.orderNo}-${item.productId}`}>
+                        <strong>
+                          {item.productName} x{item.quantity}
+                        </strong>
+                        <span>{item.options.join(", ") || "Standart"}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {order.note ? <small>Not: {order.note}</small> : null}
+                  <button
+                    className="button success wide"
+                    disabled={isUpdating === order.orderNo}
+                    onClick={() => updateStatus(order.orderNo, "ready")}
+                    type="button"
+                  >
+                    Hazır
+                  </button>
+                </article>
+              ))
+            )}
           </div>
         )}
       </section>

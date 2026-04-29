@@ -136,8 +136,8 @@ export function OrderTracker({ orderNo }: Props) {
           </div>
         ) : (
           <div className="notice-box">
-            <strong>Lütfen bu sayfayı kapatmayın.</strong>
-            <span>SMS yerine bu takip sayfası ve tarayıcı bildirimi kullanılabilir.</span>
+            <strong>Durum otomatik güncellenir.</strong>
+            <span>İzin verirseniz sipariş hazır olduğunda tarayıcı bildirimi gönderilir.</span>
           </div>
         )}
 

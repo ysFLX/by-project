@@ -2,10 +2,16 @@ import Link from "next/link";
 import { tables } from "@/lib/mock-data";
 
 const staffLinks = [
-  { href: "/kasa", title: "Kasa Sipariş Paneli", text: "Yeni siparişleri kabul et, durum güncelle." },
-  { href: "/mutfak", title: "Mutfak Ekranı", text: "Hazırlanan siparişleri kart kart takip et." },
-  { href: "/ekran", title: "Hazır Sipariş Ekranı", text: "Müşterinin kendi numarasını göreceği ekran." },
-  { href: "/admin", title: "Yönetici Paneli", text: "Menü, masa ve işletme ayarları için temel alan." }
+  { href: "/kasa", title: "Kasa Paneli", text: "Sipariş kabulü, ödeme kontrolü ve teslim akışı." },
+  { href: "/mutfak", title: "Mutfak Ekranı", text: "Hazırlık kuyruğu, masa bilgisi ve ürün detayları." },
+  { href: "/ekran", title: "Hazır Ekranı", text: "Kasadan teslim alınacak sipariş numaraları." },
+  { href: "/admin", title: "Yönetim", text: "Menü, masa ve işletme ayarlarını yönetin." }
+];
+
+const metrics = [
+  { value: "QR", label: "Masa bağlantısı" },
+  { value: "2.5 sn", label: "Canlı yenileme" },
+  { value: "4 ekran", label: "Operasyon akışı" }
 ];
 
 export default function Home() {
@@ -13,15 +19,22 @@ export default function Home() {
     <main className="home-shell">
       <section className="home-hero">
         <div>
-          <p className="eyebrow">BY Project</p>
-          <h1>QR ile sipariş alan kafe/restoran başlangıç sistemi</h1>
+          <p className="eyebrow">BY Project POS</p>
+          <h1>Kahve Durağı operasyon konsolu</h1>
           <p className="hero-text">
-            Müşteri masadaki QR kodu okur, sipariş kasaya ve mutfağa düşer, hazır olunca takip sayfasında görünür.
-            Bu repo ilk MVP iskeletini içerir.
+            Masa QR siparişi, kasa onayı, mutfak hazırlığı ve müşteri takip ekranı tek akışta birleşir.
           </p>
+          <div className="home-metrics">
+            {metrics.map((metric) => (
+              <div key={metric.label}>
+                <strong>{metric.value}</strong>
+                <span>{metric.label}</span>
+              </div>
+            ))}
+          </div>
           <div className="hero-actions">
             <Link className="button primary" href="/masa/7">
-              Masa 7 müşteri akışı
+              Masa 7
             </Link>
             <Link className="button secondary" href="/kasa">
               Kasa paneli
@@ -29,7 +42,7 @@ export default function Home() {
           </div>
         </div>
         <div className="demo-card">
-          <span className="demo-label">Örnek QR linkleri</span>
+          <span className="demo-label">Masa QR linkleri</span>
           {tables.slice(0, 4).map((table) => (
             <Link className="qr-row" href={`/masa/${table.id}`} key={table.id}>
               <span className="qr-code" aria-hidden="true" />

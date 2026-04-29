@@ -149,10 +149,10 @@ export function CustomerOrderApp({ tableNo, menu }: Props) {
         <div>
           <span className="eyebrow">Masa {tableNo}</span>
           <h1>Kahve Durağı</h1>
-          <p>Ürünlerini seç, siparişin kasaya otomatik düşsün.</p>
+          <p>Masa sipariş ekranı</p>
         </div>
         <div className="cart-summary">
-          <span>{itemCount} ürün</span>
+          <span>Sepet · {itemCount} ürün</span>
           <strong>{currency.format(total)}</strong>
         </div>
       </section>
@@ -234,7 +234,7 @@ export function CustomerOrderApp({ tableNo, menu }: Props) {
               </div>
             </>
           ) : (
-            <div className="empty-state">Ürün seç.</div>
+            <div className="empty-state">Ürün seçimi bekleniyor.</div>
           )}
         </section>
 
@@ -245,7 +245,7 @@ export function CustomerOrderApp({ tableNo, menu }: Props) {
           </div>
           <div className="cart-lines">
             {cart.length === 0 ? (
-              <div className="empty-state">Sepetin boş.</div>
+              <div className="empty-state">Sepet boş.</div>
             ) : (
               cart.map((line) => (
                 <article className="cart-line" key={line.cartId}>
