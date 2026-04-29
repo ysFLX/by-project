@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { ComponentType } from "react";
+import { BellRing, Check, CheckCircle2, Clock3, Home, PackageCheck, ReceiptText } from "lucide-react";
 import type { Order, OrderStatus } from "@/lib/types";
 
 type Props = {
@@ -15,11 +17,11 @@ const statusIndex: Record<OrderStatus, number> = {
   delivered: 3
 };
 
-const steps: Array<{ status: OrderStatus; label: string }> = [
-  { status: "new", label: "Sipariş alındı" },
-  { status: "preparing", label: "Hazırlanıyor" },
-  { status: "ready", label: "Hazır" },
-  { status: "delivered", label: "Teslim edildi" }
+const steps: Array<{ status: OrderStatus; label: string; icon: ComponentType<{ size?: number }> }> = [
+  { status: "new", label: "Sipariş alındı", icon: ReceiptText },
+  { status: "preparing", label: "Hazırlanıyor", icon: Clock3 },
+  { status: "ready", label: "Hazır", icon: CheckCircle2 },
+  { status: "delivered", label: "Teslim edildi", icon: PackageCheck }
 ];
 
 export function OrderTracker({ orderNo }: Props) {
@@ -43,7 +45,7 @@ export function OrderTracker({ orderNo }: Props) {
     }
 
     if (order.status === "delivered") {
-      return "Afiyet olsun";
+      return "Teslim edildi";
     }
 
     return "Siparişiniz alındı";
@@ -109,40 +111,53 @@ export function OrderTracker({ orderNo }: Props) {
   }
 
   return (
-    <main className={isReady ? "tracking-shell ready" : "tracking-shell"}>
-      <section className="tracking-card">
-        <span className="eyebrow">Sipariş takibi</span>
-        <h1>{title}</h1>
-        <div className="order-number">#{order?.orderNo ?? orderNo}</div>
-        {order ? (
-          <p>
-            Masa {order.tableNo} için tahmini hazırlanma süresi: <strong>{order.estimatedMinutes} dk</strong>
-          </p>
-        ) : null}
-
-        <div className="timeline">
-          {steps.map((step, index) => (
-            <div className={index <= activeIndex ? "timeline-row done" : "timeline-row"} key={step.status}>
-              <span>{index <= activeIndex ? "✓" : "+"}</span>
-              <p>{step.label}</p>
-            </div>
-          ))}
+    <main className={isReady ? "tracking-shell-pro ready" : "tracking-shell-pro"}>
+      <section className="tracking-device">
+        <div className="tracking-top">
+          <span>Kahve Durağı</span>
+          <strong>Masa {order?.tableNo ?? "-"}</strong>
         </div>
 
-        {isReady ? (
-          <div className="ready-message">
-            <strong>Siparişinizi kasadan teslim alabilirsiniz.</strong>
-            <span>Numaranız hazır sipariş ekranında göründüğünde teslim alabilirsiniz.</span>
-          </div>
-        ) : (
-          <div className="notice-box">
-            <strong>Durum otomatik güncellenir.</strong>
-            <span>İzin verirseniz sipariş hazır olduğunda tarayıcı bildirimi gönderilir.</span>
-          </div>
-        )}
+        <div className="tracking-status-card">
+          <span className={isReady ? "ready-icon" : "pending-icon"}>
+            {isReady ? <Check size={42} /> : <Clock3 size={42} />}
+          </span>
+          <h1>{title}</h1>
+          <div className="order-number">#{order?.orderNo ?? orderNo}</div>
+          {order ? (
+            <p>
+              Tahmini hazırlanma süresi <strong>{order.estimatedMinutes} dk</strong>
+            </p>
+          ) : null}
+        </div>
+
+        <div className="timeline-pro">
+          {steps.map((step, index) => {
+            const Icon = step.icon;
+
+            return (
+              <div className={index <= activeIndex ? "done" : ""} key={step.status}>
+                <span>
+                  <Icon size={17} />
+                </span>
+                <p>{step.label}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className={isReady ? "ready-message" : "notice-box"}>
+          <strong>{isReady ? "Siparişinizi kasadan teslim alabilirsiniz." : "Durum otomatik güncellenir."}</strong>
+          <span>
+            {isReady
+              ? "Hazır sipariş ekranında numaranızı gördüğünüzde teslim alabilirsiniz."
+              : "Bu sayfa açık kaldığında sipariş durumunu canlı takip edebilirsiniz."}
+          </span>
+        </div>
 
         {notificationPermission !== "granted" ? (
-          <button className="button secondary wide" onClick={requestNotifications} type="button">
+          <button className="button button-secondary wide" onClick={requestNotifications} type="button">
+            <BellRing size={18} />
             Tarayıcı bildirimi aç
           </button>
         ) : (
@@ -150,7 +165,8 @@ export function OrderTracker({ orderNo }: Props) {
         )}
 
         {error ? <p className="form-error">{error}</p> : null}
-        <Link className="button primary wide" href={order ? `/masa/${order.tableNo}` : "/"}>
+        <Link className="button button-primary wide" href={order ? `/masa/${order.tableNo}` : "/"}>
+          <Home size={18} />
           Ana sayfaya dön
         </Link>
       </section>

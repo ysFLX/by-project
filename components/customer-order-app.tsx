@@ -1,7 +1,23 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { ComponentType } from "react";
 import { useRouter } from "next/navigation";
+import {
+  Check,
+  ChevronRight,
+  Clock3,
+  Coffee,
+  Minus,
+  Plus,
+  ReceiptText,
+  Search,
+  Send,
+  ShoppingBag,
+  ShoppingCart,
+  Sparkles,
+  Utensils
+} from "lucide-react";
 import type { Product, ProductCategory } from "@/lib/types";
 import { categories } from "@/lib/mock-data";
 
@@ -23,6 +39,13 @@ const currency = new Intl.NumberFormat("tr-TR", {
   currency: "TRY",
   maximumFractionDigits: 0
 });
+
+const categoryIcons: Record<ProductCategory, ComponentType<{ size?: number }>> = {
+  Kahveler: Coffee,
+  Tatlılar: Sparkles,
+  Yemekler: Utensils,
+  İçecekler: ShoppingBag
+};
 
 function lineKey(productId: string, options: string[], note: string) {
   return `${productId}-${options.join("|")}-${note}`.toLowerCase();
@@ -144,37 +167,72 @@ export function CustomerOrderApp({ tableNo, menu }: Props) {
   }
 
   return (
-    <main className="customer-shell">
-      <section className="customer-top">
-        <div>
-          <span className="eyebrow">Masa {tableNo}</span>
-          <h1>Kahve Durağı</h1>
-          <p>Masa sipariş ekranı</p>
+    <main className="customer-experience">
+      <section className="customer-hero">
+        <div className="customer-brand-card">
+          <span className="eyebrow">
+            <Coffee size={14} />
+            Kahve Durağı
+          </span>
+          <h1>Masa {tableNo}</h1>
+          <p>Menüden seç, siparişin kasaya ve mutfağa otomatik düşsün.</p>
+          <div className="customer-status-row">
+            <span>
+              <Clock3 size={15} />
+              Ortalama 10-15 dk
+            </span>
+            <span>
+              <ReceiptText size={15} />
+              Kasadan teslim
+            </span>
+          </div>
         </div>
-        <div className="cart-summary">
-          <span>Sepet · {itemCount} ürün</span>
-          <strong>{currency.format(total)}</strong>
+        <div className="floating-cart">
+          <ShoppingCart size={20} />
+          <div>
+            <span>{itemCount} ürün</span>
+            <strong>{currency.format(total)}</strong>
+          </div>
         </div>
       </section>
 
-      <section className="customer-grid">
-        <aside className="menu-panel">
-          <label className="search-box">
-            <span>Ara</span>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Kahve, tatlı, yemek..." />
-          </label>
-          <div className="category-tabs" role="tablist" aria-label="Kategori seçimi">
-            {categories.map((item) => (
-              <button
-                className={item === category ? "active" : ""}
-                key={item}
-                onClick={() => setCategory(item)}
-                type="button"
-              >
-                {item}
-              </button>
-            ))}
+      <section className="order-workspace">
+        <aside className="menu-panel elevated-panel">
+          <div className="panel-heading">
+            <div>
+              <span className="mini-label">Menü</span>
+              <h2>Ürünler</h2>
+            </div>
+            <span className="item-count">{filteredProducts.length}</span>
           </div>
+
+          <label className="search-box search-with-icon">
+            <Search size={17} />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Ürün ara..."
+            />
+          </label>
+
+          <div className="category-tabs" role="tablist" aria-label="Kategori seçimi">
+            {categories.map((item) => {
+              const Icon = categoryIcons[item];
+
+              return (
+                <button
+                  className={item === category ? "active" : ""}
+                  key={item}
+                  onClick={() => setCategory(item)}
+                  type="button"
+                >
+                  <Icon size={15} />
+                  {item}
+                </button>
+              );
+            })}
+          </div>
+
           <div className="product-list">
             {filteredProducts.map((product) => (
               <button
@@ -189,22 +247,28 @@ export function CustomerOrderApp({ tableNo, menu }: Props) {
                   <small>{product.description}</small>
                   <b>{currency.format(product.price)}</b>
                 </span>
-                <span className="add-dot">+</span>
+                <ChevronRight size={18} />
               </button>
             ))}
           </div>
         </aside>
 
-        <section className="detail-panel">
+        <section className="detail-panel product-spotlight">
           {selectedProduct ? (
             <>
-              <div className="detail-photo" style={{ backgroundImage: `url(${selectedProduct.imageUrl})` }} />
+              <div className="detail-photo" style={{ backgroundImage: `url(${selectedProduct.imageUrl})` }}>
+                <span>{selectedProduct.category}</span>
+              </div>
               <div className="detail-content">
-                <div>
-                  <h2>{selectedProduct.name}</h2>
-                  <p>{selectedProduct.description}</p>
+                <div className="product-title-row">
+                  <div>
+                    <span className="mini-label">Seçili ürün</span>
+                    <h2>{selectedProduct.name}</h2>
+                    <p>{selectedProduct.description}</p>
+                  </div>
                   <strong>{currency.format(selectedProduct.price)}</strong>
                 </div>
+
                 <div className="option-group">
                   <span>Seçenekler</span>
                   <div>
@@ -215,20 +279,24 @@ export function CustomerOrderApp({ tableNo, menu }: Props) {
                         onClick={() => toggleOption(option)}
                         type="button"
                       >
+                        {selectedOptions.includes(option) ? <Check size={14} /> : null}
                         {option}
                       </button>
                     ))}
                   </div>
                 </div>
+
                 <label className="note-field">
-                  Not
+                  Ürün notu
                   <input
                     value={productNote}
                     onChange={(event) => setProductNote(event.target.value)}
-                    placeholder="Örn: Daha sıcak olsun, şekersiz olsun..."
+                    placeholder="Örn: Şekersiz, ekstra sıcak..."
                   />
                 </label>
-                <button className="button primary wide" onClick={addSelectedProduct} type="button">
+
+                <button className="button button-primary wide" onClick={addSelectedProduct} type="button">
+                  <Plus size={18} />
                   Sepete ekle
                 </button>
               </div>
@@ -238,14 +306,22 @@ export function CustomerOrderApp({ tableNo, menu }: Props) {
           )}
         </section>
 
-        <aside className="cart-panel">
+        <aside className="cart-panel elevated-panel">
           <div className="panel-heading">
-            <h2>Sepetim</h2>
-            <span>Masa {tableNo}</span>
+            <div>
+              <span className="mini-label">Masa {tableNo}</span>
+              <h2>Sepet</h2>
+            </div>
+            <ShoppingCart size={22} />
           </div>
+
           <div className="cart-lines">
             {cart.length === 0 ? (
-              <div className="empty-state">Sepet boş.</div>
+              <div className="cart-empty">
+                <ShoppingBag size={26} />
+                <strong>Sepet boş</strong>
+                <span>Ürün seçerek siparişe başlayabilirsin.</span>
+              </div>
             ) : (
               cart.map((line) => (
                 <article className="cart-line" key={line.cartId}>
@@ -256,28 +332,46 @@ export function CustomerOrderApp({ tableNo, menu }: Props) {
                     <b>{currency.format(line.product.price * line.quantity)}</b>
                   </div>
                   <div className="quantity">
-                    <button onClick={() => updateQuantity(line.cartId, -1)} type="button">
-                      -
+                    <button aria-label="Azalt" onClick={() => updateQuantity(line.cartId, -1)} type="button">
+                      <Minus size={14} />
                     </button>
                     <span>{line.quantity}</span>
-                    <button onClick={() => updateQuantity(line.cartId, 1)} type="button">
-                      +
+                    <button aria-label="Artır" onClick={() => updateQuantity(line.cartId, 1)} type="button">
+                      <Plus size={14} />
                     </button>
                   </div>
                 </article>
               ))
             )}
           </div>
+
           <label className="note-field">
             Sipariş notu
-            <input value={orderNote} onChange={(event) => setOrderNote(event.target.value)} placeholder="Örn: Peçete, çatal..." />
+            <input
+              value={orderNote}
+              onChange={(event) => setOrderNote(event.target.value)}
+              placeholder="Örn: Peçete, çatal..."
+            />
           </label>
-          <div className="total-box">
-            <span>Toplam</span>
-            <strong>{currency.format(total)}</strong>
+
+          <div className="receipt-box">
+            <div>
+              <span>Ara toplam</span>
+              <strong>{currency.format(total)}</strong>
+            </div>
+            <div>
+              <span>Servis</span>
+              <strong>{currency.format(0)}</strong>
+            </div>
+            <div className="receipt-total">
+              <span>Toplam</span>
+              <strong>{currency.format(total)}</strong>
+            </div>
           </div>
+
           {error ? <p className="form-error">{error}</p> : null}
-          <button className="button primary wide" disabled={isSubmitting} onClick={submitOrder} type="button">
+          <button className="button button-primary wide" disabled={isSubmitting} onClick={submitOrder} type="button">
+            <Send size={18} />
             {isSubmitting ? "Gönderiliyor..." : "Siparişi onayla"}
           </button>
         </aside>
