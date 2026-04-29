@@ -1342,7 +1342,7 @@ a:focus-visible {
 
 .order-main-cell {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   min-width: 0;
 }
@@ -1369,6 +1369,26 @@ a:focus-visible {
   color: var(--muted);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.order-note-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.order-note-pill {
+  display: inline-flex;
+  max-width: 100%;
+  border: 1px solid rgba(217, 119, 6, 0.24);
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: var(--amber-soft);
+  color: #8a4b05;
+  font-size: 0.76rem;
+  font-weight: 850;
+  line-height: 1.25;
 }
 
 .order-meta-cell {
@@ -1494,13 +1514,33 @@ a:focus-visible {
 }
 
 .ticket-items strong,
-.ticket-items small {
+.ticket-items small,
+.ticket-items em {
   display: block;
 }
 
 .ticket-items small,
+.ticket-items em,
 .kitchen-ticket p {
   color: rgba(255, 255, 255, 0.64);
+}
+
+.ticket-items em {
+  margin-top: 7px;
+  border-left: 3px solid #ffce83;
+  padding-left: 8px;
+  color: #ffe4b8;
+  font-style: normal;
+  font-weight: 850;
+}
+
+.ticket-order-note {
+  border: 1px solid rgba(255, 206, 131, 0.2);
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(255, 206, 131, 0.08);
+  color: #ffe4b8 !important;
+  font-weight: 850;
 }
 
 .kitchen-empty {

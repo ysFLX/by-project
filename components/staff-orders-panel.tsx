@@ -72,6 +72,10 @@ function itemSummary(order: Order) {
   return order.items.map((item) => `${item.productName} x${item.quantity}`).join(", ");
 }
 
+function hasAnyNote(order: Order) {
+  return Boolean(order.note || order.items.some((item) => item.note));
+}
+
 export function StaffOrdersPanel({ mode }: Props) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isUpdating, setIsUpdating] = useState("");
@@ -210,6 +214,7 @@ export function StaffOrdersPanel({ mode }: Props) {
                     <div>
                       <strong>Masa {order.tableNo}</strong>
                       <small>{itemSummary(order)}</small>
+                      {hasAnyNote(order) ? <OrderNotes order={order} /> : null}
                     </div>
                   </div>
                   <div className="order-meta-cell">
@@ -246,11 +251,12 @@ export function StaffOrdersPanel({ mode }: Props) {
                         <div>
                           <strong>{item.productName}</strong>
                           <small>{item.options.join(", ") || "Standart"}</small>
+                          {item.note ? <em>Ürün notu: {item.note}</em> : null}
                         </div>
                       </div>
                     ))}
                   </div>
-                  {order.note ? <p>Not: {order.note}</p> : null}
+                  {order.note ? <p className="ticket-order-note">Sipariş notu: {order.note}</p> : null}
                   <button
                     className="button button-success wide"
                     disabled={isUpdating === order.orderNo}
@@ -267,6 +273,21 @@ export function StaffOrdersPanel({ mode }: Props) {
         )}
       </section>
     </main>
+  );
+}
+
+function OrderNotes({ order }: { order: Order }) {
+  return (
+    <div className="order-note-stack">
+      {order.note ? <span className="order-note-pill">Sipariş notu: {order.note}</span> : null}
+      {order.items
+        .filter((item) => item.note)
+        .map((item, index) => (
+          <span className="order-note-pill" key={`${order.orderNo}-${item.productId}-${index}`}>
+            {item.productName}: {item.note}
+          </span>
+        ))}
+    </div>
   );
 }
 
