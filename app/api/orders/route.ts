@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
-import { createOrder, listOrders } from "@/lib/order-store";
+import { createOrder, listOrders } from "@/lib/order-repository";
 import type { CreateOrderInput, OrderStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 const statuses: OrderStatus[] = ["new", "preparing", "ready", "delivered"];
 
-export function GET(request: Request) {
+export async function GET(request: Request) {
   const url = new URL(request.url);
   const status = url.searchParams.get("status") as OrderStatus | null;
   const tableNo = url.searchParams.get("tableNo");
 
-  let orders = listOrders();
+  let orders = await listOrders();
 
   if (status && statuses.includes(status)) {
     orders = orders.filter((order) => order.status === status);
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Masa numarası gerekli." }, { status: 400 });
     }
 
-    const order = createOrder(input);
+    const order = await createOrder(input);
     return NextResponse.json({ order }, { status: 201 });
   } catch (error) {
     return NextResponse.json(

@@ -9,7 +9,9 @@ import {
   ChefHat,
   Clock3,
   CreditCard,
+  Flame,
   LayoutDashboard,
+  ListChecks,
   Monitor,
   PackageCheck,
   ReceiptText,
@@ -76,6 +78,10 @@ function hasAnyNote(order: Order) {
   return Boolean(order.note || order.items.some((item) => item.note));
 }
 
+function elapsedMinutes(value: string) {
+  return Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 60_000));
+}
+
 export function StaffOrdersPanel({ mode }: Props) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isUpdating, setIsUpdating] = useState("");
@@ -113,6 +119,20 @@ export function StaffOrdersPanel({ mode }: Props) {
   const newOrders = activeOrders.filter((order) => order.status === "new");
   const preparingOnlyOrders = activeOrders.filter((order) => order.status === "preparing");
   const revenue = orders.reduce((sum, order) => sum + order.total, 0);
+  const allDayCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    activeOrders.forEach((order) => {
+      order.items.forEach((item) => {
+        counts.set(item.productName, (counts.get(item.productName) ?? 0) + item.quantity);
+      });
+    });
+
+    return [...counts.entries()]
+      .map(([name, count]) => ({ name, count }))
+      .sort((first, second) => second.count - first.count)
+      .slice(0, 5);
+  }, [activeOrders]);
 
   if (mode === "display") {
     return (
@@ -197,79 +217,163 @@ export function StaffOrdersPanel({ mode }: Props) {
           <MetricCard icon={PackageCheck} label="Hazır" value={readyOrders.length.toString()} tone="green" />
         </div>
 
+        <section className="service-command-bar" aria-label="Servis akışı">
+          <div className="command-stage active">
+            <span>01</span>
+            <strong>QR sipariş</strong>
+            <small>{newOrders.length} yeni</small>
+          </div>
+          <div className="command-stage">
+            <span>02</span>
+            <strong>Kasa onayı</strong>
+            <small>{activeOrders.length} aktif</small>
+          </div>
+          <div className="command-stage">
+            <span>03</span>
+            <strong>Mutfak üretim</strong>
+            <small>{preparingOnlyOrders.length} ticket</small>
+          </div>
+          <div className="command-stage done">
+            <span>04</span>
+            <strong>Teslim</strong>
+            <small>{readyOrders.length} hazır</small>
+          </div>
+        </section>
+
         {mode === "cashier" ? (
-          <section className="orders-panel">
-            <div className="panel-title-row">
-              <div>
-                <span className="mini-label">Bugünkü ciro</span>
-                <strong>{currency.format(revenue)}</strong>
+          <section className="ops-split-layout">
+            <div className="orders-panel">
+              <div className="panel-title-row">
+                <div>
+                  <span className="mini-label">Bugünkü ciro</span>
+                  <strong>{currency.format(revenue)}</strong>
+                </div>
+                <span>{orders.length} sipariş</span>
               </div>
-              <span>{orders.length} sipariş</span>
-            </div>
-            <div className="cashier-list">
-              {orders.map((order) => (
-                <article className="cashier-order" key={order.orderNo}>
-                  <div className="order-main-cell">
-                    <span className="order-number-badge">#{order.orderNo}</span>
-                    <div>
-                      <strong>Masa {order.tableNo}</strong>
-                      <small>{itemSummary(order)}</small>
-                      {hasAnyNote(order) ? <OrderNotes order={order} /> : null}
+              <div className="cashier-list">
+                {orders.map((order) => (
+                  <article className="cashier-order" key={order.orderNo}>
+                    <div className="order-main-cell">
+                      <span className="order-number-badge">#{order.orderNo}</span>
+                      <div>
+                        <strong>Masa {order.tableNo}</strong>
+                        <small>{itemSummary(order)}</small>
+                        {hasAnyNote(order) ? <OrderNotes order={order} /> : null}
+                      </div>
                     </div>
-                  </div>
-                  <div className="order-meta-cell">
-                    <Clock3 size={15} />
-                    {formatTime(order.createdAt)}
-                  </div>
-                  <div className="order-total-cell">{currency.format(order.total)}</div>
-                  <span className={`status status-${order.status}`}>{statusLabels[order.status]}</span>
-                  <OrderActions isUpdating={isUpdating === order.orderNo} order={order} onUpdate={updateStatus} />
-                </article>
-              ))}
+                    <div className="order-meta-cell">
+                      <Clock3 size={15} />
+                      {elapsedMinutes(order.createdAt)} dk
+                    </div>
+                    <div className="order-total-cell">{currency.format(order.total)}</div>
+                    <span className={`status status-${order.status}`}>{statusLabels[order.status]}</span>
+                    <OrderActions isUpdating={isUpdating === order.orderNo} order={order} onUpdate={updateStatus} />
+                  </article>
+                ))}
+              </div>
             </div>
+
+            <aside className="service-insights-panel">
+              <div className="insight-card highlight">
+                <span>
+                  <Flame size={18} />
+                  Servis baskısı
+                </span>
+                <strong>{preparingOrders.length + readyOrders.length}</strong>
+                <small>Hazırlık ve teslim bekleyen sipariş</small>
+              </div>
+              <div className="insight-card">
+                <span>
+                  <ListChecks size={18} />
+                  All-day sayım
+                </span>
+                <div className="all-day-list">
+                  {allDayCounts.length > 0 ? (
+                    allDayCounts.map((item) => (
+                      <p key={item.name}>
+                        <strong>{item.count}x</strong>
+                        <span>{item.name}</span>
+                      </p>
+                    ))
+                  ) : (
+                    <small>Aktif ürün yok</small>
+                  )}
+                </div>
+              </div>
+            </aside>
           </section>
         ) : (
-          <section className="kitchen-board">
-            {preparingOrders.length === 0 ? (
-              <div className="empty-state kitchen-empty">Hazırlanacak sipariş yok.</div>
-            ) : (
-              preparingOrders.map((order) => (
-                <article className={`kitchen-ticket status-${order.status}`} key={order.orderNo}>
-                  <div className="ticket-top">
-                    <div>
-                      <span>#{order.orderNo}</span>
-                      <strong>Masa {order.tableNo}</strong>
-                    </div>
-                    <em>{formatTime(order.createdAt)}</em>
-                  </div>
-                  <div className="ticket-items">
-                    {order.items.map((item) => (
-                      <div key={`${order.orderNo}-${item.productId}`}>
-                        <span>
-                          {item.quantity}x
-                        </span>
-                        <div>
-                          <strong>{item.productName}</strong>
-                          <small>{item.options.join(", ") || "Standart"}</small>
-                          {item.note ? <em>Ürün notu: {item.note}</em> : null}
-                        </div>
+          <>
+            <section className="kitchen-command-strip">
+              <div>
+                <span className="mini-label">All-day</span>
+                <div className="kitchen-counts">
+                  {allDayCounts.length > 0 ? (
+                    allDayCounts.map((item) => (
+                      <span key={item.name}>
+                        <strong>{item.count}x</strong>
+                        {item.name}
+                      </span>
+                    ))
+                  ) : (
+                    <span>Aktif ürün yok</span>
+                  )}
+                </div>
+              </div>
+              <div className="station-filter-row" aria-label="İstasyonlar">
+                <span className="active">Tüm istasyonlar</span>
+                <span>Bar</span>
+                <span>Mutfak</span>
+                <span>Tatlı</span>
+              </div>
+            </section>
+
+            <section className="kitchen-board">
+              {preparingOrders.length === 0 ? (
+                <div className="empty-state kitchen-empty">Hazırlanacak sipariş yok.</div>
+              ) : (
+                preparingOrders.map((order) => (
+                  <article className={`kitchen-ticket status-${order.status}`} key={order.orderNo}>
+                    <div className="ticket-top">
+                      <div>
+                        <span>#{order.orderNo}</span>
+                        <strong>Masa {order.tableNo}</strong>
                       </div>
-                    ))}
-                  </div>
-                  {order.note ? <p className="ticket-order-note">Sipariş notu: {order.note}</p> : null}
-                  <button
-                    className="button button-success wide"
-                    disabled={isUpdating === order.orderNo}
-                    onClick={() => updateStatus(order.orderNo, "ready")}
-                    type="button"
-                  >
-                    <CheckCircle2 size={18} />
-                    Hazır
-                  </button>
-                </article>
-              ))
-            )}
-          </section>
+                      <em>{elapsedMinutes(order.createdAt)} dk</em>
+                    </div>
+                    <div className="ticket-subline">
+                      <span>{formatTime(order.createdAt)}</span>
+                      <span>{order.items.reduce((sum, item) => sum + item.quantity, 0)} ürün</span>
+                    </div>
+                    <div className="ticket-items">
+                      {order.items.map((item) => (
+                        <div key={`${order.orderNo}-${item.productId}`}>
+                          <span>
+                            {item.quantity}x
+                          </span>
+                          <div>
+                            <strong>{item.productName}</strong>
+                            <small>{item.options.join(", ") || "Standart"}</small>
+                            {item.note ? <em>Ürün notu: {item.note}</em> : null}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {order.note ? <p className="ticket-order-note">Sipariş notu: {order.note}</p> : null}
+                    <button
+                      className="button button-success wide"
+                      disabled={isUpdating === order.orderNo}
+                      onClick={() => updateStatus(order.orderNo, "ready")}
+                      type="button"
+                    >
+                      <CheckCircle2 size={18} />
+                      Hazır
+                    </button>
+                  </article>
+                ))
+              )}
+            </section>
+          </>
         )}
       </section>
     </main>

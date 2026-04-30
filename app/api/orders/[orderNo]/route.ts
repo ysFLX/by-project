@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getOrder, updateOrderStatus } from "@/lib/order-store";
+import { getOrder, updateOrderStatus } from "@/lib/order-repository";
 import type { OrderStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +12,7 @@ type RouteContext = {
 
 export async function GET(_request: Request, context: RouteContext) {
   const { orderNo } = await context.params;
-  const order = getOrder(orderNo);
+  const order = await getOrder(orderNo);
 
   if (!order) {
     return NextResponse.json({ message: "Sipariş bulunamadı." }, { status: 404 });
@@ -36,7 +36,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ message: "Geçerli bir durum gönderilmedi." }, { status: 400 });
   }
 
-  const order = updateOrderStatus(orderNo, body.status);
+  const order = await updateOrderStatus(orderNo, body.status);
 
   if (!order) {
     return NextResponse.json({ message: "Sipariş bulunamadı." }, { status: 404 });

@@ -78,6 +78,7 @@ export function CustomerOrderApp({ tableNo, menu }: Props) {
     });
   }, [activeProducts, category, query]);
 
+  const featuredProducts = useMemo(() => activeProducts.slice(0, 3), [activeProducts]);
   const total = cart.reduce((sum, line) => sum + line.product.price * line.quantity, 0);
   const itemCount = cart.reduce((sum, line) => sum + line.quantity, 0);
 
@@ -196,6 +197,24 @@ export function CustomerOrderApp({ tableNo, menu }: Props) {
         </div>
       </section>
 
+      <section className="customer-flow-strip" aria-label="Sipariş akışı">
+        <article>
+          <span>01</span>
+          <strong>Ürün seç</strong>
+          <small>Menüden kişiselleştir</small>
+        </article>
+        <article>
+          <span>02</span>
+          <strong>Not ekle</strong>
+          <small>Ürün ve sipariş notu</small>
+        </article>
+        <article>
+          <span>03</span>
+          <strong>Takip et</strong>
+          <small>Hazır olunca ekranda</small>
+        </article>
+      </section>
+
       <section className="order-workspace">
         <aside className="menu-panel elevated-panel">
           <div className="panel-heading">
@@ -214,6 +233,22 @@ export function CustomerOrderApp({ tableNo, menu }: Props) {
               placeholder="Ürün ara..."
             />
           </label>
+
+          <div className="quick-shelf">
+            <span className="mini-label">Öne çıkanlar</span>
+            {featuredProducts.map((product) => (
+              <button
+                className={selectedProduct?.id === product.id ? "quick-item active" : "quick-item"}
+                key={product.id}
+                onClick={() => selectProduct(product)}
+                type="button"
+              >
+                <span style={{ backgroundImage: `url(${product.imageUrl})` }} />
+                <strong>{product.name}</strong>
+                <small>{currency.format(product.price)}</small>
+              </button>
+            ))}
+          </div>
 
           <div className="category-tabs" role="tablist" aria-label="Kategori seçimi">
             {categories.map((item) => {
