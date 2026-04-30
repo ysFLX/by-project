@@ -31,9 +31,12 @@ import {
 } from "lucide-react";
 import type { Order, OrderStatus, Product, ProductCategory, TableInfo } from "@/lib/types";
 
+export type AdminView = "overview" | "orders" | "tables" | "menu" | "notifications" | "settings";
+
 type Props = {
   menu: Product[];
   tables: TableInfo[];
+  section?: AdminView;
 };
 
 const currency = new Intl.NumberFormat("tr-TR", {
@@ -43,15 +46,15 @@ const currency = new Intl.NumberFormat("tr-TR", {
 });
 
 const navItems = [
-  { label: "Operasyon", icon: Home, href: "#overview", active: true },
-  { label: "Canlı Siparişler", icon: ReceiptText, href: "#orders" },
+  { label: "Operasyon", icon: Home, href: "/admin", view: "overview" },
+  { label: "Canlı Siparişler", icon: ReceiptText, href: "/admin/siparisler", view: "orders" },
   { label: "Mutfak Kuyruğu", icon: ChefHat, href: "/mutfak" },
-  { label: "Masa & QR", icon: QrCode, href: "#tables" },
-  { label: "Menü Yönetimi", icon: Package, href: "#menu" },
+  { label: "Masa & QR", icon: QrCode, href: "/admin/masalar", view: "tables" },
+  { label: "Menü Yönetimi", icon: Package, href: "/admin/menu", view: "menu" },
   { label: "Hazır Ekranı", icon: MonitorCheck, href: "/ekran" },
   { label: "Kasa Akışı", icon: CreditCard, href: "/kasa" },
-  { label: "Bildirimler", icon: Bell, href: "#notifications" },
-  { label: "Ayarlar", icon: Settings, href: "#settings" }
+  { label: "Bildirimler", icon: Bell, href: "/admin/bildirimler", view: "notifications" },
+  { label: "Ayarlar", icon: Settings, href: "/admin/ayarlar", view: "settings" }
 ];
 
 const actionLinks = [
@@ -71,6 +74,33 @@ const statusMeta: Record<OrderStatus, { label: string; tone: string; color: stri
 };
 
 const categoryOrder: ProductCategory[] = ["Kahveler", "Tatlılar", "Yemekler", "İçecekler"];
+
+const viewCopy: Record<AdminView, { title: string; text: string }> = {
+  overview: {
+    title: "Kahve Durağı Operasyon Paneli",
+    text: "Masa QR siparişleri, kasa, mutfak ve hazır ekranı tek canlı merkezde."
+  },
+  orders: {
+    title: "Canlı Siparişler",
+    text: "Müşteriden gelen siparişleri, notları, masa bilgisini ve durumunu buradan takip et."
+  },
+  tables: {
+    title: "Masa & QR Yönetimi",
+    text: "Her masanın müşteri sipariş linki ve aktif sipariş yoğunluğu burada."
+  },
+  menu: {
+    title: "Menü Yönetimi",
+    text: "Kategori bazlı ürün durumunu ve menünün operasyon sağlığını izle."
+  },
+  notifications: {
+    title: "Operasyon Bildirimleri",
+    text: "Hazır siparişler, mutfak kuyruğu ve sistem sinyalleri bu ekranda."
+  },
+  settings: {
+    title: "İşletme Ayarları",
+    text: "Servis, bildirim ve operasyon parametrelerini tek yerde kontrol et."
+  }
+};
 
 function toChartPoints(values: number[]) {
   const max = Math.max(...values);
@@ -114,7 +144,7 @@ function buildDonutGradient(rows: Array<{ percent: number; color: string }>) {
   return `conic-gradient(${segments.join(", ")})`;
 }
 
-export function AdminDashboard({ menu, tables }: Props) {
+export function AdminDashboard({ menu, tables, section = "overview" }: Props) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [query, setQuery] = useState("");
   const [isSidebarCompact, setIsSidebarCompact] = useState(false);
@@ -127,10 +157,6 @@ export function AdminDashboard({ menu, tables }: Props) {
     if (response.ok) {
       setOrders(payload.orders);
     }
-  }
-
-  function scrollToPanel(panelId: string) {
-    document.getElementById(panelId)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   useEffect(() => {
@@ -262,7 +288,7 @@ export function AdminDashboard({ menu, tables }: Props) {
       text: `${tables.filter((table) => table.active).length} masa müşteri sipariş linkine bağlı.`,
       time: "online",
       tone: "blue",
-      href: "#tables"
+      href: "/admin/masalar"
     },
     {
       icon: ReceiptText,
@@ -279,6 +305,15 @@ export function AdminDashboard({ menu, tables }: Props) {
     month: "long",
     year: "numeric"
   }).format(new Date());
+  const copy = viewCopy[section];
+  const showOverview = section === "overview";
+  const showOrders = showOverview || section === "orders";
+  const showNotifications = showOverview || section === "notifications";
+  const showTables = showOverview || section === "tables";
+  const showMenu = showOverview || section === "menu";
+  const showSettings = section === "settings";
+  const splitGridClass = showOverview ? "kanka-bottom-grid" : "admin-single-grid";
+  const opsGridClass = showOverview ? "kanka-ops-grid" : "admin-single-grid";
 
   return (
     <main className={`kanka-admin-shell${isSidebarCompact ? " sidebar-compact" : ""}${isNightMode ? " night-mode" : ""}`}>
@@ -296,7 +331,7 @@ export function AdminDashboard({ menu, tables }: Props) {
             const Icon = item.icon;
 
             return (
-              <Link className={item.active ? "active" : ""} href={item.href} key={item.label}>
+              <Link className={item.view === section ? "active" : ""} href={item.href} key={item.label}>
                 <Icon size={19} />
                 <span>{item.label}</span>
               </Link>
@@ -333,10 +368,10 @@ export function AdminDashboard({ menu, tables }: Props) {
             <input placeholder="Sipariş, masa veya ürün ara..." value={query} onChange={(event) => setQuery(event.target.value)} />
             <Search size={20} />
           </label>
-          <button className="notification-button" type="button" aria-label="Bildirimler" onClick={() => scrollToPanel("notifications")}>
+          <Link className="notification-button" href="/admin/bildirimler" aria-label="Bildirimler">
             <Bell size={20} />
             <span>{Math.max(newOrders.length + readyOrders.length, 1)}</span>
-          </button>
+          </Link>
           <div className="topbar-user">
             <span className="avatar image">KD</span>
             <div>
@@ -348,10 +383,10 @@ export function AdminDashboard({ menu, tables }: Props) {
         </header>
 
         <div className="kanka-content">
-          <section className="admin-welcome" id="overview">
+          <section className="admin-welcome">
             <div>
-              <h1>Kahve Durağı Operasyon Paneli</h1>
-              <p>Masa QR siparişleri, kasa, mutfak ve hazır ekranı tek canlı merkezde.</p>
+              <h1>{copy.title}</h1>
+              <p>{copy.text}</p>
             </div>
             <button className="date-filter" type="button" onClick={loadOrders}>
               <CalendarDays size={17} />
@@ -382,201 +417,260 @@ export function AdminDashboard({ menu, tables }: Props) {
             })}
           </section>
 
-          <section className="admin-action-strip" aria-label="Hızlı operasyon bağlantıları">
-            {actionLinks.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <Link className={`admin-action-card tone-${item.tone}`} href={item.href} key={item.href}>
-                  <span>
-                    <Icon size={21} />
-                  </span>
-                  <div>
-                    <strong>{item.label}</strong>
-                    <small>{item.text}</small>
-                  </div>
-                </Link>
-              );
-            })}
-          </section>
-
-          <section className="kanka-analytics-grid">
-            <article className="kanka-panel revenue-panel">
-              <div className="panel-head">
-                <h2>Saatlik Sipariş Akışı</h2>
-                <button type="button" onClick={loadOrders}>
-                  Bugün
-                  <ChevronDown size={15} />
-                </button>
-              </div>
-              <div className="chart-legend">
-                <span className="current">Sipariş</span>
-                <span className="previous">Beklenen tempo</span>
-              </div>
-              <div className="line-chart ops-chart">
-                <span>24</span>
-                <span>18</span>
-                <span>12</span>
-                <span>6</span>
-                <span>3</span>
-                <span>0</span>
-                <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-                  <polyline className="chart-line-muted" points={toChartPoints(hourlyBaseline)} />
-                  <polyline className="chart-line-main" points={toChartPoints(chartValues)} />
-                </svg>
-                <div className="chart-days">
-                  <small>09:00</small>
-                  <small>11:00</small>
-                  <small>13:00</small>
-                  <small>15:00</small>
-                  <small>17:00</small>
-                  <small>19:00</small>
-                  <small>21:00</small>
-                </div>
-              </div>
-            </article>
-
-            <article className="kanka-panel status-panel">
-              <div className="panel-head">
-                <h2>Sipariş Operasyonu</h2>
-                <button type="button" onClick={loadOrders}>
-                  Canlı
-                  <Wifi size={15} />
-                </button>
-              </div>
-              <div className="donut-layout">
-                <div className="donut-chart" style={{ background: donutGradient }}>
-                  <div>
-                    <span>Aktif</span>
-                    <strong>{activeOrders.length.toLocaleString("tr-TR")}</strong>
-                  </div>
-                </div>
-                <div className="status-list">
-                  {statusRows.map((row) => (
-                    <p key={row.label}>
-                      <span className={row.tone} />
-                      <strong>{row.label}</strong>
-                      <em>
-                        {row.value.toLocaleString("tr-TR")} ({row.percent}%)
-                      </em>
-                    </p>
-                  ))}
-                </div>
-              </div>
-            </article>
-          </section>
-
-          <section className="kanka-bottom-grid">
-            <article className="kanka-panel" id="orders">
-              <div className="panel-head compact-head">
-                <h2>{query ? "Arama Sonuçları" : "Son Siparişler"}</h2>
-                <Link href="/kasa">Kasaya Git</Link>
-              </div>
-              <div className="recent-orders">
-                {filteredOrders.length === 0 ? (
-                  <p className="empty-state">{query ? "Aramana uygun sipariş bulunamadı." : "Henüz sipariş yok."}</p>
-                ) : (
-                  filteredOrders.slice(0, 5).map((order) => (
-                    <Link className="recent-order-row" href={`/takip/${order.orderNo}`} key={order.orderNo}>
-                      <strong>#{order.orderNo}</strong>
-                      <span>{formatTime(order.createdAt)}</span>
-                      <i className="avatar mini">M{order.tableNo}</i>
-                      <div>
-                        <b>Masa {order.tableNo}</b>
-                        <small>{itemSummary(order)}</small>
-                      </div>
-                      <em>{currency.format(order.total)}</em>
-                      <mark className={order.status}>{statusMeta[order.status].label}</mark>
-                    </Link>
-                  ))
-                )}
-              </div>
-            </article>
-
-            <article className="kanka-panel" id="notifications">
-              <div className="panel-head compact-head">
-                <h2>Operasyon Bildirimleri</h2>
-                <div>
-                  <button type="button" onClick={loadOrders}>Canlı</button>
-                  <MoreVertical size={18} />
-                </div>
-              </div>
-              <div className="notification-list">
-                {notifications.map((notification) => {
-                  const Icon = notification.icon;
+          {showOverview ? (
+            <>
+              <section className="admin-action-strip" aria-label="Hızlı operasyon bağlantıları">
+                {actionLinks.map((item) => {
+                  const Icon = item.icon;
 
                   return (
-                    <Link href={notification.href} key={notification.title}>
-                      <span className={notification.tone}>
-                        <Icon size={18} />
+                    <Link className={`admin-action-card tone-${item.tone}`} href={item.href} key={item.href}>
+                      <span>
+                        <Icon size={21} />
                       </span>
                       <div>
-                        <strong>{notification.title}</strong>
-                        <small>{notification.text}</small>
+                        <strong>{item.label}</strong>
+                        <small>{item.text}</small>
                       </div>
-                      <em>{notification.time}</em>
                     </Link>
                   );
                 })}
-              </div>
-            </article>
-          </section>
+              </section>
 
-          <section className="kanka-ops-grid">
-            <article className="kanka-panel" id="tables">
-              <div className="panel-head compact-head">
-                <h2>Masa & QR Yönetimi</h2>
-                <Link href="/masa/7">Önizle</Link>
-              </div>
-              <div className="qr-table-list">
-                {tables.map((table) => {
-                  const tableOrders = activeOrders.filter((order) => order.tableNo === table.id);
-
-                  return (
-                    <Link href={`/masa/${table.id}`} key={table.id}>
-                      <span className="qr-mini-code" aria-hidden="true" />
-                      <div>
-                        <strong>{table.label}</strong>
-                        <small>/masa/{table.id} · {table.seats}</small>
-                      </div>
-                      <em>{tableOrders.length ? `${tableOrders.length} aktif` : "boş"}</em>
-                    </Link>
-                  );
-                })}
-              </div>
-            </article>
-
-            <article className="kanka-panel" id="menu">
-              <div className="panel-head compact-head">
-                <h2>Menü Sağlığı</h2>
-                <span className="panel-metric">{activeMenuCount}/{menu.length} aktif</span>
-              </div>
-              <div className="menu-health-list">
-                {menuHealth.map((item) => (
-                  <div key={item.category}>
-                    <span>
-                      {item.category === "Kahveler" ? <Store size={17} /> : item.category === "Yemekler" ? <Utensils size={17} /> : <Package size={17} />}
-                    </span>
-                    <div>
-                      <strong>{item.category}</strong>
-                      <small>{item.active} aktif ürün</small>
-                    </div>
-                    <em>{item.total}</em>
+              <section className="kanka-analytics-grid">
+                <article className="kanka-panel revenue-panel">
+                  <div className="panel-head">
+                    <h2>Saatlik Sipariş Akışı</h2>
+                    <button type="button" onClick={loadOrders}>
+                      Bugün
+                      <ChevronDown size={15} />
+                    </button>
                   </div>
-                ))}
-              </div>
-              <div className="channel-health" id="settings">
-                <p>
-                  <Timer size={17} />
-                  Ortalama hazırlık: <strong>{averagePrep} dk</strong>
-                </p>
-                <p>
-                  <Armchair size={17} />
-                  Aktif masa: <strong>{activeTableCount}/{tables.length}</strong>
-                </p>
-              </div>
-            </article>
-          </section>
+                  <div className="chart-legend">
+                    <span className="current">Sipariş</span>
+                    <span className="previous">Beklenen tempo</span>
+                  </div>
+                  <div className="line-chart ops-chart">
+                    <span>24</span>
+                    <span>18</span>
+                    <span>12</span>
+                    <span>6</span>
+                    <span>3</span>
+                    <span>0</span>
+                    <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                      <polyline className="chart-line-muted" points={toChartPoints(hourlyBaseline)} />
+                      <polyline className="chart-line-main" points={toChartPoints(chartValues)} />
+                    </svg>
+                    <div className="chart-days">
+                      <small>09:00</small>
+                      <small>11:00</small>
+                      <small>13:00</small>
+                      <small>15:00</small>
+                      <small>17:00</small>
+                      <small>19:00</small>
+                      <small>21:00</small>
+                    </div>
+                  </div>
+                </article>
+
+                <article className="kanka-panel status-panel">
+                  <div className="panel-head">
+                    <h2>Sipariş Operasyonu</h2>
+                    <button type="button" onClick={loadOrders}>
+                      Canlı
+                      <Wifi size={15} />
+                    </button>
+                  </div>
+                  <div className="donut-layout">
+                    <div className="donut-chart" style={{ background: donutGradient }}>
+                      <div>
+                        <span>Aktif</span>
+                        <strong>{activeOrders.length.toLocaleString("tr-TR")}</strong>
+                      </div>
+                    </div>
+                    <div className="status-list">
+                      {statusRows.map((row) => (
+                        <p key={row.label}>
+                          <span className={row.tone} />
+                          <strong>{row.label}</strong>
+                          <em>
+                            {row.value.toLocaleString("tr-TR")} ({row.percent}%)
+                          </em>
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                </article>
+              </section>
+            </>
+          ) : null}
+
+          {showOrders || showNotifications ? (
+            <section className={splitGridClass}>
+              {showOrders ? (
+                <article className="kanka-panel">
+                  <div className="panel-head compact-head">
+                    <h2>{query ? "Arama Sonuçları" : "Canlı Siparişler"}</h2>
+                    <Link href="/kasa">Kasaya Git</Link>
+                  </div>
+                  <div className="recent-orders">
+                    {filteredOrders.length === 0 ? (
+                      <p className="empty-state">{query ? "Aramana uygun sipariş bulunamadı." : "Henüz sipariş yok."}</p>
+                    ) : (
+                      filteredOrders.slice(0, showOverview ? 5 : 12).map((order) => (
+                        <Link className="recent-order-row" href={`/takip/${order.orderNo}`} key={order.orderNo}>
+                          <strong>#{order.orderNo}</strong>
+                          <span>{formatTime(order.createdAt)}</span>
+                          <i className="avatar mini">M{order.tableNo}</i>
+                          <div>
+                            <b>Masa {order.tableNo}</b>
+                            <small>{itemSummary(order)}</small>
+                          </div>
+                          <em>{currency.format(order.total)}</em>
+                          <mark className={order.status}>{statusMeta[order.status].label}</mark>
+                        </Link>
+                      ))
+                    )}
+                  </div>
+                </article>
+              ) : null}
+
+              {showNotifications ? (
+                <article className="kanka-panel">
+                  <div className="panel-head compact-head">
+                    <h2>Operasyon Bildirimleri</h2>
+                    <div>
+                      <button type="button" onClick={loadOrders}>Canlı</button>
+                      <MoreVertical size={18} />
+                    </div>
+                  </div>
+                  <div className="notification-list">
+                    {notifications.map((notification) => {
+                      const Icon = notification.icon;
+
+                      return (
+                        <Link href={notification.href} key={notification.title}>
+                          <span className={notification.tone}>
+                            <Icon size={18} />
+                          </span>
+                          <div>
+                            <strong>{notification.title}</strong>
+                            <small>{notification.text}</small>
+                          </div>
+                          <em>{notification.time}</em>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </article>
+              ) : null}
+            </section>
+          ) : null}
+
+          {showTables || showMenu || showSettings ? (
+            <section className={opsGridClass}>
+              {showTables ? (
+                <article className="kanka-panel">
+                  <div className="panel-head compact-head">
+                    <h2>Masa & QR Yönetimi</h2>
+                    <Link href="/masa/7">Önizle</Link>
+                  </div>
+                  <div className="qr-table-list">
+                    {tables.map((table) => {
+                      const tableOrders = activeOrders.filter((order) => order.tableNo === table.id);
+
+                      return (
+                        <Link href={`/masa/${table.id}`} key={table.id}>
+                          <span className="qr-mini-code" aria-hidden="true" />
+                          <div>
+                            <strong>{table.label}</strong>
+                            <small>/masa/{table.id} · {table.seats}</small>
+                          </div>
+                          <em>{tableOrders.length ? `${tableOrders.length} aktif` : "boş"}</em>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </article>
+              ) : null}
+
+              {showMenu ? (
+                <article className="kanka-panel">
+                  <div className="panel-head compact-head">
+                    <h2>Menü Sağlığı</h2>
+                    <span className="panel-metric">{activeMenuCount}/{menu.length} aktif</span>
+                  </div>
+                  <div className="menu-health-list">
+                    {menuHealth.map((item) => (
+                      <div key={item.category}>
+                        <span>
+                          {item.category === "Kahveler" ? <Store size={17} /> : item.category === "Yemekler" ? <Utensils size={17} /> : <Package size={17} />}
+                        </span>
+                        <div>
+                          <strong>{item.category}</strong>
+                          <small>{item.active} aktif ürün</small>
+                        </div>
+                        <em>{item.total}</em>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="channel-health">
+                    <p>
+                      <Timer size={17} />
+                      Ortalama hazırlık: <strong>{averagePrep} dk</strong>
+                    </p>
+                    <p>
+                      <Armchair size={17} />
+                      Aktif masa: <strong>{activeTableCount}/{tables.length}</strong>
+                    </p>
+                  </div>
+                </article>
+              ) : null}
+
+              {showSettings ? (
+                <article className="kanka-panel">
+                  <div className="panel-head compact-head">
+                    <h2>İşletme Ayarları</h2>
+                    <button type="button" onClick={loadOrders}>Kaydet</button>
+                  </div>
+                  <div className="menu-health-list settings-summary-list">
+                    <div>
+                      <span><Store size={17} /></span>
+                      <div>
+                        <strong>İşletme adı</strong>
+                        <small>Kahve Durağı</small>
+                      </div>
+                      <em>aktif</em>
+                    </div>
+                    <div>
+                      <span><QrCode size={17} /></span>
+                      <div>
+                        <strong>QR masa sayısı</strong>
+                        <small>{tables.length} masa sipariş linkine bağlı</small>
+                      </div>
+                      <em>{tables.length}</em>
+                    </div>
+                    <div>
+                      <span><Bell size={17} /></span>
+                      <div>
+                        <strong>Bildirim kanalı</strong>
+                        <small>SMS yerine ekran ve tarayıcı tabanlı akış</small>
+                      </div>
+                      <em>0 SMS</em>
+                    </div>
+                    <div>
+                      <span><CreditCard size={17} /></span>
+                      <div>
+                        <strong>Servis ücreti</strong>
+                        <small>Self servis akışı için kapalı</small>
+                      </div>
+                      <em>%0</em>
+                    </div>
+                  </div>
+                </article>
+              ) : null}
+            </section>
+          ) : null}
         </div>
       </section>
     </main>

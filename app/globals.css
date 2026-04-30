@@ -2638,6 +2638,12 @@ a:focus-visible {
   gap: 22px;
 }
 
+.admin-single-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 22px;
+}
+
 .kanka-panel {
   overflow: hidden;
 }
