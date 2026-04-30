@@ -5,13 +5,11 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Armchair,
   BadgeCheck,
-  BarChart3,
   Bell,
   CalendarDays,
   ChefHat,
   ChevronDown,
   CircleDollarSign,
-  Clock3,
   CreditCard,
   Home,
   Menu,
@@ -26,7 +24,6 @@ import {
   Settings,
   ShoppingBag,
   Store,
-  Table2,
   Timer,
   TrendingUp,
   Utensils,
@@ -46,15 +43,15 @@ const currency = new Intl.NumberFormat("tr-TR", {
 });
 
 const navItems = [
-  { label: "Operasyon", icon: Home, active: true },
-  { label: "Canlı Siparişler", icon: ReceiptText },
-  { label: "Mutfak Kuyruğu", icon: ChefHat },
-  { label: "Masa & QR", icon: QrCode },
-  { label: "Menü Yönetimi", icon: Package },
-  { label: "Hazır Ekranı", icon: MonitorCheck },
-  { label: "Kasa Akışı", icon: CreditCard },
-  { label: "Bildirimler", icon: Bell },
-  { label: "Ayarlar", icon: Settings }
+  { label: "Operasyon", icon: Home, href: "#overview", active: true },
+  { label: "Canlı Siparişler", icon: ReceiptText, href: "#orders" },
+  { label: "Mutfak Kuyruğu", icon: ChefHat, href: "/mutfak" },
+  { label: "Masa & QR", icon: QrCode, href: "#tables" },
+  { label: "Menü Yönetimi", icon: Package, href: "#menu" },
+  { label: "Hazır Ekranı", icon: MonitorCheck, href: "/ekran" },
+  { label: "Kasa Akışı", icon: CreditCard, href: "/kasa" },
+  { label: "Bildirimler", icon: Bell, href: "#notifications" },
+  { label: "Ayarlar", icon: Settings, href: "#settings" }
 ];
 
 const actionLinks = [
@@ -119,17 +116,24 @@ function buildDonutGradient(rows: Array<{ percent: number; color: string }>) {
 
 export function AdminDashboard({ menu, tables }: Props) {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [query, setQuery] = useState("");
+  const [isSidebarCompact, setIsSidebarCompact] = useState(false);
+  const [isNightMode, setIsNightMode] = useState(false);
+
+  async function loadOrders() {
+    const response = await fetch("/api/orders", { cache: "no-store" });
+    const payload = await response.json();
+
+    if (response.ok) {
+      setOrders(payload.orders);
+    }
+  }
+
+  function scrollToPanel(panelId: string) {
+    document.getElementById(panelId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   useEffect(() => {
-    async function loadOrders() {
-      const response = await fetch("/api/orders", { cache: "no-store" });
-      const payload = await response.json();
-
-      if (response.ok) {
-        setOrders(payload.orders);
-      }
-    }
-
     loadOrders();
     const interval = window.setInterval(loadOrders, 2500);
 
@@ -207,6 +211,22 @@ export function AdminDashboard({ menu, tables }: Props) {
   const chartValues = orders.length
     ? hourlyBaseline.map((value, index) => value + orders.filter((order) => elapsedMinutes(order.createdAt) <= (index + 1) * 8).length)
     : hourlyBaseline;
+  const normalizedQuery = query.trim().toLocaleLowerCase("tr-TR");
+  const filteredOrders = normalizedQuery
+    ? orders.filter((order) => {
+        const searchable = [
+          order.orderNo,
+          `Masa ${order.tableNo}`,
+          statusMeta[order.status].label,
+          order.note ?? "",
+          ...order.items.flatMap((item) => [item.productName, item.note ?? "", ...item.options])
+        ]
+          .join(" ")
+          .toLocaleLowerCase("tr-TR");
+
+        return searchable.includes(normalizedQuery);
+      })
+    : orders;
 
   const menuHealth = categoryOrder.map((category) => {
     const products = menu.filter((product) => product.category === category);
@@ -225,28 +245,32 @@ export function AdminDashboard({ menu, tables }: Props) {
       title: readyOrders[0] ? `#${readyOrders[0].orderNo} teslim bekliyor` : "Hazır sipariş yok",
       text: readyOrders[0] ? `Masa ${readyOrders[0].tableNo} siparişi müşteri ekranında hazır görünüyor.` : "Hazır olan siparişler burada öne düşecek.",
       time: "canlı",
-      tone: "green"
+      tone: "green",
+      href: readyOrders[0] ? `/takip/${readyOrders[0].orderNo}` : "/ekran"
     },
     {
       icon: ChefHat,
       title: `${preparingOrders.length} sipariş mutfakta`,
       text: newOrders.length ? `${newOrders.length} yeni sipariş kabul bekliyor.` : "Yeni sipariş kuyruğu temiz.",
       time: "şimdi",
-      tone: "amber"
+      tone: "amber",
+      href: "/mutfak"
     },
     {
       icon: QrCode,
       title: "Masa QR bağlantıları aktif",
       text: `${tables.filter((table) => table.active).length} masa müşteri sipariş linkine bağlı.`,
       time: "online",
-      tone: "blue"
+      tone: "blue",
+      href: "#tables"
     },
     {
       icon: ReceiptText,
       title: "Müşteri notları kasaya düşüyor",
       text: "Sipariş ve ürün notları operasyon panellerinde görüntüleniyor.",
       time: "kontrol edildi",
-      tone: "purple"
+      tone: "purple",
+      href: "/kasa"
     }
   ];
 
@@ -257,7 +281,7 @@ export function AdminDashboard({ menu, tables }: Props) {
   }).format(new Date());
 
   return (
-    <main className="kanka-admin-shell">
+    <main className={`kanka-admin-shell${isSidebarCompact ? " sidebar-compact" : ""}${isNightMode ? " night-mode" : ""}`}>
       <aside className="kanka-sidebar">
         <div className="kanka-brand">
           <span>BY</span>
@@ -272,16 +296,16 @@ export function AdminDashboard({ menu, tables }: Props) {
             const Icon = item.icon;
 
             return (
-              <button className={item.active ? "active" : ""} key={item.label} type="button">
+              <Link className={item.active ? "active" : ""} href={item.href} key={item.label}>
                 <Icon size={19} />
                 <span>{item.label}</span>
-              </button>
+              </Link>
             );
           })}
         </nav>
 
         <div className="kanka-sidebar-bottom">
-          <button className="dark-mode-card" type="button">
+          <button className={`dark-mode-card${isNightMode ? " active" : ""}`} type="button" onClick={() => setIsNightMode((current) => !current)}>
             <span>
               <Moon size={18} />
               Gece Operasyonu
@@ -302,14 +326,14 @@ export function AdminDashboard({ menu, tables }: Props) {
 
       <section className="kanka-main">
         <header className="kanka-topbar">
-          <button className="icon-button" type="button" aria-label="Menü">
+          <button className="icon-button" type="button" aria-label="Menü" onClick={() => setIsSidebarCompact((current) => !current)}>
             <Menu size={22} />
           </button>
           <label className="admin-search">
-            <input placeholder="Sipariş, masa veya ürün ara..." />
+            <input placeholder="Sipariş, masa veya ürün ara..." value={query} onChange={(event) => setQuery(event.target.value)} />
             <Search size={20} />
           </label>
-          <button className="notification-button" type="button" aria-label="Bildirimler">
+          <button className="notification-button" type="button" aria-label="Bildirimler" onClick={() => scrollToPanel("notifications")}>
             <Bell size={20} />
             <span>{Math.max(newOrders.length + readyOrders.length, 1)}</span>
           </button>
@@ -324,12 +348,12 @@ export function AdminDashboard({ menu, tables }: Props) {
         </header>
 
         <div className="kanka-content">
-          <section className="admin-welcome">
+          <section className="admin-welcome" id="overview">
             <div>
               <h1>Kahve Durağı Operasyon Paneli</h1>
               <p>Masa QR siparişleri, kasa, mutfak ve hazır ekranı tek canlı merkezde.</p>
             </div>
-            <button className="date-filter" type="button">
+            <button className="date-filter" type="button" onClick={loadOrders}>
               <CalendarDays size={17} />
               {todayLabel}
               <ChevronDown size={16} />
@@ -380,7 +404,7 @@ export function AdminDashboard({ menu, tables }: Props) {
             <article className="kanka-panel revenue-panel">
               <div className="panel-head">
                 <h2>Saatlik Sipariş Akışı</h2>
-                <button type="button">
+                <button type="button" onClick={loadOrders}>
                   Bugün
                   <ChevronDown size={15} />
                 </button>
@@ -415,7 +439,7 @@ export function AdminDashboard({ menu, tables }: Props) {
             <article className="kanka-panel status-panel">
               <div className="panel-head">
                 <h2>Sipariş Operasyonu</h2>
-                <button type="button">
+                <button type="button" onClick={loadOrders}>
                   Canlı
                   <Wifi size={15} />
                 </button>
@@ -443,17 +467,17 @@ export function AdminDashboard({ menu, tables }: Props) {
           </section>
 
           <section className="kanka-bottom-grid">
-            <article className="kanka-panel">
+            <article className="kanka-panel" id="orders">
               <div className="panel-head compact-head">
-                <h2>Son Siparişler</h2>
+                <h2>{query ? "Arama Sonuçları" : "Son Siparişler"}</h2>
                 <Link href="/kasa">Kasaya Git</Link>
               </div>
               <div className="recent-orders">
-                {orders.length === 0 ? (
-                  <p className="empty-state">Henüz sipariş yok.</p>
+                {filteredOrders.length === 0 ? (
+                  <p className="empty-state">{query ? "Aramana uygun sipariş bulunamadı." : "Henüz sipariş yok."}</p>
                 ) : (
-                  orders.slice(0, 5).map((order) => (
-                    <div key={order.orderNo}>
+                  filteredOrders.slice(0, 5).map((order) => (
+                    <Link className="recent-order-row" href={`/takip/${order.orderNo}`} key={order.orderNo}>
                       <strong>#{order.orderNo}</strong>
                       <span>{formatTime(order.createdAt)}</span>
                       <i className="avatar mini">M{order.tableNo}</i>
@@ -463,17 +487,17 @@ export function AdminDashboard({ menu, tables }: Props) {
                       </div>
                       <em>{currency.format(order.total)}</em>
                       <mark className={order.status}>{statusMeta[order.status].label}</mark>
-                    </div>
+                    </Link>
                   ))
                 )}
               </div>
             </article>
 
-            <article className="kanka-panel">
+            <article className="kanka-panel" id="notifications">
               <div className="panel-head compact-head">
                 <h2>Operasyon Bildirimleri</h2>
                 <div>
-                  <button type="button">Canlı</button>
+                  <button type="button" onClick={loadOrders}>Canlı</button>
                   <MoreVertical size={18} />
                 </div>
               </div>
@@ -482,7 +506,7 @@ export function AdminDashboard({ menu, tables }: Props) {
                   const Icon = notification.icon;
 
                   return (
-                    <div key={notification.title}>
+                    <Link href={notification.href} key={notification.title}>
                       <span className={notification.tone}>
                         <Icon size={18} />
                       </span>
@@ -491,7 +515,7 @@ export function AdminDashboard({ menu, tables }: Props) {
                         <small>{notification.text}</small>
                       </div>
                       <em>{notification.time}</em>
-                    </div>
+                    </Link>
                   );
                 })}
               </div>
@@ -499,7 +523,7 @@ export function AdminDashboard({ menu, tables }: Props) {
           </section>
 
           <section className="kanka-ops-grid">
-            <article className="kanka-panel">
+            <article className="kanka-panel" id="tables">
               <div className="panel-head compact-head">
                 <h2>Masa & QR Yönetimi</h2>
                 <Link href="/masa/7">Önizle</Link>
@@ -522,7 +546,7 @@ export function AdminDashboard({ menu, tables }: Props) {
               </div>
             </article>
 
-            <article className="kanka-panel">
+            <article className="kanka-panel" id="menu">
               <div className="panel-head compact-head">
                 <h2>Menü Sağlığı</h2>
                 <span className="panel-metric">{activeMenuCount}/{menu.length} aktif</span>
@@ -541,7 +565,7 @@ export function AdminDashboard({ menu, tables }: Props) {
                   </div>
                 ))}
               </div>
-              <div className="channel-health">
+              <div className="channel-health" id="settings">
                 <p>
                   <Timer size={17} />
                   Ortalama hazırlık: <strong>{averagePrep} dk</strong>

@@ -2250,7 +2250,7 @@ a:focus-visible {
   padding-right: 2px;
 }
 
-.kanka-nav button {
+.kanka-nav a {
   display: flex;
   min-height: 52px;
   align-items: center;
@@ -2262,15 +2262,35 @@ a:focus-visible {
   color: rgba(255, 255, 255, 0.78);
   font-weight: 850;
   text-align: left;
+  text-decoration: none;
   transition: background 150ms ease, color 150ms ease, transform 150ms ease;
 }
 
-.kanka-nav button:hover,
-.kanka-nav button.active {
+.kanka-nav a:hover,
+.kanka-nav a.active {
   background: linear-gradient(135deg, #4f46e5, #6d28d9);
   color: #fff;
   box-shadow: 0 14px 30px rgba(79, 70, 229, 0.28);
   transform: translateY(-1px);
+}
+
+.kanka-admin-shell.sidebar-compact {
+  grid-template-columns: 92px 1fr;
+}
+
+.kanka-admin-shell.sidebar-compact .kanka-brand div,
+.kanka-admin-shell.sidebar-compact .kanka-nav a span,
+.kanka-admin-shell.sidebar-compact .kanka-sidebar-bottom {
+  display: none;
+}
+
+.kanka-admin-shell.sidebar-compact .kanka-nav a {
+  justify-content: center;
+  padding: 0;
+}
+
+.kanka-admin-shell.night-mode {
+  background: #eef2f8;
 }
 
 .kanka-sidebar-bottom {
@@ -2321,6 +2341,11 @@ a:focus-visible {
   border-radius: 999px;
   background: #fff;
   content: "";
+}
+
+.dark-mode-card.active i::after {
+  right: auto;
+  left: 4px;
 }
 
 .sidebar-user-card {
@@ -2481,6 +2506,13 @@ a:focus-visible {
 
 .kanka-content {
   padding: 32px 34px 42px;
+}
+
+.kanka-panel[id],
+.admin-welcome[id],
+.admin-action-strip[id],
+.channel-health[id] {
+  scroll-margin-top: 96px;
 }
 
 .admin-welcome {
@@ -2903,17 +2935,22 @@ a:focus-visible {
   display: grid;
 }
 
-.recent-orders > div {
+.recent-orders > div,
+.recent-orders > a {
   display: grid;
   grid-template-columns: 110px 160px 38px minmax(160px, 1fr) 110px 118px;
   gap: 12px;
   align-items: center;
   border-bottom: 1px solid #e8eef6;
   padding: 16px 24px;
+  color: #0f172a;
+  text-decoration: none;
 }
 
 .recent-orders > div:last-child,
-.notification-list > div:last-child {
+.recent-orders > a:last-child,
+.notification-list > div:last-child,
+.notification-list > a:last-child {
   border-bottom: 0;
 }
 
@@ -2968,16 +3005,20 @@ a:focus-visible {
   color: #2563eb;
 }
 
-.notification-list > div {
+.notification-list > div,
+.notification-list > a {
   display: grid;
   grid-template-columns: 48px minmax(0, 1fr) 110px;
   gap: 14px;
   align-items: center;
   border-bottom: 1px solid #e8eef6;
   padding: 17px 24px;
+  color: #0f172a;
+  text-decoration: none;
 }
 
-.notification-list > div > span {
+.notification-list > div > span,
+.notification-list > a > span {
   display: inline-flex;
   width: 46px;
   height: 46px;
@@ -3199,12 +3240,12 @@ a:focus-visible {
   }
 
   .kanka-brand div,
-  .kanka-nav button span,
+  .kanka-nav a span,
   .kanka-sidebar-bottom {
     display: none;
   }
 
-  .kanka-nav button {
+  .kanka-nav a {
     justify-content: center;
     padding: 0;
   }
@@ -3218,7 +3259,8 @@ a:focus-visible {
   }
 
   .donut-layout,
-  .recent-orders > div {
+  .recent-orders > div,
+  .recent-orders > a {
     grid-template-columns: 1fr;
   }
 }
@@ -3342,7 +3384,7 @@ a:focus-visible {
   }
 
   .kanka-brand div,
-  .kanka-nav button span {
+  .kanka-nav a span {
     display: block;
   }
 
@@ -3351,7 +3393,7 @@ a:focus-visible {
     overflow-x: auto;
   }
 
-  .kanka-nav button {
+  .kanka-nav a {
     min-width: 150px;
     justify-content: flex-start;
     padding: 0 14px;
@@ -3384,7 +3426,9 @@ a:focus-visible {
   .kanka-ops-grid,
   .donut-layout,
   .recent-orders > div,
+  .recent-orders > a,
   .notification-list > div,
+  .notification-list > a,
   .qr-table-list a,
   .menu-health-list > div {
     grid-template-columns: 1fr;
