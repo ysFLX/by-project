@@ -76,7 +76,7 @@ export function CompanyLogin() {
             Giriş yap
             <ArrowRight size={18} />
           </button>
-          <small>Demo: admin/admin123 veya aytek/123456</small>
+          <small>Demo: admin/admin123 veya aytek/123456 · Canlı deploy testi aktif</small>
         </form>
       </section>
     </main>
