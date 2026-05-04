@@ -1,0 +1,635 @@
+:root {
+  --catering-ink: #172019;
+  --catering-muted: #61705d;
+  --catering-leaf: #173f2a;
+  --catering-leaf-2: #1f6f46;
+  --catering-cream: #fff8e8;
+  --catering-line: rgba(29, 78, 50, 0.14);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+  text-rendering: geometricPrecision;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+.empty-state {
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px dashed rgba(23, 63, 42, 0.18);
+  border-radius: 20px;
+  color: var(--catering-muted);
+  margin: 0;
+  padding: 18px;
+}
+.catering-home-shell,
+.catering-auth-shell,
+.catering-member-shell,
+.catering-dashboard-shell {
+  min-height: 100vh;
+  color: #172019;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(235, 163, 68, 0.2), transparent 26rem),
+    radial-gradient(circle at 86% 4%, rgba(28, 99, 65, 0.18), transparent 30rem),
+    linear-gradient(135deg, #f7f1e5 0%, #edf3e5 48%, #f9fbf3 100%);
+}
+
+.catering-home-shell,
+.catering-dashboard-shell {
+  padding: 28px;
+}
+
+.catering-home-nav,
+.catering-dashboard-hero,
+.catering-hero-section,
+.catering-metric-strip,
+.catering-flow-grid,
+.catering-dashboard-grid,
+.catering-metric-grid {
+  margin: 0 auto;
+  max-width: 1180px;
+}
+
+.catering-home-nav,
+.catering-dashboard-hero {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.catering-home-nav {
+  background: rgba(255, 252, 244, 0.74);
+  border: 1px solid rgba(29, 78, 50, 0.14);
+  border-radius: 30px;
+  box-shadow: 0 18px 50px rgba(37, 55, 42, 0.08);
+  padding: 12px 14px;
+}
+
+.catering-brand,
+.catering-home-nav > div,
+.catering-hero-actions,
+.meal-form-actions {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.catering-brand {
+  color: inherit;
+  text-decoration: none;
+}
+
+.catering-brand > span {
+  align-items: center;
+  background: #1f6f46;
+  border-radius: 18px;
+  color: #fff8e8;
+  display: inline-flex;
+  font-weight: 900;
+  height: 48px;
+  justify-content: center;
+  letter-spacing: -0.08em;
+  width: 48px;
+}
+
+.catering-brand strong,
+.catering-brand small,
+.catering-home-nav a,
+.catering-hero-copy h1,
+.catering-hero-copy p,
+.catering-live-card strong,
+.catering-flow-grid strong,
+.catering-flow-grid p {
+  display: block;
+}
+
+.catering-brand small,
+.catering-home-nav a,
+.catering-kicker,
+.catering-flow-grid p,
+.catering-live-card span,
+.catering-metric-strip span,
+.catering-panel p,
+.meal-request-row small,
+.meal-request-row em,
+.meal-status-card small,
+.catering-member-card p,
+.catering-auth-card p {
+  color: #61705d;
+}
+
+.catering-home-nav a {
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.catering-nav-button,
+.catering-primary-button,
+.catering-secondary-button {
+  align-items: center;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-weight: 900;
+  gap: 8px;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 18px;
+  text-decoration: none;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.catering-nav-button,
+.catering-primary-button {
+  background: #173f2a;
+  box-shadow: 0 16px 30px rgba(23, 63, 42, 0.22);
+  color: #fff8e8;
+}
+
+.catering-secondary-button {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(23, 63, 42, 0.14);
+  color: #173f2a;
+}
+
+.catering-nav-button:hover,
+.catering-primary-button:hover,
+.catering-secondary-button:hover {
+  transform: translateY(-2px);
+}
+
+.catering-primary-button:disabled,
+.catering-secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+
+.catering-hero-section {
+  align-items: stretch;
+  display: grid;
+  gap: 28px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(340px, 0.85fr);
+  padding: 76px 0 32px;
+}
+
+.catering-hero-copy,
+.catering-live-card,
+.catering-auth-card,
+.catering-member-card,
+.catering-panel {
+  backdrop-filter: blur(18px);
+  background: rgba(255, 252, 244, 0.78);
+  border: 1px solid rgba(29, 78, 50, 0.14);
+  border-radius: 34px;
+  box-shadow: 0 24px 70px rgba(37, 55, 42, 0.1);
+}
+
+.catering-hero-copy {
+  padding: clamp(32px, 6vw, 68px);
+}
+
+.catering-kicker {
+  align-items: center;
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 900;
+  gap: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.catering-hero-copy h1 {
+  font-size: clamp(2.6rem, 6vw, 5.5rem);
+  letter-spacing: -0.08em;
+  line-height: 0.9;
+  margin: 20px 0;
+  max-width: 920px;
+}
+
+.catering-hero-copy p {
+  font-size: 1.08rem;
+  line-height: 1.75;
+  margin: 0 0 28px;
+  max-width: 760px;
+}
+
+.catering-live-card {
+  align-content: space-between;
+  display: grid;
+  gap: 24px;
+  padding: 28px;
+}
+
+.live-card-top {
+  background: #173f2a;
+  border-radius: 26px;
+  color: #fff8e8;
+  padding: 26px;
+}
+
+.live-card-top span,
+.live-card-top strong {
+  color: inherit;
+}
+
+.live-card-top strong {
+  font-size: 2rem;
+  letter-spacing: -0.04em;
+  margin-top: 8px;
+}
+
+.live-card-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.live-card-grid article,
+.catering-metric-strip article,
+.catering-flow-grid article,
+.catering-metric-grid article,
+.meal-status-card,
+.meal-request-row {
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(29, 78, 50, 0.12);
+  border-radius: 24px;
+}
+
+.live-card-grid article {
+  padding: 20px;
+}
+
+.live-card-grid svg,
+.catering-flow-grid svg,
+.catering-metric-grid svg {
+  color: #c77729;
+}
+
+.catering-metric-strip,
+.catering-flow-grid,
+.catering-metric-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.catering-metric-strip {
+  grid-template-columns: repeat(4, 1fr);
+  padding: 18px 0 26px;
+}
+
+.catering-metric-strip article,
+.catering-metric-grid article {
+  padding: 20px;
+}
+
+.catering-metric-strip strong,
+.catering-metric-grid strong {
+  display: block;
+  font-size: 2rem;
+  letter-spacing: -0.06em;
+}
+
+.catering-flow-grid {
+  grid-template-columns: repeat(4, 1fr);
+  padding-bottom: 56px;
+}
+
+.catering-flow-grid article {
+  min-height: 230px;
+  padding: 24px;
+  position: relative;
+}
+
+.catering-flow-grid article > span {
+  color: rgba(23, 63, 42, 0.25);
+  font-size: 2.6rem;
+  font-weight: 900;
+  position: absolute;
+  right: 22px;
+  top: 14px;
+}
+
+.catering-flow-grid strong {
+  font-size: 1.15rem;
+  margin: 38px 0 10px;
+}
+
+.catering-auth-shell,
+.catering-member-shell {
+  display: grid;
+  padding: 24px;
+  place-items: center;
+}
+
+.catering-auth-card,
+.catering-member-card {
+  max-width: 760px;
+  padding: clamp(28px, 5vw, 56px);
+  width: min(100%, 760px);
+}
+
+.catering-auth-card h1,
+.catering-member-card h1,
+.catering-dashboard-hero h1 {
+  font-size: clamp(2rem, 4vw, 3.6rem);
+  letter-spacing: -0.07em;
+  line-height: 0.98;
+  margin: 16px 0;
+}
+
+.catering-auth-form,
+.meal-request-form,
+.company-create-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 26px;
+}
+
+.catering-auth-form label,
+.meal-request-form label,
+.company-create-form label,
+.dashboard-date-filter {
+  display: grid;
+  gap: 8px;
+}
+
+.catering-auth-form label > span,
+.meal-request-form label > span,
+.company-create-form label > span {
+  color: #324237;
+  font-weight: 900;
+}
+
+.catering-auth-form label > div {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.catering-auth-form input,
+.meal-request-form input,
+.meal-request-form textarea,
+.company-create-form input,
+.dashboard-date-filter input {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(23, 63, 42, 0.16);
+  border-radius: 18px;
+  color: #172019;
+  font: inherit;
+  min-height: 52px;
+  outline: 0;
+  padding: 0 16px;
+  width: 100%;
+}
+
+.meal-request-form textarea {
+  min-height: 110px;
+  padding: 14px 16px;
+  resize: vertical;
+}
+
+.catering-auth-form input:focus,
+.meal-request-form input:focus,
+.meal-request-form textarea:focus,
+.company-create-form input:focus {
+  border-color: #1f6f46;
+  box-shadow: 0 0 0 4px rgba(31, 111, 70, 0.1);
+}
+
+.form-error,
+.form-success {
+  border-radius: 18px;
+  font-weight: 800;
+  margin: 0;
+  padding: 12px 14px;
+}
+
+.form-error {
+  background: #fee2e2;
+  color: #9f1239;
+}
+
+.form-success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.member-card-head,
+.panel-title-row,
+.meal-request-row {
+  align-items: flex-start;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+}
+
+.member-code-pill {
+  background: #173f2a;
+  border-radius: 999px;
+  color: #fff8e8;
+  flex: 0 0 auto;
+  font-weight: 900;
+  padding: 10px 14px;
+}
+
+.meal-status-card {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  margin: 26px 0;
+  padding: 18px;
+}
+
+.meal-status-card > span {
+  align-items: center;
+  background: #f1b65c;
+  border-radius: 18px;
+  color: #173f2a;
+  display: inline-flex;
+  height: 58px;
+  justify-content: center;
+  width: 58px;
+}
+
+.meal-status-card.status-eaten > span,
+.meal-status-card.status-collected > span {
+  background: #b7df9a;
+}
+
+.meal-status-card strong {
+  display: block;
+}
+
+.catering-loading-card {
+  align-items: center;
+  background: rgba(255, 252, 244, 0.86);
+  border-radius: 24px;
+  display: inline-flex;
+  gap: 12px;
+  padding: 18px 22px;
+}
+
+.catering-loading-card svg,
+.catering-dashboard-hero svg,
+.panel-title-row > svg {
+  animation: catering-spin 1.1s linear infinite;
+}
+
+.catering-dashboard-hero svg,
+.panel-title-row > svg {
+  animation: none;
+}
+
+@keyframes catering-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.catering-dashboard-hero {
+  padding: 22px 0 26px;
+}
+
+.catering-dashboard-hero p {
+  color: #61705d;
+  line-height: 1.65;
+  margin: 0;
+  max-width: 700px;
+}
+
+.dashboard-date-filter {
+  background: rgba(255, 252, 244, 0.78);
+  border: 1px solid rgba(23, 63, 42, 0.14);
+  border-radius: 22px;
+  display: flex;
+  padding: 10px;
+}
+
+.dashboard-date-filter input {
+  background: transparent;
+  border: 0;
+  min-height: auto;
+  padding: 0;
+}
+
+.catering-metric-grid {
+  grid-template-columns: repeat(4, 1fr);
+  margin-bottom: 18px;
+}
+
+.catering-metric-grid article {
+  display: grid;
+  gap: 8px;
+}
+
+.catering-dashboard-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(320px, 0.8fr) minmax(0, 1.2fr);
+}
+
+.catering-panel {
+  padding: 24px;
+}
+
+.panel-title-row {
+  margin-bottom: 18px;
+}
+
+.panel-title-row h2 {
+  margin: 0 0 6px;
+}
+
+.meal-request-list {
+  display: grid;
+  gap: 12px;
+}
+
+.meal-request-row {
+  align-items: center;
+  border-left: 5px solid #d9a14a;
+  padding: 14px;
+}
+
+.meal-request-row.status-eaten {
+  border-left-color: #1f6f46;
+}
+
+.meal-request-row.status-collected {
+  opacity: 0.72;
+}
+
+.meal-request-row strong,
+.meal-request-row small,
+.meal-request-row em {
+  display: block;
+}
+
+.meal-request-row span {
+  background: rgba(31, 111, 70, 0.08);
+  border-radius: 999px;
+  color: #173f2a;
+  font-weight: 900;
+  padding: 8px 10px;
+  white-space: nowrap;
+}
+
+.meal-request-row em {
+  font-style: normal;
+  margin-top: 4px;
+}
+
+@media (max-width: 900px) {
+  .catering-home-shell,
+  .catering-dashboard-shell {
+    padding: 16px;
+  }
+
+  .catering-home-nav,
+  .catering-dashboard-hero,
+  .member-card-head,
+  .meal-form-actions,
+  .panel-title-row,
+  .meal-request-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .catering-hero-section,
+  .catering-dashboard-grid,
+  .catering-metric-strip,
+  .catering-flow-grid,
+  .catering-metric-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .catering-home-nav > div,
+  .catering-hero-actions {
+    flex-wrap: wrap;
+  }
+
+  .member-code-pill {
+    width: fit-content;
+  }
+}
