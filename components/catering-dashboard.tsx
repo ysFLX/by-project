@@ -14,7 +14,9 @@ import {
   RefreshCcw,
   Search,
   Truck,
-  Utensils
+  UserPlus,
+  Utensils,
+  X
 } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
@@ -68,6 +70,7 @@ export function CateringDashboard() {
   const [contactName, setContactName] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [lastUpdatedAt, setLastUpdatedAt] = useState("");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -134,6 +137,7 @@ export function CateringDashboard() {
       setCompanyName("");
       setCompanyCode("");
       setContactName("");
+      setIsCreateOpen(false);
       loadDashboard();
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Şirket üyeliği oluşturulamadı.");
@@ -230,13 +234,29 @@ export function CateringDashboard() {
 
         <section className="catering-dashboard-grid admin-content-grid">
           <article className="catering-panel company-admin-card">
-            <div className="panel-title-row">
+            <div className="company-admin-hero">
               <div>
                 <h2>Yeni Üyelik Oluştur</h2>
                 <p>Bu kodla şirket giriş ekranından müşteri paneline girer.</p>
               </div>
-              <Plus size={20} />
+              <strong>{activeCompanyCount}</strong>
             </div>
+
+            {message ? <p className="form-success">{message}</p> : null}
+            <button
+              className="create-user-button"
+              type="button"
+              onClick={() => {
+                setError("");
+                setMessage("");
+                setIsCreateOpen(true);
+              }}
+            >
+              <span>
+                <Plus size={18} />
+              </span>
+              Yeni kullanÄ±cÄ± oluÅŸtur
+            </button>
 
             <form className="company-create-form" onSubmit={createCompany}>
               <label>
@@ -331,6 +351,54 @@ export function CateringDashboard() {
           </article>
         </section>
       </section>
+
+      {isCreateOpen ? (
+        <div className="admin-modal-backdrop" role="presentation">
+          <section className="admin-create-modal" role="dialog" aria-modal="true" aria-labelledby="create-company-title">
+            <button className="modal-close-button" type="button" onClick={() => setIsCreateOpen(false)} aria-label="Kapat">
+              <X size={20} />
+            </button>
+
+            <div className="create-modal-visual">
+              <span className="catering-kicker">
+                <UserPlus size={16} />
+                Yeni mÃ¼ÅŸteri hesabÄ±
+              </span>
+              <h2 id="create-company-title">Åirket iÃ§in giriÅŸ hesabÄ± oluÅŸtur.</h2>
+              <p>Bu ekrandan oluÅŸan kod mÃ¼ÅŸterinin giriÅŸ ekranÄ±nda kullanacaÄŸÄ± demo Ã¼yelik kodudur.</p>
+
+              <div className="create-modal-steps">
+                <span>1</span>
+                <strong>Bilgileri yaz</strong>
+                <span>2</span>
+                <strong>Kodu mÃ¼ÅŸteriye ver</strong>
+                <span>3</span>
+                <strong>Panelde gÃ¼nlÃ¼k adetleri izle</strong>
+              </div>
+            </div>
+
+            <form className="company-create-form modal-company-form" onSubmit={createCompany}>
+              <label>
+                <span>Åirket adÄ±</span>
+                <input value={companyName} onChange={(event) => setCompanyName(event.target.value)} placeholder="Ã–rn: Kuzey Teknoloji" autoFocus />
+              </label>
+              <label>
+                <span>Ãœyelik kodu</span>
+                <input value={companyCode} onChange={(event) => setCompanyCode(event.target.value)} placeholder="BoÅŸ bÄ±rakÄ±lÄ±rsa otomatik oluÅŸur" />
+              </label>
+              <label>
+                <span>Yetkili kiÅŸi</span>
+                <input value={contactName} onChange={(event) => setContactName(event.target.value)} placeholder="Opsiyonel" />
+              </label>
+              {error ? <p className="form-error">{error}</p> : null}
+              <button className="catering-primary-button" type="submit" disabled={isSaving}>
+                <Plus size={18} />
+                KullanÄ±cÄ±yÄ± oluÅŸtur
+              </button>
+            </form>
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }

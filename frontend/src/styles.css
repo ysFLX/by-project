@@ -805,6 +805,76 @@ a {
 
 .company-admin-card {
   align-self: start;
+  display: grid;
+  gap: 18px;
+  overflow: hidden;
+  position: relative;
+}
+
+.company-admin-card > .company-create-form {
+  display: none;
+}
+
+.company-admin-hero {
+  background:
+    linear-gradient(135deg, rgba(23, 63, 42, 0.94), rgba(16, 37, 27, 0.86)),
+    url("https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=900&q=80");
+  background-position: center;
+  background-size: cover;
+  border-radius: 8px;
+  color: #fff;
+  display: grid;
+  gap: 18px;
+  min-height: 220px;
+  padding: 22px;
+}
+
+.company-admin-hero .catering-kicker,
+.company-admin-hero p {
+  color: rgba(255, 255, 255, 0.74);
+}
+
+.company-admin-hero h2 {
+  font-size: clamp(1.75rem, 3vw, 2.45rem);
+  letter-spacing: 0;
+  line-height: 1;
+  margin: 12px 0;
+}
+
+.company-admin-hero > strong {
+  align-self: end;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  font-size: 3rem;
+  justify-self: start;
+  line-height: 1;
+  padding: 12px 16px;
+}
+
+.create-user-button {
+  align-items: center;
+  background: #f1b65c;
+  border: 0;
+  border-radius: 8px;
+  color: #10251b;
+  cursor: pointer;
+  display: flex;
+  font-weight: 900;
+  gap: 12px;
+  justify-content: center;
+  min-height: 56px;
+  padding: 0 18px;
+}
+
+.create-user-button > span {
+  align-items: center;
+  background: rgba(16, 37, 27, 0.12);
+  border-radius: 999px;
+  display: inline-flex;
+  height: 34px;
+  justify-content: center;
+  width: 34px;
 }
 
 .orders-panel-title {
@@ -963,11 +1033,8 @@ a {
 }
 
 .company-mini-list {
-  border-top: 1px solid rgba(23, 63, 42, 0.1);
   display: grid;
   gap: 10px;
-  margin-top: 22px;
-  padding-top: 18px;
 }
 
 .company-mini-list > span {
@@ -983,15 +1050,133 @@ a {
   background: #f7faf8;
   border: 1px solid rgba(23, 63, 42, 0.1);
   border-radius: 12px;
-  display: flex;
+  display: grid;
   gap: 10px;
-  justify-content: space-between;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
   padding: 10px 12px;
+}
+
+.company-avatar {
+  align-items: center;
+  background: #173f2a;
+  border-radius: 999px;
+  color: #fff;
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 900;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+
+.company-mini-list strong {
+  overflow-wrap: anywhere;
 }
 
 .company-mini-list small {
   color: #61705d;
   font-weight: 900;
+}
+
+.admin-modal-backdrop {
+  align-items: center;
+  background: rgba(9, 18, 13, 0.62);
+  display: grid;
+  inset: 0;
+  padding: 20px;
+  place-items: center;
+  position: fixed;
+  z-index: 50;
+}
+
+.admin-create-modal {
+  background: #fff;
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(320px, 0.7fr);
+  max-width: 980px;
+  overflow: hidden;
+  position: relative;
+  width: min(100%, 980px);
+}
+
+.modal-close-button {
+  align-items: center;
+  background: #fff;
+  border: 1px solid rgba(23, 63, 42, 0.12);
+  border-radius: 999px;
+  color: #173f2a;
+  cursor: pointer;
+  display: inline-flex;
+  height: 40px;
+  justify-content: center;
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  width: 40px;
+  z-index: 2;
+}
+
+.create-modal-visual {
+  background: #10251b;
+  color: #fff;
+  display: grid;
+  gap: 18px;
+  padding: clamp(28px, 5vw, 48px);
+}
+
+.create-modal-visual .catering-kicker,
+.create-modal-visual p {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.create-modal-visual h2 {
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  letter-spacing: 0;
+  line-height: 1;
+  margin: 0;
+}
+
+.create-modal-visual p {
+  line-height: 1.65;
+  margin: 0;
+}
+
+.create-modal-steps {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 34px minmax(0, 1fr);
+  margin-top: 10px;
+}
+
+.create-modal-steps span {
+  align-items: center;
+  background: #f1b65c;
+  border-radius: 999px;
+  color: #10251b;
+  display: inline-flex;
+  font-weight: 900;
+  height: 34px;
+  justify-content: center;
+  width: 34px;
+}
+
+.create-modal-steps strong {
+  align-self: center;
+}
+
+.modal-company-form {
+  align-content: center;
+  margin: 0;
+  padding: clamp(28px, 4vw, 44px);
+}
+
+@media (max-width: 820px) {
+  .admin-create-modal {
+    grid-template-columns: 1fr;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+  }
 }
 
 .portal-login-shell {
