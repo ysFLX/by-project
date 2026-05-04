@@ -1175,7 +1175,7 @@ a {
 }
 
 .today-menu-list svg,
-.monthly-menu-grid article.active {
+.monthly-menu-cell.active {
   color: #c77729;
 }
 
@@ -1197,36 +1197,54 @@ a {
   white-space: nowrap;
 }
 
-.monthly-menu-grid {
+.monthly-menu-table {
   display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 8px;
+  grid-template-columns: repeat(6, minmax(160px, 1fr));
   margin-top: 18px;
+  overflow-x: auto;
 }
 
-.monthly-menu-grid article {
+.monthly-menu-head {
+  background: #173f2a;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 900;
+  min-width: 160px;
+  padding: 12px;
+  text-align: center;
+}
+
+.monthly-menu-cell {
   background: #f8faf8;
   border: 1px solid rgba(23, 63, 42, 0.1);
   border-radius: 8px;
   display: grid;
   gap: 8px;
-  min-height: 158px;
-  padding: 16px;
+  min-height: 176px;
+  min-width: 160px;
+  padding: 14px;
 }
 
-.monthly-menu-grid article.active {
+.monthly-menu-cell.active {
   background: #fff7ed;
   border-color: rgba(199, 119, 41, 0.34);
 }
 
-.monthly-menu-grid time {
+.monthly-menu-cell.empty {
+  background: repeating-linear-gradient(135deg, #f2f5f3, #f2f5f3 8px, #edf1ef 8px, #edf1ef 16px);
+  border-style: dashed;
+}
+
+.monthly-menu-cell time {
   color: #61705d;
   font-size: 0.82rem;
   font-weight: 900;
 }
 
-.monthly-menu-grid span,
-.monthly-menu-grid small {
+.monthly-menu-cell span,
+.monthly-menu-cell small {
   color: #61705d;
   line-height: 1.5;
 }

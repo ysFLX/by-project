@@ -124,6 +124,10 @@ const maharetMay2026Menu: DemoMenuDay[] = [
   { date: "2026-05-02", items: ["Izgara Tavuk Pirzola Menü"], calories: 900 }
 ];
 
+function makeDateKey(year: number, month: number, day: number) {
+  return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
 export function normalizeCode(value: string) {
   return value
     .trim()
@@ -297,16 +301,14 @@ export function getMonthlyDemoMenu(referenceDate: string) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const fixedMenu = year === 2026 && month === 3 ? maharetApril2026Menu : year === 2026 && month === 4 ? maharetMay2026Menu : [];
 
-  return Array.from({ length: daysInMonth }, (_, index): DemoMenuDay => {
-    const day = index + 1;
-    const menuDate = new Date(year, month, day);
-    const dateKey = menuDate.toISOString().slice(0, 10);
-    const fixedMenuDay = fixedMenu.find((menuDay) => menuDay.date === dateKey);
+  if (fixedMenu.length > 0) {
+    return fixedMenu;
+  }
 
-    if (fixedMenuDay) {
-      return fixedMenuDay;
-    }
-
+  return Array.from({ length: daysInMonth }, (_, index) => index + 1)
+    .filter((day) => new Date(year, month, day).getDay() !== 0)
+    .map((day): DemoMenuDay => {
+    const dateKey = makeDateKey(year, month, day);
     const key = day + month;
 
     return {

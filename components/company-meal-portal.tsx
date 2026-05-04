@@ -34,6 +34,45 @@ function formatMonth(value: string) {
   }).format(new Date(`${value}T12:00:00`));
 }
 
+const weekDays = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
+
+function buildMenuWeeks(menu: ReturnType<typeof getMonthlyDemoMenu>, referenceDate: string) {
+  const reference = new Date(`${referenceDate}T12:00:00`);
+  const year = reference.getFullYear();
+  const month = reference.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const menuByDate = new Map(menu.map((menuDay) => [menuDay.date, menuDay]));
+  const weeks: Array<Array<(typeof menu)[number] | null>> = [];
+  let currentWeek: Array<(typeof menu)[number] | null> = Array(6).fill(null);
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const date = new Date(year, month, day);
+    const weekDay = date.getDay();
+
+    if (weekDay === 0) {
+      if (currentWeek.some(Boolean)) {
+        weeks.push(currentWeek);
+        currentWeek = Array(6).fill(null);
+      }
+      continue;
+    }
+
+    const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    currentWeek[weekDay - 1] = menuByDate.get(dateKey) ?? null;
+
+    if (weekDay === 6) {
+      weeks.push(currentWeek);
+      currentWeek = Array(6).fill(null);
+    }
+  }
+
+  if (currentWeek.some(Boolean)) {
+    weeks.push(currentWeek);
+  }
+
+  return weeks;
+}
+
 export function CompanyMealPortal({ companyCode }: Props) {
   const [company, setCompany] = useState<DemoCompany | null>(null);
   const [request, setRequest] = useState<DemoMealRequest | null>(null);
@@ -44,7 +83,8 @@ export function CompanyMealPortal({ companyCode }: Props) {
   const [error, setError] = useState("");
 
   const monthlyMenu = useMemo(() => getMonthlyDemoMenu(serviceDate), [serviceDate]);
-  const todaysMenu = monthlyMenu.find((menuDay) => menuDay.date === serviceDate) ?? monthlyMenu[0];
+  const menuWeeks = useMemo(() => buildMenuWeeks(monthlyMenu, serviceDate), [monthlyMenu, serviceDate]);
+  const todaysMenu = monthlyMenu.find((menuDay) => menuDay.date === serviceDate) ?? null;
 
   function loadPortalData() {
     const currentCompany = getDemoCompanyByCode(companyCode);
@@ -155,7 +195,8 @@ export function CompanyMealPortal({ companyCode }: Props) {
             </span>
             <h2>Bugünün yemeği</h2>
             <div className="today-menu-list">
-              {todaysMenu.items.map((item, index) => {
+              {todaysMenu ? (
+                todaysMenu.items.map((item, index) => {
                 const icons = [Soup, Utensils, CheckCircle2, ChefHat];
                 const MenuIcon = icons[index % icons.length];
 
@@ -166,7 +207,14 @@ export function CompanyMealPortal({ companyCode }: Props) {
                     <strong>{item}</strong>
                   </div>
                 );
-              })}
+              })
+              ) : (
+                <div className="no-menu-day">
+                  <CalendarDays size={22} />
+                  <span>Plan yok</span>
+                  <strong>Bu tarih için yemek listesi bulunmuyor.</strong>
+                </div>
+              )}
             </div>
           </article>
 
@@ -202,15 +250,27 @@ export function CompanyMealPortal({ companyCode }: Props) {
             <span className="month-pill">{formatMonth(serviceDate)}</span>
           </div>
 
-          <div className="monthly-menu-grid">
-            {monthlyMenu.map((menuDay) => (
-              <article className={menuDay.date === serviceDate ? "active" : ""} key={menuDay.date}>
-                <time>{formatDate(menuDay.date)}</time>
-                <strong>{menuDay.items[0]}</strong>
-                <span>{menuDay.items.slice(1).join(" · ")}</span>
-                <small>{menuDay.calories} kcal</small>
-              </article>
+          <div className="monthly-menu-table">
+            {weekDays.map((weekDay) => (
+              <div className="monthly-menu-head" key={weekDay}>
+                {weekDay}
+              </div>
             ))}
+
+            {menuWeeks.map((week, weekIndex) =>
+              week.map((menuDay, dayIndex) =>
+                menuDay ? (
+                  <article className={menuDay.date === serviceDate ? "active monthly-menu-cell" : "monthly-menu-cell"} key={menuDay.date}>
+                    <time>{formatDate(menuDay.date)}</time>
+                    <strong>{menuDay.items[0]}</strong>
+                    <span>{menuDay.items.slice(1).join(" · ")}</span>
+                    <small>{menuDay.calories} kcal</small>
+                  </article>
+                ) : (
+                  <div className="monthly-menu-cell empty" key={`empty-${weekIndex}-${dayIndex}`} />
+                )
+              )
+            )}
           </div>
         </section>
       </section>
