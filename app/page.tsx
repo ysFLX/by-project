@@ -13,7 +13,11 @@ import {
   Store,
   Table2
 } from "lucide-react";
-import { tables } from "@/lib/mock-data";
+import { tables } from "@/lib/catalog-data";
+import { listOrders } from "@/lib/order-repository";
+import type { OrderStatus } from "@/lib/types";
+
+export const dynamic = "force-dynamic";
 
 const workflow = [
   {
@@ -46,20 +50,37 @@ const workflow = [
   }
 ];
 
-const metrics = [
-  { value: "4", label: "bağlı ekran" },
-  { value: "2.5 sn", label: "canlı yenileme" },
-  { value: "0 SMS", label: "ek maliyet" },
-  { value: "QR", label: "masa bazlı akış" }
-];
+const currency = new Intl.NumberFormat("tr-TR", {
+  style: "currency",
+  currency: "TRY",
+  maximumFractionDigits: 0
+});
 
-const orders = [
-  { no: "A42", table: "Masa 7", status: "Hazır", price: "₺275", tone: "green" },
-  { no: "A43", table: "Masa 3", status: "Hazırlanıyor", price: "₺285", tone: "amber" },
-  { no: "A44", table: "Masa 5", status: "Yeni", price: "₺190", tone: "blue" }
-];
+const statusMeta: Record<OrderStatus, { label: string; tone: string }> = {
+  new: { label: "Yeni", tone: "blue" },
+  preparing: { label: "Hazırlanıyor", tone: "amber" },
+  ready: { label: "Hazır", tone: "green" },
+  delivered: { label: "Teslim edildi", tone: "slate" }
+};
 
-export default function Home() {
+export default async function Home() {
+  const orders = await listOrders();
+  const activeOrders = orders.filter((order) => order.status !== "delivered");
+  const revenue = orders.reduce((sum, order) => sum + order.total, 0);
+  const averagePrep = activeOrders.length
+    ? Math.round(activeOrders.reduce((sum, order) => sum + order.estimatedMinutes, 0) / activeOrders.length)
+    : 0;
+  const recentOrders = activeOrders.slice(0, 3);
+  const screenOrders = [
+    ...activeOrders.filter((order) => order.status === "ready"),
+    ...activeOrders.filter((order) => order.status === "preparing")
+  ].slice(0, 2);
+  const metrics = [
+    { value: activeOrders.length.toLocaleString("tr-TR"), label: "aktif sipariş" },
+    { value: currency.format(revenue), label: "günlük ciro" },
+    { value: `${averagePrep} dk`, label: "ortalama süre" },
+    { value: tables.filter((table) => table.active).length.toLocaleString("tr-TR"), label: "aktif masa" }
+  ];
   return (
     <main className="home-stage">
       <nav className="home-nav" aria-label="Ana navigasyon">
@@ -122,47 +143,60 @@ export default function Home() {
           <div className="console-topbar">
             <div>
               <span>Canlı Operasyon</span>
-              <strong>Kahve Durağı</strong>
+              <strong>Gerçek siparişler</strong>
             </div>
             <span className="pulse-pill">Online</span>
           </div>
           <div className="console-stats">
             <article>
               <span>Aktif</span>
-              <strong>15</strong>
+              <strong>{activeOrders.length.toLocaleString("tr-TR")}</strong>
             </article>
             <article>
               <span>Ciro</span>
-              <strong>₺8.750</strong>
+              <strong>{currency.format(revenue)}</strong>
             </article>
             <article>
               <span>Süre</span>
-              <strong>12 dk</strong>
+              <strong>{`${averagePrep} dk`}</strong>
             </article>
           </div>
           <div className="console-orders">
-            {orders.map((order) => (
-              <article className={`console-order tone-${order.tone}`} key={order.no}>
-                <div>
-                  <strong>#{order.no}</strong>
-                  <span>{order.table}</span>
-                </div>
-                <div>
-                  <em>{order.status}</em>
-                  <b>{order.price}</b>
-                </div>
-              </article>
-            ))}
+            {recentOrders.length === 0 ? (
+              <p className="empty-state">Henüz gerçek sipariş yok.</p>
+            ) : (
+              recentOrders.map((order) => {
+                const meta = statusMeta[order.status];
+
+                return (
+                  <article className={`console-order tone-${meta.tone}`} key={order.orderNo}>
+                    <div>
+                      <strong>#{order.orderNo}</strong>
+                      <span>Masa {order.tableNo}</span>
+                    </div>
+                    <div>
+                      <em>{meta.label}</em>
+                      <b>{currency.format(order.total)}</b>
+                    </div>
+                  </article>
+                );
+              })
+            )}
           </div>
           <div className="screen-preview">
-            <div>
-              <span>Hazır</span>
-              <strong>#A42</strong>
-            </div>
-            <div>
-              <span>Hazırlanıyor</span>
-              <strong>#A43</strong>
-            </div>
+            {screenOrders.length === 0 ? (
+              <div>
+                <span>Canlı ekran</span>
+                <strong>Beklemede</strong>
+              </div>
+            ) : (
+              screenOrders.map((order) => (
+                <div key={order.orderNo}>
+                  <span>{statusMeta[order.status].label}</span>
+                  <strong>#{order.orderNo}</strong>
+                </div>
+              ))
+            )}
           </div>
         </aside>
       </section>

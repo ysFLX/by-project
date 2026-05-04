@@ -140,7 +140,7 @@ export function StaffOrdersPanel({ mode }: Props) {
         <section className="display-frame">
           <div className="display-header">
             <div>
-              <span>Kahve Durağı</span>
+              <span>BY Project</span>
               <h1>Sipariş Takip</h1>
             </div>
             <span className="display-live">Canlı</span>

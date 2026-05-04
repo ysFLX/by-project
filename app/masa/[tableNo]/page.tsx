@@ -1,5 +1,5 @@
 import { CustomerOrderApp } from "@/components/customer-order-app";
-import { menu } from "@/lib/mock-data";
+import { menu } from "@/lib/catalog-data";
 
 type PageProps = {
   params: Promise<{ tableNo: string }>;

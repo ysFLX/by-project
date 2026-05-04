@@ -114,7 +114,7 @@ export function OrderTracker({ orderNo }: Props) {
     <main className={isReady ? "tracking-shell-pro ready" : "tracking-shell-pro"}>
       <section className="tracking-device">
         <div className="tracking-top">
-          <span>Kahve Durağı</span>
+          <span>BY Project</span>
           <strong>Masa {order?.tableNo ?? "-"}</strong>
         </div>
 

@@ -64,7 +64,7 @@ const actionLinks = [
   { href: "/masa/7", label: "Masa QR", text: "Müşteri akışı", icon: ScanQrCode, tone: "purple" }
 ];
 
-const hourlyBaseline = [2, 3, 5, 4, 7, 9, 8, 11, 13, 10, 14, 17, 15, 12, 16, 19, 18, 14, 11];
+const emptyChartValues = Array.from({ length: 19 }, () => 0);
 
 const statusMeta: Record<OrderStatus, { label: string; tone: string; color: string }> = {
   new: { label: "Yeni", tone: "blue", color: "#2f8cff" },
@@ -77,7 +77,7 @@ const categoryOrder: ProductCategory[] = ["Kahveler", "Tatlılar", "Yemekler", "
 
 const viewCopy: Record<AdminView, { title: string; text: string }> = {
   overview: {
-    title: "Kahve Durağı Operasyon Paneli",
+    title: "Operasyon Paneli",
     text: "Masa QR siparişleri, kasa, mutfak ve hazır ekranı tek canlı merkezde."
   },
   orders: {
@@ -170,6 +170,7 @@ export function AdminDashboard({ menu, tables, section = "overview" }: Props) {
   const newOrders = activeOrders.filter((order) => order.status === "new");
   const preparingOrders = activeOrders.filter((order) => order.status === "new" || order.status === "preparing");
   const readyOrders = activeOrders.filter((order) => order.status === "ready");
+  const kitchenOrders = activeOrders.filter((order) => order.status === "preparing");
   const deliveredOrders = orders.filter((order) => order.status === "delivered");
   const revenue = orders.reduce((sum, order) => sum + order.total, 0);
   const averagePrep = activeOrders.length
@@ -234,9 +235,9 @@ export function AdminDashboard({ menu, tables, section = "overview" }: Props) {
     ? buildDonutGradient(statusRows.map((row) => ({ percent: row.percent, color: row.color })))
     : "conic-gradient(#e2e8f0 0 100%)";
 
-  const chartValues = orders.length
-    ? hourlyBaseline.map((value, index) => value + orders.filter((order) => elapsedMinutes(order.createdAt) <= (index + 1) * 8).length)
-    : hourlyBaseline;
+  const chartValues = emptyChartValues.map((_, index) => {
+    return orders.filter((order) => elapsedMinutes(order.createdAt) <= (index + 1) * 8).length;
+  });
   const normalizedQuery = query.trim().toLocaleLowerCase("tr-TR");
   const filteredOrders = normalizedQuery
     ? orders.filter((order) => {
@@ -266,40 +267,43 @@ export function AdminDashboard({ menu, tables, section = "overview" }: Props) {
   });
 
   const notifications = [
-    {
-      icon: BadgeCheck,
-      title: readyOrders[0] ? `#${readyOrders[0].orderNo} teslim bekliyor` : "Hazır sipariş yok",
-      text: readyOrders[0] ? `Masa ${readyOrders[0].tableNo} siparişi müşteri ekranında hazır görünüyor.` : "Hazır olan siparişler burada öne düşecek.",
-      time: "canlı",
-      tone: "green",
-      href: readyOrders[0] ? `/takip/${readyOrders[0].orderNo}` : "/ekran"
-    },
-    {
-      icon: ChefHat,
-      title: `${preparingOrders.length} sipariş mutfakta`,
-      text: newOrders.length ? `${newOrders.length} yeni sipariş kabul bekliyor.` : "Yeni sipariş kuyruğu temiz.",
-      time: "şimdi",
-      tone: "amber",
-      href: "/mutfak"
-    },
-    {
-      icon: QrCode,
-      title: "Masa QR bağlantıları aktif",
-      text: `${tables.filter((table) => table.active).length} masa müşteri sipariş linkine bağlı.`,
-      time: "online",
-      tone: "blue",
-      href: "/admin/masalar"
-    },
-    {
-      icon: ReceiptText,
-      title: "Müşteri notları kasaya düşüyor",
-      text: "Sipariş ve ürün notları operasyon panellerinde görüntüleniyor.",
-      time: "kontrol edildi",
-      tone: "purple",
-      href: "/kasa"
-    }
+    ...(readyOrders[0]
+      ? [
+          {
+            icon: BadgeCheck,
+            title: `#${readyOrders[0].orderNo} teslim bekliyor`,
+            text: `Masa ${readyOrders[0].tableNo} siparişi müşteri ekranında hazır görünüyor.`,
+            time: "canlı",
+            tone: "green",
+            href: `/takip/${readyOrders[0].orderNo}`
+          }
+        ]
+      : []),
+    ...(newOrders.length
+      ? [
+          {
+            icon: ReceiptText,
+            title: `${newOrders.length} yeni sipariş kabul bekliyor`,
+            text: "Kasa panelinden onaylanmayı bekleyen gerçek sipariş var.",
+            time: "şimdi",
+            tone: "blue",
+            href: "/kasa"
+          }
+        ]
+      : []),
+    ...(kitchenOrders.length
+      ? [
+          {
+            icon: ChefHat,
+            title: `${kitchenOrders.length} sipariş mutfakta`,
+            text: "Hazırlık durumunu mutfak ekranından takip et.",
+            time: "canlı",
+            tone: "amber",
+            href: "/mutfak"
+          }
+        ]
+      : [])
   ];
-
   const todayLabel = new Intl.DateTimeFormat("tr-TR", {
     day: "2-digit",
     month: "long",
@@ -350,8 +354,8 @@ export function AdminDashboard({ menu, tables, section = "overview" }: Props) {
           <div className="sidebar-user-card">
             <span className="avatar">KD</span>
             <div>
-              <strong>Kahve Durağı</strong>
-              <small>operasyon@byproject.app</small>
+              <strong>BY Project</strong>
+              <small>Operasyon paneli</small>
               <em>Canlı sistem</em>
             </div>
             <ChevronDown size={17} />
@@ -370,13 +374,13 @@ export function AdminDashboard({ menu, tables, section = "overview" }: Props) {
           </label>
           <Link className="notification-button" href="/admin/bildirimler" aria-label="Bildirimler">
             <Bell size={20} />
-            <span>{Math.max(newOrders.length + readyOrders.length, 1)}</span>
+            <span>{newOrders.length + readyOrders.length}</span>
           </Link>
           <div className="topbar-user">
             <span className="avatar image">KD</span>
             <div>
-              <strong>İşletme Yöneticisi</strong>
-              <small>Kahve Durağı</small>
+              <strong>Yönetim Paneli</strong>
+              <small>Gerçek veriler</small>
             </div>
             <ChevronDown size={18} />
           </div>
@@ -448,7 +452,6 @@ export function AdminDashboard({ menu, tables, section = "overview" }: Props) {
                   </div>
                   <div className="chart-legend">
                     <span className="current">Sipariş</span>
-                    <span className="previous">Beklenen tempo</span>
                   </div>
                   <div className="line-chart ops-chart">
                     <span>24</span>
@@ -458,7 +461,7 @@ export function AdminDashboard({ menu, tables, section = "overview" }: Props) {
                     <span>3</span>
                     <span>0</span>
                     <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-                      <polyline className="chart-line-muted" points={toChartPoints(hourlyBaseline)} />
+                      <polyline className="chart-line-muted" points={toChartPoints(emptyChartValues)} />
                       <polyline className="chart-line-main" points={toChartPoints(chartValues)} />
                     </svg>
                     <div className="chart-days">
@@ -545,22 +548,26 @@ export function AdminDashboard({ menu, tables, section = "overview" }: Props) {
                     </div>
                   </div>
                   <div className="notification-list">
-                    {notifications.map((notification) => {
-                      const Icon = notification.icon;
+                    {notifications.length === 0 ? (
+                      <p className="empty-state">Şu an operasyon bildirimi yok.</p>
+                    ) : (
+                      notifications.map((notification) => {
+                        const Icon = notification.icon;
 
-                      return (
-                        <Link href={notification.href} key={notification.title}>
-                          <span className={notification.tone}>
-                            <Icon size={18} />
-                          </span>
-                          <div>
-                            <strong>{notification.title}</strong>
-                            <small>{notification.text}</small>
-                          </div>
-                          <em>{notification.time}</em>
-                        </Link>
-                      );
-                    })}
+                        return (
+                          <Link href={notification.href} key={notification.title}>
+                            <span className={notification.tone}>
+                              <Icon size={18} />
+                            </span>
+                            <div>
+                              <strong>{notification.title}</strong>
+                              <small>{notification.text}</small>
+                            </div>
+                            <em>{notification.time}</em>
+                          </Link>
+                        );
+                      })
+                    )}
                   </div>
                 </article>
               ) : null}
@@ -638,7 +645,7 @@ export function AdminDashboard({ menu, tables, section = "overview" }: Props) {
                       <span><Store size={17} /></span>
                       <div>
                         <strong>İşletme adı</strong>
-                        <small>Kahve Durağı</small>
+                        <small>BY Project</small>
                       </div>
                       <em>aktif</em>
                     </div>

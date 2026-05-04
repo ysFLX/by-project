@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { AdminDashboard, type AdminView } from "@/components/admin-dashboard";
-import { menu, tables } from "@/lib/mock-data";
+import { menu, tables } from "@/lib/catalog-data";
 
 type PageProps = {
   params: Promise<{ section: string }>;

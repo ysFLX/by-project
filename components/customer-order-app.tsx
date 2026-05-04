@@ -19,7 +19,7 @@ import {
   Utensils
 } from "lucide-react";
 import type { Product, ProductCategory } from "@/lib/types";
-import { categories } from "@/lib/mock-data";
+import { categories } from "@/lib/catalog-data";
 
 type CartLine = {
   cartId: string;
@@ -173,14 +173,14 @@ export function CustomerOrderApp({ tableNo, menu }: Props) {
         <div className="customer-brand-card">
           <span className="eyebrow">
             <Coffee size={14} />
-            Kahve Durağı
+            BY Project
           </span>
           <h1>Masa {tableNo}</h1>
           <p>Menüden seç, siparişin kasaya ve mutfağa otomatik düşsün.</p>
           <div className="customer-status-row">
             <span>
               <Clock3 size={15} />
-              Ortalama 10-15 dk
+              Canlı takip
             </span>
             <span>
               <ReceiptText size={15} />

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { categories, menu } from "@/lib/mock-data";
+import { categories, menu } from "@/lib/catalog-data";
 
 export const dynamic = "force-dynamic";
 

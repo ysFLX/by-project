@@ -1,5 +1,5 @@
 import { Prisma, type Order as DbOrder, type OrderItem as DbOrderItem } from "@prisma/client";
-import { menu } from "@/lib/mock-data";
+import { menu } from "@/lib/catalog-data";
 import { getPrisma, hasDatabaseUrl } from "@/lib/prisma";
 import * as memoryStore from "@/lib/order-store";
 import type { CreateOrderInput, Order, OrderItem, OrderStatus } from "@/lib/types";
@@ -100,7 +100,7 @@ export async function createOrder(input: CreateOrderInput) {
   const order = await prisma.$transaction(async (tx) => {
     const counter = await tx.orderCounter.upsert({
       where: { key: "order" },
-      create: { key: "order", nextValue: 46 },
+      create: { key: "order", nextValue: 2 },
       update: { nextValue: { increment: 1 } }
     });
 
