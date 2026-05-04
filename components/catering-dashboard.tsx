@@ -154,6 +154,12 @@ export function CateringDashboard() {
     setIsSaving(false);
   }
 
+  function openCreateModal() {
+    setError("");
+    setMessage("");
+    setIsCreateOpen(true);
+  }
+
   return (
     <main className="catering-dashboard-shell admin-dashboard-shell">
       <aside className="admin-sidebar">
@@ -177,7 +183,7 @@ export function CateringDashboard() {
         </nav>
 
         <div className="admin-sidebar-summary">
-            <span>Bugünkü toplam</span>
+          <span>Bugünkü toplam</span>
           <strong>{totalHeadcount}</strong>
           <small>yemek / porsiyon</small>
         </div>
@@ -236,53 +242,30 @@ export function CateringDashboard() {
           <article className="catering-panel company-admin-card">
             <div className="company-admin-hero">
               <div>
-                <h2>Yeni Üyelik Oluştur</h2>
-                <p>Bu kodla şirket giriş ekranından müşteri paneline girer.</p>
+                <span className="catering-kicker">
+                  <UserPlus size={16} />
+                  Kullanıcı yönetimi
+                </span>
+                <h2>Şirket üyelikleri</h2>
+                <p>Yeni müşteri hesabı oluştur, giriş kodunu ver ve aktif üyeleri takip et.</p>
               </div>
               <strong>{activeCompanyCount}</strong>
             </div>
 
             {message ? <p className="form-success">{message}</p> : null}
-            <button
-              className="create-user-button"
-              type="button"
-              onClick={() => {
-                setError("");
-                setMessage("");
-                setIsCreateOpen(true);
-              }}
-            >
+
+            <button className="create-user-button" type="button" onClick={openCreateModal}>
               <span>
                 <Plus size={18} />
               </span>
-              Yeni kullanÄ±cÄ± oluÅŸtur
+              Yeni kullanıcı oluştur
             </button>
-
-            <form className="company-create-form" onSubmit={createCompany}>
-              <label>
-                <span>Şirket adı</span>
-                <input value={companyName} onChange={(event) => setCompanyName(event.target.value)} placeholder="Örn: Kuzey Teknoloji" />
-              </label>
-              <label>
-                <span>Üyelik kodu</span>
-                <input value={companyCode} onChange={(event) => setCompanyCode(event.target.value)} placeholder="Boş bırakılırsa otomatik oluşur" />
-              </label>
-              <label>
-                <span>Yetkili kişi</span>
-                <input value={contactName} onChange={(event) => setContactName(event.target.value)} placeholder="Opsiyonel" />
-              </label>
-              {error ? <p className="form-error">{error}</p> : null}
-              {message ? <p className="form-success">{message}</p> : null}
-              <button className="catering-primary-button" type="submit" disabled={isSaving}>
-                <Plus size={18} />
-                Üyelik oluştur
-              </button>
-            </form>
 
             <div className="company-mini-list">
               <span>Aktif üyeler</span>
-              {companies.slice(0, 4).map((company) => (
+              {companies.slice(0, 6).map((company) => (
                 <div key={company.id}>
+                  <span className="company-avatar">{company.name.slice(0, 2).toLocaleUpperCase("tr-TR")}</span>
                   <strong>{company.name}</strong>
                   <small>{company.code}</small>
                 </div>
@@ -362,38 +345,38 @@ export function CateringDashboard() {
             <div className="create-modal-visual">
               <span className="catering-kicker">
                 <UserPlus size={16} />
-                Yeni mÃ¼ÅŸteri hesabÄ±
+                Yeni müşteri hesabı
               </span>
-              <h2 id="create-company-title">Åirket iÃ§in giriÅŸ hesabÄ± oluÅŸtur.</h2>
-              <p>Bu ekrandan oluÅŸan kod mÃ¼ÅŸterinin giriÅŸ ekranÄ±nda kullanacaÄŸÄ± demo Ã¼yelik kodudur.</p>
+              <h2 id="create-company-title">Şirket için giriş hesabı oluştur.</h2>
+              <p>Bu ekrandan oluşan kod müşterinin giriş ekranında kullanacağı demo üyelik kodudur.</p>
 
               <div className="create-modal-steps">
                 <span>1</span>
                 <strong>Bilgileri yaz</strong>
                 <span>2</span>
-                <strong>Kodu mÃ¼ÅŸteriye ver</strong>
+                <strong>Kodu müşteriye ver</strong>
                 <span>3</span>
-                <strong>Panelde gÃ¼nlÃ¼k adetleri izle</strong>
+                <strong>Panelde günlük adetleri izle</strong>
               </div>
             </div>
 
             <form className="company-create-form modal-company-form" onSubmit={createCompany}>
               <label>
-                <span>Åirket adÄ±</span>
-                <input value={companyName} onChange={(event) => setCompanyName(event.target.value)} placeholder="Ã–rn: Kuzey Teknoloji" autoFocus />
+                <span>Şirket adı</span>
+                <input value={companyName} onChange={(event) => setCompanyName(event.target.value)} placeholder="Örn: Kuzey Teknoloji" autoFocus />
               </label>
               <label>
-                <span>Ãœyelik kodu</span>
-                <input value={companyCode} onChange={(event) => setCompanyCode(event.target.value)} placeholder="BoÅŸ bÄ±rakÄ±lÄ±rsa otomatik oluÅŸur" />
+                <span>Üyelik kodu</span>
+                <input value={companyCode} onChange={(event) => setCompanyCode(event.target.value)} placeholder="Boş bırakılırsa otomatik oluşur" />
               </label>
               <label>
-                <span>Yetkili kiÅŸi</span>
+                <span>Yetkili kişi</span>
                 <input value={contactName} onChange={(event) => setContactName(event.target.value)} placeholder="Opsiyonel" />
               </label>
               {error ? <p className="form-error">{error}</p> : null}
               <button className="catering-primary-button" type="submit" disabled={isSaving}>
                 <Plus size={18} />
-                KullanÄ±cÄ±yÄ± oluÅŸtur
+                Kullanıcıyı oluştur
               </button>
             </form>
           </section>
