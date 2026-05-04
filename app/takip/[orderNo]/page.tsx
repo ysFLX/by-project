@@ -1,11 +1,5 @@
-import { OrderTracker } from "@/components/order-tracker";
+import { redirect } from "next/navigation";
 
-type PageProps = {
-  params: Promise<{ orderNo: string }>;
-};
-
-export default async function TrackingPage({ params }: PageProps) {
-  const { orderNo } = await params;
-
-  return <OrderTracker orderNo={orderNo} />;
+export default function Page() {
+  redirect("/giris");
 }

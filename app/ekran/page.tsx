@@ -1,5 +1,5 @@
-import { StaffOrdersPanel } from "@/components/staff-orders-panel";
+import { redirect } from "next/navigation";
 
-export default function ReadyDisplayPage() {
-  return <StaffOrdersPanel mode="display" />;
+export default function Page() {
+  redirect("/catering");
 }

@@ -6,44 +6,43 @@ datasource db {
   provider = "postgresql"
 }
 
-model Order {
-  id               String      @id @default(cuid())
-  orderNo          String      @unique
-  tableNo          String
-  status           String      @default("new")
-  note             String?
-  subtotal         Int
-  serviceFee       Int         @default(0)
-  total            Int
-  estimatedMinutes Int
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
-  items            OrderItem[]
+model ClientCompany {
+  id           String        @id @default(cuid())
+  code         String        @unique
+  name         String
+  contactName  String?
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  mealRequests MealRequest[]
 
+  @@index([active])
+  @@map("client_companies")
+}
+
+model MealRequest {
+  id           String        @id @default(cuid())
+  requestNo    String        @unique
+  companyId    String
+  serviceDate  DateTime
+  headcount    Int
+  status       String        @default("submitted")
+  note         String?
+  eatenAt      DateTime?
+  collectedAt  DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  company      ClientCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, serviceDate])
+  @@index([serviceDate])
   @@index([status])
-  @@index([tableNo])
-  @@index([createdAt])
-  @@map("orders")
+  @@map("meal_requests")
 }
 
-model OrderItem {
-  id          String   @id @default(cuid())
-  orderId     String
-  productId   String
-  productName String
-  price       Int
-  quantity    Int
-  options     String[] @default([])
-  note        String?
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  @@index([orderId])
-  @@map("order_items")
-}
-
-model OrderCounter {
+model MealRequestCounter {
   key       String @id
   nextValue Int
 
-  @@map("order_counters")
+  @@map("meal_request_counters")
 }

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "BY Project - QR Sipariş Sistemi",
-  description: "Masa QR, müşteri siparişi, kasa ve mutfak panelleri için başlangıç projesi."
+  title: "BY Catering - Kurumsal Yemek Operasyonu",
+  description: "Catering firmaları için şirket üyeliği, günlük kişi sayısı ve tabak toplama takip sistemi."
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

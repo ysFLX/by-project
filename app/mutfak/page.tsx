@@ -1,5 +1,5 @@
-import { StaffOrdersPanel } from "@/components/staff-orders-panel";
+import { redirect } from "next/navigation";
 
-export default function KitchenPage() {
-  return <StaffOrdersPanel mode="kitchen" />;
+export default function Page() {
+  redirect("/catering");
 }

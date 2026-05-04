@@ -1,6 +1,5 @@
-import { AdminDashboard } from "@/components/admin-dashboard";
-import { menu, tables } from "@/lib/catalog-data";
+import { redirect } from "next/navigation";
 
-export default function AdminPage() {
-  return <AdminDashboard menu={menu} tables={tables} section="overview" />;
+export default function Page() {
+  redirect("/catering");
 }

@@ -1,40 +1,34 @@
-# BY Project
+# BY Catering
 
-QR kod ile masa siparişi alan kafe/restoran MVP başlangıç projesi.
+Catering firmalarının yemek dağıttıkları şirketlerden günlük kişi sayısı alması ve yemek sonrası tabak toplama onayını takip etmesi için MVP.
 
-## Ne var?
+## Yeni Akış
 
-- `/masa/[tableNo]`: Müşteri menü, ürün detayı, sepet ve sipariş oluşturma akışı.
-- `/takip/[orderNo]`: Müşteri sipariş durum takip ekranı.
-- `/kasa`: Kasadaki bilgisayar için sipariş kabul ve durum paneli.
-- `/mutfak`: Mutfak hazırlık ekranı.
-- `/ekran`: Hazır sipariş numaralarının müşteriye gösterildiği ekran.
-- `/admin`: Menü, masa/QR ve işletme ayarları için ilk yönetici ekranı.
-- `/api/orders`: Geçici sipariş API'si.
-- `/api/menu`: Örnek menü API'si.
+- `/`: Catering ürün tanıtımı ve ana yönlendirme.
+- `/catering`: Catering firmasının operasyon paneli. Şirket üyeliği oluşturur, günlük porsiyon toplamını ve toplama durumunu görür.
+- `/giris`: Yemek alan şirketin üyelik koduyla giriş ekranı.
+- `/uye/[companyCode]`: Şirketin bugünkü kişi sayısını girdiği ve yemek sonrası “tabaklar toplanabilir” onayı verdiği alan.
+- `/api/client-companies`: Şirket üyeliklerini listeler ve oluşturur.
+- `/api/meal-requests`: Günlük yemek taleplerini listeler ve kişi sayısı gönderir.
+- `/api/meal-requests/[requestNo]`: Yemek yenildi/toplandı durumunu günceller.
 
-## Çalıştırma
+## MVP Mantığı
+
+1. Catering firması `/catering` panelinden yemek verdiği şirket için üyelik kodu oluşturur.
+2. Şirket bu kodla `/giris` üzerinden kendi ekranına girer.
+3. Şirket sabah “bugün kaç kişilik yemek alınacak?” alanını doldurur.
+4. Catering panelinde toplam porsiyon ve şirket bazlı talepler görünür.
+5. Yemek yendikten sonra şirket “Yemek yenildi, tabaklar toplanabilir” butonuna basar.
+6. Catering firması panelde toplanabilir şirketleri görür ve topladığında “Toplandı” durumuna alır.
+
+## Komutlar
 
 ```bash
-npm install
 npm run dev
+npm run typecheck
+npm run build
 ```
 
-Sonra tarayıcıda:
+## Not
 
-```text
-http://localhost:3000
-```
-
-## Bildirim mantığı
-
-SMS ücretli olduğu için ilk aşamada daha mantıklı seçenekler:
-
-1. Müşteri siparişten sonra `/takip/A42` gibi bir takip sayfasında kalır.
-2. Kasa/mutfak siparişi `Hazır` yapınca takip ekranı bunu otomatik yenileyerek gösterir.
-3. Müşteri izin verirse tarayıcı bildirimi gönderilir. Bu MVP içinde eklendi.
-4. Daha sonraki aşamada PWA Web Push, Firebase, Supabase Realtime veya Pusher ile sayfa kapalıyken de bildirim kurulabilir.
-
-## Önemli not
-
-Bu ilk temel sürümde siparişler server hafızasında tutuluyor. Development için iyi, ama canlı kullanım için veritabanı gerekir. Bir sonraki sağlam adım Prisma + PostgreSQL veya Supabase ile kalıcı sipariş tablosu kurmak.
+Bu sürümde üyelik ve yemek talepleri geliştirme hızını korumak için server hafızasında tutuluyor. Canlı satışa hazırlanırken sıradaki sağlam adım bu yeni `ClientCompany` ve `MealRequest` modellerini PostgreSQL/Prisma repository katmanına bağlamak ve gerçek kullanıcı girişi eklemek.
