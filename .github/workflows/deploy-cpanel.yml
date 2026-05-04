@@ -1,4 +1,4 @@
-name: Deploy cPanel asd frontend
+name: Deploy cPanel frontend
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   deploy:
-    name: Build and upload asd frontend
+    name: Build and upload frontend
     runs-on: ubuntu-latest
 
     steps:
@@ -20,26 +20,26 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: asd/package-lock.json
+          cache-dependency-path: frontend/package-lock.json
 
-      - name: Install asd frontend dependencies
+      - name: Install frontend dependencies
         run: npm ci
-        working-directory: asd
+        working-directory: frontend
 
-      - name: Build asd frontend
+      - name: Build frontend
         run: npm run build
-        working-directory: asd
+        working-directory: frontend
 
       - name: Add cPanel route fallback
         run: |
-          cat > asd/dist/.htaccess <<'EOF'
+          cat > frontend/dist/.htaccess <<'EOF'
           <IfModule mod_rewrite.c>
             RewriteEngine On
-            RewriteBase /asd/
+            RewriteBase /
             RewriteRule ^index\.html$ - [L]
             RewriteCond %{REQUEST_FILENAME} !-f
             RewriteCond %{REQUEST_FILENAME} !-d
-            RewriteRule . /asd/index.html [L]
+            RewriteRule . /index.html [L]
           </IfModule>
           EOF
 
@@ -61,6 +61,6 @@ jobs:
           set ssl:verify-certificate no
           set net:timeout 30
           set net:max-retries 2
-          mirror --reverse --delete --verbose asd/dist/ "$FTP_SERVER_DIR"
+          mirror --reverse --delete --verbose frontend/dist/ "$FTP_SERVER_DIR"
           bye
           EOF

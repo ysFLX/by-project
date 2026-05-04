@@ -1,58 +1,51 @@
 # BY Catering
 
-Catering firmalarının yemek dağıttıkları şirketlerden günlük kişi sayısı alması ve yemek sonrası tabak toplama onayını takip etmesi için MVP.
+React frontend ve Laravel API iki temiz klasorde tutulur:
 
-## Hedef Mimari
+- `frontend/`: React + Vite SPA.
+- `backend/`: Laravel API.
 
-- `asd/`: React + Vite SPA frontend.
-- `backend/`: Laravel API için model, controller, route ve MySQL migration dosyaları.
-- MySQL/MariaDB verisi phpMyAdmin üzerinden yönetilebilir.
-
-> Not: Bu bilgisayarda `php` ve `composer` PATH'te görünmediği için Laravel uygulamasını otomatik kuramadım. `backend/README.md` içinde Laravel kurulum adımları var.
-
-## Ürün Akışı
-
-1. Catering firması `/catering` panelinden yemek verdiği şirket için üyelik kodu oluşturur.
-2. Şirket bu kodla `/giris` üzerinden kendi ekranına girer.
-3. Şirket sabah “bugün kaç kişilik yemek alınacak?” alanını doldurur.
-4. Catering panelinde toplam porsiyon ve şirket bazlı talepler görünür.
-5. Yemek yendikten sonra şirket “Yemek yenildi, tabaklar toplanabilir” butonuna basar.
-6. Catering firması panelde toplanabilir şirketleri görür ve topladığında “Toplandı” durumuna alır.
-
-## React Frontend
+## Frontend
 
 ```bash
-cd asd
+cd frontend
 npm install
 npm run dev
 ```
 
-`asd/.env`:
+`frontend/.env`:
 
 ```env
 VITE_API_BASE_URL=http://localhost:8000/api
 ```
 
-## Laravel Backend
+## Backend
+
+Backend resmi Laravel iskeleti uzerine kuruldu. Calistirmak icin PHP 8.3+ ve Composer gerekir.
 
 ```bash
-composer create-project laravel/laravel backend-app
+cd backend
+composer install
+copy .env.example .env
+php artisan key:generate
+php artisan migrate
+php artisan serve
 ```
 
-Sonra `backend/` içindeki `app`, `database`, `routes` dosyalarını Laravel uygulamasına taşı.
-
-`.env` MySQL örneği:
+MySQL ayarlari `backend/.env.example` icinde hazir:
 
 ```env
 DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
 DB_DATABASE=by_catering
 DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-```bash
-php artisan migrate
-php artisan serve
-```
+## Akis
+
+1. Catering firmasi `/catering` panelinden sirket uyelik kodu olusturur.
+2. Sirket `/giris` uzerinden kodla girer.
+3. Gunluk yemek kisi sayisi girilir.
+4. Catering panelinde toplam porsiyon ve sirket bazli talepler gorunur.
+5. Yemek yenildikten sonra sirket toplama onayi verir.
+6. Catering firmasi talebi `Toplandi` durumuna alir.
