@@ -1471,3 +1471,329 @@ a {
     flex-direction: column;
   }
 }
+
+.admin-nav-list button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 14px;
+  color: rgba(248, 250, 249, 0.72);
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  font-weight: 900;
+  min-height: 44px;
+  padding: 0 12px;
+  text-align: left;
+  width: 100%;
+}
+
+.admin-nav-list button.active,
+.admin-nav-list button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.create-user-button.compact {
+  flex: 0 0 auto;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 16px;
+}
+
+.company-mini-list button {
+  align-items: center;
+  background: #f7faf8;
+  border: 1px solid rgba(23, 63, 42, 0.1);
+  border-radius: 12px;
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  padding: 10px 12px;
+  text-align: left;
+  width: 100%;
+}
+
+.company-mini-list button:hover {
+  border-color: rgba(199, 119, 41, 0.34);
+  transform: translateY(-1px);
+}
+
+.company-avatar.large {
+  font-size: 1.05rem;
+  height: 64px;
+  width: 64px;
+}
+
+.admin-create-modal.wide {
+  max-width: 1120px;
+  width: min(100%, 1120px);
+}
+
+.admin-flash {
+  margin: 0 auto 16px;
+  max-width: 1280px;
+}
+
+.admin-section-panel {
+  background: #fff;
+  border: 1px solid rgba(23, 63, 42, 0.1);
+  border-radius: 8px;
+  margin: 0 auto;
+  max-width: 1280px;
+  padding: 24px;
+}
+
+.company-management-layout {
+  align-items: start;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(310px, 0.42fr) minmax(0, 0.9fr);
+}
+
+.company-directory,
+.company-detail-panel,
+.company-edit-form {
+  display: grid;
+  gap: 18px;
+}
+
+.company-directory-list {
+  display: grid;
+  gap: 10px;
+  max-height: 640px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.company-directory-list button {
+  align-items: center;
+  background: #f7faf8;
+  border: 1px solid rgba(23, 63, 42, 0.1);
+  border-radius: 8px;
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  padding: 12px;
+  text-align: left;
+  width: 100%;
+}
+
+.company-directory-list button.active,
+.company-directory-list button:hover {
+  background: #fff7ed;
+  border-color: rgba(199, 119, 41, 0.36);
+}
+
+.company-directory-list strong,
+.company-directory-list small,
+.company-directory-list em {
+  display: block;
+}
+
+.company-directory-list small {
+  color: #61705d;
+  font-weight: 800;
+}
+
+.company-directory-list em {
+  background: #ecfdf5;
+  border-radius: 999px;
+  color: #166534;
+  font-size: 0.76rem;
+  font-style: normal;
+  font-weight: 900;
+  padding: 7px 10px;
+}
+
+.company-detail-panel {
+  min-width: 0;
+}
+
+.company-detail-head {
+  align-items: center;
+  border-bottom: 1px solid rgba(23, 63, 42, 0.1);
+  display: flex;
+  gap: 16px;
+  padding-bottom: 18px;
+}
+
+.company-detail-head h2 {
+  font-size: clamp(1.7rem, 3vw, 2.6rem);
+  letter-spacing: 0;
+  line-height: 1;
+  margin: 8px 0 4px;
+}
+
+.company-detail-head p {
+  color: #61705d;
+  margin: 0;
+}
+
+.company-contact-strip {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.company-contact-strip span {
+  align-items: center;
+  background: #f7faf8;
+  border: 1px solid rgba(23, 63, 42, 0.1);
+  border-radius: 8px;
+  color: #324237;
+  display: flex;
+  font-weight: 800;
+  gap: 8px;
+  min-height: 48px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding: 10px 12px;
+}
+
+.company-contact-strip svg {
+  color: #c77729;
+  flex: 0 0 auto;
+}
+
+.detail-form-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.company-edit-form label,
+.modal-company-form label {
+  display: grid;
+  gap: 8px;
+}
+
+.company-edit-form label > span,
+.modal-company-form label > span {
+  color: #324237;
+  font-weight: 900;
+}
+
+.company-edit-form input,
+.company-edit-form textarea,
+.modal-company-form textarea {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(23, 63, 42, 0.16);
+  border-radius: 14px;
+  color: #172019;
+  min-height: 52px;
+  outline: 0;
+  padding: 0 16px;
+  width: 100%;
+}
+
+.company-edit-form textarea,
+.modal-company-form textarea {
+  min-height: 104px;
+  padding: 14px 16px;
+  resize: vertical;
+}
+
+.company-edit-form input:focus,
+.company-edit-form textarea:focus,
+.modal-company-form textarea:focus {
+  border-color: #1f6f46;
+  box-shadow: 0 0 0 4px rgba(31, 111, 70, 0.1);
+}
+
+.company-form-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.admin-danger-button {
+  align-items: center;
+  background: #fff1f2;
+  border: 1px solid rgba(190, 18, 60, 0.18);
+  border-radius: 999px;
+  color: #9f1239;
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 900;
+  gap: 8px;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 18px;
+}
+
+.admin-danger-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.admin-control-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-control-grid article,
+.admin-settings-panel article {
+  background: #f7faf8;
+  border: 1px solid rgba(23, 63, 42, 0.1);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 20px;
+}
+
+.admin-control-grid svg,
+.admin-settings-panel svg {
+  color: #c77729;
+}
+
+.admin-control-grid span,
+.admin-control-grid small,
+.admin-settings-panel small {
+  color: #61705d;
+}
+
+.admin-control-grid strong {
+  font-size: 2rem;
+  letter-spacing: 0;
+}
+
+.admin-settings-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-settings-panel article {
+  align-items: center;
+  grid-template-columns: 36px minmax(0, 1fr);
+}
+
+.admin-settings-panel strong,
+.admin-settings-panel small {
+  display: block;
+}
+
+@media (max-width: 1100px) {
+  .company-management-layout,
+  .company-contact-strip,
+  .admin-control-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .detail-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .company-detail-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

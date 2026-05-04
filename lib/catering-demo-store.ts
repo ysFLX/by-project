@@ -4,6 +4,11 @@ export type DemoCompany = {
   username?: string;
   name: string;
   contactName?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  taxNumber?: string;
+  notes?: string;
   active: boolean;
   createdAt: string;
 };
@@ -50,6 +55,11 @@ const seedCompanies: DemoCompany[] = [
     username: "aytek",
     name: "Aytek Yazılım",
     contactName: "Elif Demir",
+    phone: "0332 245 19 29",
+    email: "operasyon@aytek.test",
+    address: "Karatay, Konya",
+    taxNumber: "1234567890",
+    notes: "Hafta içi öğle servisi.",
     active: true,
     createdAt: "2026-05-01T08:00:00.000Z"
   },
@@ -59,6 +69,11 @@ const seedCompanies: DemoCompany[] = [
     username: "kuzey",
     name: "Kuzey Lojistik",
     contactName: "Mert Arslan",
+    phone: "0332 444 10 42",
+    email: "mert@kuzeylojistik.test",
+    address: "Selçuklu, Konya",
+    taxNumber: "2345678901",
+    notes: "Servis saati 12:30.",
     active: true,
     createdAt: "2026-05-02T08:00:00.000Z"
   },
@@ -68,6 +83,11 @@ const seedCompanies: DemoCompany[] = [
     username: "orion",
     name: "Orion Tekstil",
     contactName: "Derya Koç",
+    phone: "0332 500 40 10",
+    email: "derya@oriontekstil.test",
+    address: "Meram, Konya",
+    taxNumber: "3456789012",
+    notes: "Vejetaryen porsiyon talebi olabilir.",
     active: true,
     createdAt: "2026-05-03T08:00:00.000Z"
   }
@@ -257,7 +277,17 @@ export function authenticateDemoUser(input: { username: string; password: string
   return user;
 }
 
-export function createDemoCompany(input: { name: string; username: string; password: string; contactName?: string }) {
+export function createDemoCompany(input: {
+  name: string;
+  username: string;
+  password: string;
+  contactName?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  taxNumber?: string;
+  notes?: string;
+}) {
   const state = getDemoState();
   const name = input.name.trim();
   const username = normalizeCode(input.username);
@@ -295,6 +325,11 @@ export function createDemoCompany(input: { name: string; username: string; passw
     username,
     name,
     contactName: input.contactName?.trim() || undefined,
+    phone: input.phone?.trim() || undefined,
+    email: input.email?.trim() || undefined,
+    address: input.address?.trim() || undefined,
+    taxNumber: input.taxNumber?.trim() || undefined,
+    notes: input.notes?.trim() || undefined,
     active: true,
     createdAt: new Date().toISOString()
   };
@@ -309,6 +344,69 @@ export function createDemoCompany(input: { name: string; username: string; passw
   });
   saveDemoState(state);
   return company;
+}
+
+export function updateDemoCompany(
+  companyId: string,
+  input: {
+    name: string;
+    contactName?: string;
+    phone?: string;
+    email?: string;
+    address?: string;
+    taxNumber?: string;
+    notes?: string;
+  }
+) {
+  const state = getDemoState();
+  const company = state.companies.find((item) => item.id === companyId);
+
+  if (!company) {
+    throw new Error("Şirket bulunamadı.");
+  }
+
+  const name = input.name.trim();
+
+  if (!name) {
+    throw new Error("Şirket adı gerekli.");
+  }
+
+  company.name = name;
+  company.contactName = input.contactName?.trim() || undefined;
+  company.phone = input.phone?.trim() || undefined;
+  company.email = input.email?.trim() || undefined;
+  company.address = input.address?.trim() || undefined;
+  company.taxNumber = input.taxNumber?.trim() || undefined;
+  company.notes = input.notes?.trim() || undefined;
+
+  state.requests.forEach((request) => {
+    if (request.companyId === company.id) {
+      request.companyName = company.name;
+    }
+  });
+
+  state.users.forEach((user) => {
+    if (user.companyCode === company.code) {
+      user.displayName = company.name;
+    }
+  });
+
+  saveDemoState(state);
+  return company;
+}
+
+export function deleteDemoCompany(companyId: string) {
+  const state = getDemoState();
+  const company = state.companies.find((item) => item.id === companyId);
+
+  if (!company) {
+    throw new Error("Şirket bulunamadı.");
+  }
+
+  state.companies = state.companies.filter((item) => item.id !== companyId);
+  state.requests = state.requests.filter((request) => request.companyId !== companyId);
+  state.users = state.users.filter((user) => user.companyCode !== company.code);
+  saveDemoState(state);
 }
 
 export function listDemoRequests(filters?: { serviceDate?: string; companyCode?: string }) {
