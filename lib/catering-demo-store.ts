@@ -1,6 +1,7 @@
 export type DemoCompany = {
   id: string;
   code: string;
+  username?: string;
   name: string;
   contactName?: string;
   active: boolean;
@@ -28,6 +29,7 @@ export type DemoMenuDay = {
 type DemoState = {
   companies: DemoCompany[];
   requests: DemoMealRequest[];
+  users: DemoUser[];
   nextRequest: number;
 };
 
@@ -45,6 +47,7 @@ const seedCompanies: DemoCompany[] = [
   {
     id: "company_aytek",
     code: "aytek",
+    username: "aytek",
     name: "Aytek Yazılım",
     contactName: "Elif Demir",
     active: true,
@@ -53,6 +56,7 @@ const seedCompanies: DemoCompany[] = [
   {
     id: "company_kuzey",
     code: "kuzey-lojistik",
+    username: "kuzey",
     name: "Kuzey Lojistik",
     contactName: "Mert Arslan",
     active: true,
@@ -61,6 +65,7 @@ const seedCompanies: DemoCompany[] = [
   {
     id: "company_orion",
     code: "orion-tekstil",
+    username: "orion",
     name: "Orion Tekstil",
     contactName: "Derya Koç",
     active: true,
@@ -92,7 +97,7 @@ const seedRequests: DemoMealRequest[] = [
   }
 ];
 
-const demoUsers: DemoUser[] = [
+const seedUsers: DemoUser[] = [
   {
     username: "admin",
     password: "admin123",
@@ -188,6 +193,7 @@ function getDefaultState(): DemoState {
   return {
     companies: seedCompanies,
     requests: seedRequests,
+    users: seedUsers,
     nextRequest: 3
   };
 }
@@ -206,7 +212,11 @@ export function getDemoState(): DemoState {
   }
 
   try {
-    return JSON.parse(stored) as DemoState;
+    const parsedState = JSON.parse(stored) as DemoState;
+    return {
+      ...parsedState,
+      users: parsedState.users ?? seedUsers
+    };
   } catch {
     const defaultState = getDefaultState();
     window.localStorage.setItem(storageKey, JSON.stringify(defaultState));
@@ -230,7 +240,7 @@ export function getDemoCompanyByCode(code: string) {
 export function authenticateDemoUser(input: { username: string; password: string }) {
   const username = input.username.trim().toLocaleLowerCase("tr-TR");
   const password = input.password.trim();
-  const user = demoUsers.find((item) => item.username === username && item.password === password) ?? null;
+  const user = getDemoState().users.find((item) => item.username === username && item.password === password) ?? null;
 
   if (!user) {
     return null;
@@ -247,27 +257,42 @@ export function authenticateDemoUser(input: { username: string; password: string
   return user;
 }
 
-export function createDemoCompany(input: { name: string; code?: string; contactName?: string }) {
+export function createDemoCompany(input: { name: string; username: string; password: string; contactName?: string }) {
   const state = getDemoState();
   const name = input.name.trim();
+  const username = normalizeCode(input.username);
+  const password = input.password.trim();
 
   if (!name) {
     throw new Error("Şirket adı gerekli.");
   }
 
-  const baseCode = normalizeCode(input.code || name);
+  if (!username) {
+    throw new Error("Kullanıcı adı gerekli.");
+  }
+
+  if (password.length < 4) {
+    throw new Error("Şifre en az 4 karakter olmalı.");
+  }
+
+  if (state.users.some((user) => user.username === username)) {
+    throw new Error("Bu kullanıcı adı zaten kullanılıyor.");
+  }
+
+  const baseCode = username;
 
   if (!baseCode) {
-    throw new Error("Geçerli bir üyelik kodu gerekli.");
+    throw new Error("Geçerli bir kullanıcı adı gerekli.");
   }
 
   if (state.companies.some((company) => company.code === baseCode)) {
-    throw new Error("Bu üyelik kodu zaten kullanılıyor.");
+    throw new Error("Bu kullanıcı adı zaten kullanılıyor.");
   }
 
   const company: DemoCompany = {
     id: makeId("company"),
     code: baseCode,
+    username,
     name,
     contactName: input.contactName?.trim() || undefined,
     active: true,
@@ -275,6 +300,13 @@ export function createDemoCompany(input: { name: string; code?: string; contactN
   };
 
   state.companies.unshift(company);
+  state.users.unshift({
+    username,
+    password,
+    role: "customer",
+    companyCode: company.code,
+    displayName: company.name
+  });
   saveDemoState(state);
   return company;
 }

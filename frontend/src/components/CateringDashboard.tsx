@@ -65,7 +65,8 @@ export function CateringDashboard() {
   const [requests, setRequests] = useState<DemoMealRequest[]>([]);
   const [serviceDate, setServiceDate] = useState(todayKey());
   const [companyName, setCompanyName] = useState("");
-  const [companyCode, setCompanyCode] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [contactName, setContactName] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [lastUpdatedAt, setLastUpdatedAt] = useState("");
@@ -128,13 +129,15 @@ export function CateringDashboard() {
     try {
       const company = createDemoCompany({
         name: companyName,
-        code: companyCode,
+        username,
+        password,
         contactName
       });
 
-      setMessage(`${company.name} üyeliği oluşturuldu. Kod: ${company.code}`);
+      setMessage(`${company.name} hesabı oluşturuldu. Kullanıcı adı: ${company.username ?? company.code}`);
       setCompanyName("");
-      setCompanyCode("");
+      setUsername("");
+      setPassword("");
       setContactName("");
       setIsCreateOpen(false);
       loadDashboard();
@@ -347,13 +350,13 @@ export function CateringDashboard() {
                 Yeni müşteri hesabı
               </span>
               <h2 id="create-company-title">Şirket için giriş hesabı oluştur.</h2>
-              <p>Bu ekrandan oluşan kod müşterinin giriş ekranında kullanacağı demo üyelik kodudur.</p>
+              <p>Bu ekrandan oluşturulan kullanıcı adı ve şifreyle müşteri kendi paneline giriş yapar.</p>
 
               <div className="create-modal-steps">
                 <span>1</span>
                 <strong>Bilgileri yaz</strong>
                 <span>2</span>
-                <strong>Kodu müşteriye ver</strong>
+                <strong>Kullanıcı bilgisini ver</strong>
                 <span>3</span>
                 <strong>Panelde günlük adetleri izle</strong>
               </div>
@@ -365,8 +368,12 @@ export function CateringDashboard() {
                 <input value={companyName} onChange={(event) => setCompanyName(event.target.value)} placeholder="Örn: Kuzey Teknoloji" autoFocus />
               </label>
               <label>
-                <span>Üyelik kodu</span>
-                <input value={companyCode} onChange={(event) => setCompanyCode(event.target.value)} placeholder="Boş bırakılırsa otomatik oluşur" />
+                <span>Kullanıcı adı</span>
+                <input value={username} onChange={(event) => setUsername(event.target.value)} placeholder="Örn: kuzey" />
+              </label>
+              <label>
+                <span>Şifre</span>
+                <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="En az 4 karakter" />
               </label>
               <label>
                 <span>Yetkili kişi</span>
