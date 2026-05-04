@@ -21,11 +21,7 @@ export type DemoMealRequest = {
 
 export type DemoMenuDay = {
   date: string;
-  soup: string;
-  main: string;
-  side: string;
-  salad: string;
-  dessert: string;
+  items: string[];
   calories: number;
 };
 
@@ -93,6 +89,40 @@ const mains = ["Izgara köfte", "Tavuk sote", "Etli kuru fasulye", "Fırın tavu
 const sides = ["Pirinç pilavı", "Bulgur pilavı", "Fırın makarna", "Patates püresi", "Zeytinyağlı fasulye"];
 const salads = ["Mevsim salata", "Çoban salata", "Yoğurtlu semizotu", "Gavurdağı salata"];
 const desserts = ["Sütlaç", "Kemalpaşa", "Meyve tabağı", "Kazandibi", "Revani"];
+
+const maharetApril2026Menu: DemoMenuDay[] = [
+  { date: "2026-04-01", items: ["Etli Nohut Yemeği", "Pirinç Pilavı", "Mevsim Salata", "Sütlaç"], calories: 910 },
+  { date: "2026-04-02", items: ["Tavuk Fajita", "Sebzeli Bulgur Pilavı", "Mercimek Çorba", "Ayran"], calories: 860 },
+  { date: "2026-04-03", items: ["Patlıcanlı Şehzade Kebabı", "Üzümlü Pirinç Pilavı", "Yoğurt Çorba", "Red Velvet"], calories: 980 },
+  { date: "2026-04-04", items: ["Kasap Köfte + Patates Kızartması Menü"], calories: 890 },
+  { date: "2026-04-06", items: ["Kavurma Pilav", "Yoğurt Çorba", "Peynir Tatlısı", "Meyve Suyu"], calories: 930 },
+  { date: "2026-04-07", items: ["Etli Kuru Fasulye", "Pirinç Pilavı", "Karışık Turşu", "Trileçe"], calories: 900 },
+  { date: "2026-04-08", items: ["Sebzeli Misket Köfte", "Domatesli Arpa Şehriye Pilavı", "Lebeni Çorba", "Meyveli Gazoz"], calories: 880 },
+  { date: "2026-04-09", items: ["Tavuk But", "Sebzeli Bulgur Pilavı", "Ezogelin Çorba", "Ayran"], calories: 850 },
+  { date: "2026-04-10", items: ["Kıymalı Fırın Patates", "Peynirli Makarna", "Tarhana Çorba", "Kase Yoğurt"], calories: 870 },
+  { date: "2026-04-11", items: ["Izgara Adana Menü"], calories: 920 },
+  { date: "2026-04-13", items: ["Pilav Üstü Tavuk Tantuni", "Sebzeli Şehriye Çorba", "Ayran", "Lokma Tatlısı"], calories: 940 },
+  { date: "2026-04-14", items: ["Şahan Köfte", "Kremalı Makarna", "Mercimek Çorba", "İçecek"], calories: 890 },
+  { date: "2026-04-15", items: ["Etli Nohut Yemeği", "Pirinç Pilavı", "Mısırlı Kırmızı Lahana Salatası", "Profiterol"], calories: 910 },
+  { date: "2026-04-16", items: ["Tas Kebabı", "Peynirli Rulo Börek", "Yoğurt Çorba", "Limonata"], calories: 960 },
+  { date: "2026-04-17", items: ["Karnıyarık", "Nohutlu Üzümlü Pirinç Pilavı", "Ezogelin Çorba", "Cacık"], calories: 900 },
+  { date: "2026-04-18", items: ["Kilis Tava Menü"], calories: 930 },
+  { date: "2026-04-20", items: ["Tavuk Pizza + Sebzeli Bulgur Pilavı", "Mercimek Çorba", "Ayran", "Halka Tatlısı"], calories: 950 },
+  { date: "2026-04-21", items: ["Etli Kuru Fasulye", "Pirinç Pilavı", "Karışık Turşu", "Terbiyeli Tavuk Çorba"], calories: 890 },
+  { date: "2026-04-22", items: ["Parmak Köfte + Patates Kızartması", "Sebzeli Erişte", "Kremalı Domates Çorba", "İçecek"], calories: 920 },
+  { date: "2026-04-23", items: ["Özbek Pilavı", "Ezogelin Çorba", "Çoban Salata", "Kıbrıs Tatlısı"], calories: 870 },
+  { date: "2026-04-24", items: ["Etli Kabak Yemeği", "Tepsi Böreği", "Yoğurt Çorba", "Limonata"], calories: 860 },
+  { date: "2026-04-25", items: ["Tavuk Kanat Menü"], calories: 900 },
+  { date: "2026-04-27", items: ["Etli Bezelye Yemeği", "Pirinç Pilavı", "Ezogelin Çorba", "Browni"], calories: 880 },
+  { date: "2026-04-28", items: ["Kadınbudu Köfte", "Sebzeli Bulgur Pilavı", "Kremalı Mantar Çorba", "İçecek"], calories: 900 },
+  { date: "2026-04-29", items: ["Etli Nohut", "Pirinç Pilavı", "Cacık", "Sakızlı Muhallebi"], calories: 870 },
+  { date: "2026-04-30", items: ["Pilav Üstü Tavuk Döner", "Köylü Çorba", "Ayran", "Kalburabastı Tatlısı"], calories: 940 }
+];
+
+const maharetMay2026Menu: DemoMenuDay[] = [
+  { date: "2026-05-01", items: ["Mevsim Türlü", "Soslu Makarna", "Mercimek Çorba", "Kase Yoğurt"], calories: 840 },
+  { date: "2026-05-02", items: ["Izgara Tavuk Pirzola Menü"], calories: 900 }
+];
 
 export function normalizeCode(value: string) {
   return value
@@ -265,19 +295,23 @@ export function getMonthlyDemoMenu(referenceDate: string) {
   const year = date.getFullYear();
   const month = date.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const fixedMenu = year === 2026 && month === 3 ? maharetApril2026Menu : year === 2026 && month === 4 ? maharetMay2026Menu : [];
 
   return Array.from({ length: daysInMonth }, (_, index): DemoMenuDay => {
     const day = index + 1;
     const menuDate = new Date(year, month, day);
+    const dateKey = menuDate.toISOString().slice(0, 10);
+    const fixedMenuDay = fixedMenu.find((menuDay) => menuDay.date === dateKey);
+
+    if (fixedMenuDay) {
+      return fixedMenuDay;
+    }
+
     const key = day + month;
 
     return {
-      date: menuDate.toISOString().slice(0, 10),
-      soup: soups[key % soups.length],
-      main: mains[(key * 2) % mains.length],
-      side: sides[(key * 3) % sides.length],
-      salad: salads[(key * 4) % salads.length],
-      dessert: desserts[(key * 5) % desserts.length],
+      date: dateKey,
+      items: [soups[key % soups.length], mains[(key * 2) % mains.length], sides[(key * 3) % sides.length], salads[(key * 4) % salads.length], desserts[(key * 5) % desserts.length]],
       calories: 780 + ((key * 37) % 240)
     };
   });

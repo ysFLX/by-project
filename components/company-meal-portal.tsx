@@ -16,7 +16,7 @@ type Props = {
 };
 
 function todayKey() {
-  return new Date().toISOString().slice(0, 10);
+  return "2026-04-01";
 }
 
 function formatDate(value: string) {
@@ -155,26 +155,18 @@ export function CompanyMealPortal({ companyCode }: Props) {
             </span>
             <h2>Bugünün yemeği</h2>
             <div className="today-menu-list">
-              <div>
-                <Soup size={22} />
-                <span>Çorba</span>
-                <strong>{todaysMenu.soup}</strong>
-              </div>
-              <div>
-                <Utensils size={22} />
-                <span>Ana yemek</span>
-                <strong>{todaysMenu.main}</strong>
-              </div>
-              <div>
-                <CheckCircle2 size={22} />
-                <span>Yan ürün</span>
-                <strong>{todaysMenu.side}</strong>
-              </div>
-              <div>
-                <ChefHat size={22} />
-                <span>Tatlı</span>
-                <strong>{todaysMenu.dessert}</strong>
-              </div>
+              {todaysMenu.items.map((item, index) => {
+                const icons = [Soup, Utensils, CheckCircle2, ChefHat];
+                const MenuIcon = icons[index % icons.length];
+
+                return (
+                  <div key={`${item}-${index}`}>
+                    <MenuIcon size={22} />
+                    <span>{index + 1}. çeşit</span>
+                    <strong>{item}</strong>
+                  </div>
+                );
+              })}
             </div>
           </article>
 
@@ -214,10 +206,8 @@ export function CompanyMealPortal({ companyCode }: Props) {
             {monthlyMenu.map((menuDay) => (
               <article className={menuDay.date === serviceDate ? "active" : ""} key={menuDay.date}>
                 <time>{formatDate(menuDay.date)}</time>
-                <strong>{menuDay.main}</strong>
-                <span>
-                  {menuDay.soup} · {menuDay.side} · {menuDay.dessert}
-                </span>
+                <strong>{menuDay.items[0]}</strong>
+                <span>{menuDay.items.slice(1).join(" · ")}</span>
                 <small>{menuDay.calories} kcal</small>
               </article>
             ))}
