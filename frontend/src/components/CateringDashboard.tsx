@@ -12,13 +12,18 @@ import {
   RefreshCcw,
   Search,
   Truck,
-  UsersRound,
   Utensils
 } from "lucide-react";
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { apiFetch } from "../lib/api";
-import type { ClientCompany, MealRequest } from "../lib/types";
+import {
+  createDemoCompany,
+  listDemoCompanies,
+  listDemoRequests,
+  updateDemoRequestStatus,
+  type DemoCompany,
+  type DemoMealRequest
+} from "../lib/demo-store";
 
 const statusMeta = {
   submitted: {
@@ -54,8 +59,8 @@ function formatTime(value?: string | null) {
 }
 
 export function CateringDashboard() {
-  const [companies, setCompanies] = useState<ClientCompany[]>([]);
-  const [requests, setRequests] = useState<MealRequest[]>([]);
+  const [companies, setCompanies] = useState<DemoCompany[]>([]);
+  const [requests, setRequests] = useState<DemoMealRequest[]>([]);
   const [serviceDate, setServiceDate] = useState(todayKey());
   const [companyName, setCompanyName] = useState("");
   const [companyCode, setCompanyCode] = useState("");
@@ -70,7 +75,6 @@ export function CateringDashboard() {
   const activeCompanyCount = companies.filter((company) => company.active).length;
   const totalHeadcount = requests.reduce((sum, request) => sum + request.headcount, 0);
   const submittedCount = requests.filter((request) => request.status === "submitted").length;
-  const collectableCount = requests.filter((request) => request.status === "eaten").length;
   const reportedCompanyCount = new Set(requests.map((request) => request.companyId)).size;
   const missingCompanyCount = Math.max(0, activeCompanyCount - reportedCompanyCount);
 
@@ -97,49 +101,41 @@ export function CateringDashboard() {
       });
   }, [requests, searchTerm]);
 
-  async function loadDashboard() {
+  function loadDashboard() {
     setIsLoading(true);
-    const [companiesPayload, requestsPayload] = await Promise.all([
-      apiFetch<{ companies: ClientCompany[] }>("/client-companies"),
-      apiFetch<{ requests: MealRequest[] }>(`/meal-requests?serviceDate=${serviceDate}`)
-    ]);
-
-    setCompanies(companiesPayload.companies);
-    setRequests(requestsPayload.requests);
+    setCompanies(listDemoCompanies());
+    setRequests(listDemoRequests({ serviceDate }));
     setLastUpdatedAt(formatTime(new Date().toISOString()));
     setIsLoading(false);
   }
 
   useEffect(() => {
-    loadDashboard().catch((loadError) => setError(loadError instanceof Error ? loadError.message : "Panel yüklenemedi."));
+    loadDashboard();
     const interval = window.setInterval(() => {
-      loadDashboard().catch(() => undefined);
+      loadDashboard();
     }, 5000);
 
     return () => window.clearInterval(interval);
   }, [serviceDate]);
 
-  async function createCompany(event: FormEvent<HTMLFormElement>) {
+  function createCompany(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSaving(true);
     setMessage("");
     setError("");
 
     try {
-      const payload = await apiFetch<{ company: ClientCompany }>("/client-companies", {
-        method: "POST",
-        body: {
-          name: companyName,
-          code: companyCode,
-          contactName
-        }
+      const company = createDemoCompany({
+        name: companyName,
+        code: companyCode,
+        contactName
       });
 
-      setMessage(`${payload.company.name} üyeliği oluşturuldu. Kod: ${payload.company.code}`);
+      setMessage(`${company.name} üyeliği oluşturuldu. Kod: ${company.code}`);
       setCompanyName("");
       setCompanyCode("");
       setContactName("");
-      await loadDashboard();
+      loadDashboard();
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Şirket üyeliği oluşturulamadı.");
     } finally {
@@ -147,22 +143,12 @@ export function CateringDashboard() {
     }
   }
 
-  async function markCollected(requestNo: string) {
+  function markCollected(requestNo: string) {
     setIsSaving(true);
     setError("");
-
-    try {
-      const payload = await apiFetch<{ request: MealRequest }>(`/meal-requests/${requestNo}`, {
-        method: "PATCH",
-        body: { status: "collected" }
-      });
-
-      setRequests((current) => current.map((request) => (request.requestNo === requestNo ? payload.request : request)));
-    } catch (updateError) {
-      setError(updateError instanceof Error ? updateError.message : "Toplama durumu güncellenemedi.");
-    } finally {
-      setIsSaving(false);
-    }
+    const updatedRequest = updateDemoRequestStatus(requestNo, "collected");
+    setRequests((current) => current.map((request) => (request.requestNo === requestNo && updatedRequest ? updatedRequest : request)));
+    setIsSaving(false);
   }
 
   return (
@@ -201,8 +187,8 @@ export function CateringDashboard() {
               <Truck size={16} />
               Catering operasyon paneli
             </span>
-            <h1>Günlük yemek adetleri</h1>
-            <p>Müşteri portaldan kaç kişilik yemek alacağını girince bu ekrana otomatik düşer.</p>
+            <h1>Catering yönetim paneli</h1>
+            <p>Üyelikleri oluştur, şirketlerin günlük yemek adetlerini takip et ve operasyonu tek ekrandan yönet.</p>
           </div>
 
           <div className="admin-toolbar">
@@ -224,16 +210,16 @@ export function CateringDashboard() {
             <small>{reportedCompanyCount} müşteri bildirdi</small>
           </article>
           <article>
-            <UsersRound size={24} />
-            <span>Yeni gelen</span>
-            <strong>{submittedCount}</strong>
-            <small>kişi sayısı geldi</small>
+            <Factory size={24} />
+            <span>Üye şirket</span>
+            <strong>{activeCompanyCount}</strong>
+            <small>aktif müşteri hesabı</small>
           </article>
           <article>
             <BadgeCheck size={24} />
-            <span>Toplanabilir</span>
-            <strong>{collectableCount}</strong>
-            <small>tabak bekliyor</small>
+            <span>Bugün bildiren</span>
+            <strong>{submittedCount}</strong>
+            <small>şirketten adet geldi</small>
           </article>
           <article>
             <AlertTriangle size={24} />
@@ -247,8 +233,8 @@ export function CateringDashboard() {
           <article className="catering-panel company-admin-card">
             <div className="panel-title-row">
               <div>
-                <h2>Şirket Üyeliği</h2>
-                <p>Müşteri için giriş kodu oluştur.</p>
+                <h2>Yeni Üyelik Oluştur</h2>
+                <p>Bu kodla şirket giriş ekranından müşteri paneline girer.</p>
               </div>
               <Plus size={20} />
             </div>
@@ -273,6 +259,16 @@ export function CateringDashboard() {
                 Üyelik oluştur
               </button>
             </form>
+
+            <div className="company-mini-list">
+              <span>Aktif üyeler</span>
+              {companies.slice(0, 4).map((company) => (
+                <div key={company.id}>
+                  <strong>{company.name}</strong>
+                  <small>{company.code}</small>
+                </div>
+              ))}
+            </div>
           </article>
 
           <article className="catering-panel daily-orders-panel">
@@ -322,7 +318,7 @@ export function CateringDashboard() {
                         {statusMeta[request.status].label}
                       </span>
 
-                      <small className="order-time-cell">{formatTime(request.submittedAt)}</small>
+                      <small className="order-time-cell">{formatTime(request.updatedAt)}</small>
 
                       <button className="catering-secondary-button" type="button" onClick={() => markCollected(request.requestNo)} disabled={isSaving || request.status !== "eaten"}>
                         <CheckCircle2 size={17} />

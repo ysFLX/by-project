@@ -1,84 +1,65 @@
-import { BadgeCheck, CalendarDays, CheckCircle2, Clock3, Loader2, PackageCheck, Send, UsersRound } from "lucide-react";
+import { CalendarDays, CheckCircle2, ChefHat, ClipboardList, LogOut, Send, Soup, UsersRound, Utensils } from "lucide-react";
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { apiFetch } from "../lib/api";
-import type { ClientCompany, MealRequest } from "../lib/types";
+import {
+  getDemoCompanyByCode,
+  getMonthlyDemoMenu,
+  listDemoRequests,
+  upsertDemoMealRequest,
+  type DemoCompany,
+  type DemoMealRequest
+} from "../lib/demo-store";
 
 type Props = {
   companyCode: string;
-};
-
-const statusCopy = {
-  submitted: {
-    label: "Kişi sayısı gönderildi",
-    text: "Catering firması bugünkü porsiyon sayınızı görüyor.",
-    icon: Clock3
-  },
-  eaten: {
-    label: "Yemek yenildi",
-    text: "Boş tabaklar toplanabilir olarak işaretlendi.",
-    icon: BadgeCheck
-  },
-  collected: {
-    label: "Tabaklar toplandı",
-    text: "Catering firması toplama işlemini tamamladı.",
-    icon: PackageCheck
-  }
 };
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("tr-TR", {
+    day: "numeric",
+    month: "long",
+    weekday: "long"
+  }).format(new Date(`${value}T12:00:00`));
+}
+
+function formatMonth(value: string) {
+  return new Intl.DateTimeFormat("tr-TR", {
+    month: "long",
+    year: "numeric"
+  }).format(new Date(`${value}T12:00:00`));
+}
+
 export function CompanyMealPortal({ companyCode }: Props) {
-  const [company, setCompany] = useState<ClientCompany | null>(null);
-  const [request, setRequest] = useState<MealRequest | null>(null);
+  const [company, setCompany] = useState<DemoCompany | null>(null);
+  const [request, setRequest] = useState<DemoMealRequest | null>(null);
   const [serviceDate, setServiceDate] = useState(todayKey());
-  const [headcount, setHeadcount] = useState("1");
+  const [headcount, setHeadcount] = useState("24");
   const [note, setNote] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const status = request ? statusCopy[request.status] : null;
-  const StatusIcon = status?.icon ?? UsersRound;
-  const canEditHeadcount = !request || request.status === "submitted";
+  const monthlyMenu = useMemo(() => getMonthlyDemoMenu(serviceDate), [serviceDate]);
+  const todaysMenu = monthlyMenu.find((menuDay) => menuDay.date === serviceDate) ?? monthlyMenu[0];
 
-  const helperText = useMemo(() => {
-    if (!request) {
-      return "Sabah servis başlamadan önce bugünkü yemek alacak kişi sayısını gönderin.";
-    }
+  function loadPortalData() {
+    const currentCompany = getDemoCompanyByCode(companyCode);
+    setCompany(currentCompany);
 
-    if (request.status === "submitted") {
-      return "Yemek yenene kadar kişi sayısını güncelleyebilirsiniz.";
-    }
-
-    return "Yemek yenildi onayından sonra kişi sayısı kilitlenir.";
-  }, [request]);
-
-  async function loadPortalData() {
-    setIsLoading(true);
-    setError("");
-
-    try {
-      const companyPayload = await apiFetch<{ company: ClientCompany }>(`/client-companies/${companyCode}`);
-      setCompany(companyPayload.company);
-
-      const requestPayload = await apiFetch<{ requests: MealRequest[] }>(`/meal-requests?companyCode=${companyCode}&serviceDate=${serviceDate}`);
-      const currentRequest = requestPayload.requests[0] ?? null;
-
-      setRequest(currentRequest);
-
-      if (currentRequest) {
-        setHeadcount(String(currentRequest.headcount));
-        setNote(currentRequest.note ?? "");
-      }
-    } catch (loadError) {
-      setCompany(null);
+    if (!currentCompany) {
       setRequest(null);
-      setError(loadError instanceof Error ? loadError.message : "Şirket üyeliği bulunamadı.");
-    } finally {
-      setIsLoading(false);
+      return;
+    }
+
+    const currentRequest = listDemoRequests({ companyCode: currentCompany.code, serviceDate })[0] ?? null;
+    setRequest(currentRequest);
+
+    if (currentRequest) {
+      setHeadcount(String(currentRequest.headcount));
+      setNote(currentRequest.note ?? "");
     }
   }
 
@@ -86,127 +67,161 @@ export function CompanyMealPortal({ companyCode }: Props) {
     loadPortalData();
   }, [companyCode, serviceDate]);
 
-  async function submitHeadcount(event: FormEvent<HTMLFormElement>) {
+  function submitHeadcount(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setIsSaving(true);
+    setMessage("");
     setError("");
 
     try {
-      const payload = await apiFetch<{ request: MealRequest }>("/meal-requests", {
-        method: "POST",
-        body: {
-          companyCode,
-          serviceDate,
-          headcount: Number(headcount),
-          note
-        }
+      const savedRequest = upsertDemoMealRequest({
+        companyCode,
+        serviceDate,
+        headcount: Number(headcount),
+        note
       });
 
-      setRequest(payload.request);
+      setRequest(savedRequest);
+      setMessage("Bugünkü yemek adediniz catering paneline düştü.");
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Kişi sayısı gönderilemedi.");
-    } finally {
-      setIsSaving(false);
+      setError(submitError instanceof Error ? submitError.message : "Kişi sayısı kaydedilemedi.");
     }
-  }
-
-  async function markEaten() {
-    if (!request) {
-      return;
-    }
-
-    setIsSaving(true);
-    setError("");
-
-    try {
-      const payload = await apiFetch<{ request: MealRequest }>(`/meal-requests/${request.requestNo}`, {
-        method: "PATCH",
-        body: { status: "eaten" }
-      });
-
-      setRequest(payload.request);
-    } catch (updateError) {
-      setError(updateError instanceof Error ? updateError.message : "Yemek yenildi onayı verilemedi.");
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  if (isLoading) {
-    return (
-      <main className="catering-member-shell">
-        <div className="catering-loading-card">
-          <Loader2 size={22} />
-          Üyelik bilgisi yükleniyor...
-        </div>
-      </main>
-    );
   }
 
   if (!company) {
     return (
-      <main className="catering-member-shell">
-        <section className="catering-member-card">
+      <main className="customer-dashboard-shell">
+        <section className="customer-empty-card">
           <span className="catering-kicker">Üyelik bulunamadı</span>
           <h1>Bu kodla kayıtlı şirket yok.</h1>
-          <p>{error || "Catering firmanızdan doğru üyelik kodunu isteyin."}</p>
+          <p>Catering firmanızın oluşturduğu üyelik koduyla giriş yapmanız gerekiyor.</p>
+          <a className="catering-primary-button" href="/giris">
+            Giriş ekranına dön
+          </a>
         </section>
       </main>
     );
   }
 
   return (
-    <main className="catering-member-shell">
-      <section className="catering-member-card">
-        <div className="member-card-head">
+    <main className="customer-dashboard-shell">
+      <aside className="customer-sidebar">
+        <a className="catering-brand admin-brand" href="/giris">
+          <span>{company.name.slice(0, 2).toLocaleUpperCase("tr-TR")}</span>
+          <div>
+            <strong>{company.name}</strong>
+            <small>Müşteri paneli</small>
+          </div>
+        </a>
+
+        <nav className="admin-nav-list" aria-label="Müşteri panel menüsü">
+          <a className="active" href="#gunluk">
+            <UsersRound size={18} />
+            Günlük adet
+          </a>
+          <a href="#menu">
+            <ClipboardList size={18} />
+            Aylık menü
+          </a>
+        </nav>
+
+        <a className="customer-logout" href="/giris">
+          <LogOut size={18} />
+          Çıkış yap
+        </a>
+      </aside>
+
+      <section className="customer-main">
+        <header className="customer-hero">
           <div>
             <span className="catering-kicker">
-              <CalendarDays size={16} />
-              Günlük yemek bildirimi
+              <ChefHat size={16} />
+              {formatMonth(serviceDate)} yemek planı
             </span>
-            <h1>{company.name}</h1>
-            <p>{helperText}</p>
+            <h1>Bugün kaç kişilik yemek yiyeceğinizi bildirin.</h1>
+            <p>Girdiğiniz adet catering firmasının panelindeki günlük toplam ve müşteri satırına anında düşer.</p>
           </div>
-          <div className="member-code-pill">Kod: {company.code}</div>
-        </div>
-
-        <div className={`meal-status-card status-${request?.status ?? "empty"}`}>
-          <span>
-            <StatusIcon size={28} />
-          </span>
-          <div>
-            <strong>{status?.label ?? "Bugün için kayıt yok"}</strong>
-            <small>{status?.text ?? "Kişi sayısını gönderdiğinizde catering paneline düşecek."}</small>
-          </div>
-        </div>
-
-        <form className="meal-request-form" onSubmit={submitHeadcount}>
-          <label>
-            <span>Servis tarihi</span>
+          <label className="dashboard-date-filter">
+            <CalendarDays size={17} />
             <input type="date" value={serviceDate} onChange={(event) => setServiceDate(event.target.value)} />
           </label>
-          <label>
-            <span>Bugün kaç kişilik yemek alınacak?</span>
-            <input min={1} type="number" value={headcount} onChange={(event) => setHeadcount(event.target.value)} disabled={!canEditHeadcount} />
-          </label>
-          <label className="meal-note-field">
-            <span>Not</span>
-            <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Örn: 2 vejetaryen porsiyon, teslimat 12:30..." disabled={!canEditHeadcount} />
-          </label>
+        </header>
 
-          {error ? <p className="form-error">{error}</p> : null}
+        <section className="customer-grid" id="gunluk">
+          <article className="today-menu-panel">
+            <span className="catering-kicker">
+              <Utensils size={16} />
+              {formatDate(serviceDate)}
+            </span>
+            <h2>Bugünün yemeği</h2>
+            <div className="today-menu-list">
+              <div>
+                <Soup size={22} />
+                <span>Çorba</span>
+                <strong>{todaysMenu.soup}</strong>
+              </div>
+              <div>
+                <Utensils size={22} />
+                <span>Ana yemek</span>
+                <strong>{todaysMenu.main}</strong>
+              </div>
+              <div>
+                <CheckCircle2 size={22} />
+                <span>Yan ürün</span>
+                <strong>{todaysMenu.side}</strong>
+              </div>
+              <div>
+                <ChefHat size={22} />
+                <span>Tatlı</span>
+                <strong>{todaysMenu.dessert}</strong>
+              </div>
+            </div>
+          </article>
 
-          <div className="meal-form-actions">
-            <button className="catering-primary-button" type="submit" disabled={isSaving || !canEditHeadcount}>
-              <Send size={18} />
-              {request ? "Kişi sayısını güncelle" : "Kişi sayısını gönder"}
-            </button>
-            <button className="catering-secondary-button" type="button" onClick={markEaten} disabled={isSaving || !request || request.status !== "submitted"}>
-              <CheckCircle2 size={18} />
-              Yemek yenildi, tabaklar toplanabilir
-            </button>
+          <article className="headcount-panel">
+            <h2>Günlük yemek adedi</h2>
+            <p>{request ? `Son bildirilen adet: ${request.headcount}` : "Bugün için henüz adet bildirilmedi."}</p>
+
+            <form className="meal-request-form" onSubmit={submitHeadcount}>
+              <label>
+                <span>Bugün kaç kişilik yemek yenilecek?</span>
+                <input min={1} type="number" value={headcount} onChange={(event) => setHeadcount(event.target.value)} />
+              </label>
+              <label>
+                <span>Not</span>
+                <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Örn: 2 vejetaryen, 1 glutensiz, servis 12:30..." />
+              </label>
+              {error ? <p className="form-error">{error}</p> : null}
+              {message ? <p className="form-success">{message}</p> : null}
+              <button className="catering-primary-button" type="submit">
+                <Send size={18} />
+                Catering paneline gönder
+              </button>
+            </form>
+          </article>
+        </section>
+
+        <section className="monthly-menu-section" id="menu">
+          <div className="panel-title-row">
+            <div>
+              <h2>Aylık yemek listesi</h2>
+              <p>Müşteri bu ay hangi gün hangi yemek olduğunu buradan görür.</p>
+            </div>
+            <span className="month-pill">{formatMonth(serviceDate)}</span>
           </div>
-        </form>
+
+          <div className="monthly-menu-grid">
+            {monthlyMenu.map((menuDay) => (
+              <article className={menuDay.date === serviceDate ? "active" : ""} key={menuDay.date}>
+                <time>{formatDate(menuDay.date)}</time>
+                <strong>{menuDay.main}</strong>
+                <span>
+                  {menuDay.soup} · {menuDay.side} · {menuDay.dessert}
+                </span>
+                <small>{menuDay.calories} kcal</small>
+              </article>
+            ))}
+          </div>
+        </section>
       </section>
     </main>
   );

@@ -14,11 +14,17 @@ import {
   RefreshCcw,
   Search,
   Truck,
-  UsersRound,
   Utensils
 } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import type { ClientCompany, MealRequest } from "@/lib/catering-types";
+import {
+  createDemoCompany,
+  listDemoCompanies,
+  listDemoRequests,
+  updateDemoRequestStatus,
+  type DemoCompany,
+  type DemoMealRequest
+} from "@/lib/catering-demo-store";
 
 const statusMeta = {
   submitted: {
@@ -54,8 +60,8 @@ function formatTime(value?: string) {
 }
 
 export function CateringDashboard() {
-  const [companies, setCompanies] = useState<ClientCompany[]>([]);
-  const [requests, setRequests] = useState<MealRequest[]>([]);
+  const [companies, setCompanies] = useState<DemoCompany[]>([]);
+  const [requests, setRequests] = useState<DemoMealRequest[]>([]);
   const [serviceDate, setServiceDate] = useState(todayKey());
   const [companyName, setCompanyName] = useState("");
   const [companyCode, setCompanyCode] = useState("");
@@ -70,8 +76,6 @@ export function CateringDashboard() {
   const activeCompanyCount = companies.filter((company) => company.active).length;
   const totalHeadcount = requests.reduce((sum, request) => sum + request.headcount, 0);
   const submittedCount = requests.filter((request) => request.status === "submitted").length;
-  const collectableCount = requests.filter((request) => request.status === "eaten").length;
-  const collectedCount = requests.filter((request) => request.status === "collected").length;
   const reportedCompanyCount = new Set(requests.map((request) => request.companyId)).size;
   const missingCompanyCount = Math.max(0, activeCompanyCount - reportedCompanyCount);
 
@@ -98,24 +102,11 @@ export function CateringDashboard() {
       });
   }, [requests, searchTerm]);
 
-  async function loadDashboard() {
+  function loadDashboard() {
     setIsLoading(true);
-    const [companiesResponse, requestsResponse] = await Promise.all([
-      fetch("/api/client-companies", { cache: "no-store" }),
-      fetch(`/api/meal-requests?serviceDate=${serviceDate}`, { cache: "no-store" })
-    ]);
-    const companiesPayload = await companiesResponse.json();
-    const requestsPayload = await requestsResponse.json();
-
-    if (companiesResponse.ok) {
-      setCompanies(companiesPayload.companies);
-    }
-
-    if (requestsResponse.ok) {
-      setRequests(requestsPayload.requests);
-      setLastUpdatedAt(formatTime(new Date().toISOString()));
-    }
-
+    setCompanies(listDemoCompanies());
+    setRequests(listDemoRequests({ serviceDate }));
+    setLastUpdatedAt(formatTime(new Date().toISOString()));
     setIsLoading(false);
   }
 
@@ -126,55 +117,36 @@ export function CateringDashboard() {
     return () => window.clearInterval(interval);
   }, [serviceDate]);
 
-  async function createCompany(event: FormEvent<HTMLFormElement>) {
+  function createCompany(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSaving(true);
     setMessage("");
     setError("");
 
-    const response = await fetch("/api/client-companies", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    try {
+      const company = createDemoCompany({
         name: companyName,
         code: companyCode,
         contactName
-      })
-    });
-    const payload = await response.json();
+      });
 
-    if (!response.ok) {
-      setError(payload.message ?? "Şirket üyeliği oluşturulamadı.");
+      setMessage(`${company.name} üyeliği oluşturuldu. Kod: ${company.code}`);
+      setCompanyName("");
+      setCompanyCode("");
+      setContactName("");
+      loadDashboard();
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : "Şirket üyeliği oluşturulamadı.");
+    } finally {
       setIsSaving(false);
-      return;
     }
-
-    setMessage(`${payload.company.name} üyeliği oluşturuldu. Kod: ${payload.company.code}`);
-    setCompanyName("");
-    setCompanyCode("");
-    setContactName("");
-    setIsSaving(false);
-    await loadDashboard();
   }
 
-  async function markCollected(requestNo: string) {
+  function markCollected(requestNo: string) {
     setIsSaving(true);
     setError("");
-
-    const response = await fetch(`/api/meal-requests/${requestNo}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "collected" })
-    });
-    const payload = await response.json();
-
-    if (!response.ok) {
-      setError(payload.message ?? "Toplama durumu güncellenemedi.");
-      setIsSaving(false);
-      return;
-    }
-
-    setRequests((current) => current.map((request) => (request.requestNo === requestNo ? payload.request : request)));
+    const updatedRequest = updateDemoRequestStatus(requestNo, "collected");
+    setRequests((current) => current.map((request) => (request.requestNo === requestNo && updatedRequest ? updatedRequest : request)));
     setIsSaving(false);
   }
 
@@ -201,7 +173,7 @@ export function CateringDashboard() {
         </nav>
 
         <div className="admin-sidebar-summary">
-          <span>Bugünkü toplam</span>
+            <span>Bugünkü toplam</span>
           <strong>{totalHeadcount}</strong>
           <small>yemek / porsiyon</small>
         </div>
@@ -214,8 +186,8 @@ export function CateringDashboard() {
               <Truck size={16} />
               Catering operasyon paneli
             </span>
-            <h1>Günlük yemek adetleri</h1>
-            <p>Müşteri portaldan kaç kişilik yemek alacağını girince bu ekrana otomatik düşer.</p>
+            <h1>Catering yönetim paneli</h1>
+            <p>Üyelikleri oluştur, şirketlerin günlük yemek adetlerini takip et ve operasyonu tek ekrandan yönet.</p>
           </div>
 
           <div className="admin-toolbar">
@@ -237,16 +209,16 @@ export function CateringDashboard() {
             <small>{reportedCompanyCount} müşteri bildirdi</small>
           </article>
           <article>
-            <UsersRound size={24} />
-            <span>Yeni gelen</span>
-            <strong>{submittedCount}</strong>
-            <small>kişi sayısı geldi</small>
+            <Factory size={24} />
+            <span>Üye şirket</span>
+            <strong>{activeCompanyCount}</strong>
+            <small>aktif müşteri hesabı</small>
           </article>
           <article>
             <BadgeCheck size={24} />
-            <span>Toplanabilir</span>
-            <strong>{collectableCount}</strong>
-            <small>tabak bekliyor</small>
+            <span>Bugün bildiren</span>
+            <strong>{submittedCount}</strong>
+            <small>şirketten adet geldi</small>
           </article>
           <article>
             <AlertTriangle size={24} />
@@ -260,8 +232,8 @@ export function CateringDashboard() {
           <article className="catering-panel company-admin-card">
             <div className="panel-title-row">
               <div>
-                <h2>Şirket Üyeliği</h2>
-                <p>Müşteri için giriş kodu oluştur.</p>
+                <h2>Yeni Üyelik Oluştur</h2>
+                <p>Bu kodla şirket giriş ekranından müşteri paneline girer.</p>
               </div>
               <Plus size={20} />
             </div>
@@ -286,6 +258,16 @@ export function CateringDashboard() {
                 Üyelik oluştur
               </button>
             </form>
+
+            <div className="company-mini-list">
+              <span>Aktif üyeler</span>
+              {companies.slice(0, 4).map((company) => (
+                <div key={company.id}>
+                  <strong>{company.name}</strong>
+                  <small>{company.code}</small>
+                </div>
+              ))}
+            </div>
           </article>
 
           <article className="catering-panel daily-orders-panel">
@@ -335,7 +317,7 @@ export function CateringDashboard() {
                         {statusMeta[request.status].label}
                       </span>
 
-                      <small className="order-time-cell">{formatTime(request.submittedAt)}</small>
+                      <small className="order-time-cell">{formatTime(request.updatedAt)}</small>
 
                       <button className="catering-secondary-button" type="button" onClick={() => markCollected(request.requestNo)} disabled={isSaving || request.status !== "eaten"}>
                         <CheckCircle2 size={17} />

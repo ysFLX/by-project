@@ -1,38 +1,57 @@
-import { ArrowRight, Building2, KeyRound } from "lucide-react";
+import { ArrowRight, Building2, KeyRound, ShieldCheck, Sparkles } from "lucide-react";
 import type { FormEvent } from "react";
 import { useState } from "react";
-
-function normalizeCode(value: string) {
-  return value.trim().toLocaleLowerCase("tr-TR").replace(/\s+/g, "-");
-}
+import { getDemoCompanyByCode, normalizeCode } from "../lib/demo-store";
 
 export function CompanyLogin() {
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState("aytek");
   const [error, setError] = useState("");
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const normalizedCode = normalizeCode(code);
+    const company = getDemoCompanyByCode(normalizedCode);
 
     if (!normalizedCode) {
       setError("Üyelik kodunu girmen gerekiyor.");
       return;
     }
 
-    window.location.href = `/uye/${encodeURIComponent(normalizedCode)}`;
+    if (!company) {
+      setError("Bu kodla kayıtlı aktif şirket bulunamadı. Demo için aytek kodunu deneyebilirsin.");
+      return;
+    }
+
+    window.location.href = `/uye/${encodeURIComponent(company.code)}`;
   }
 
   return (
-    <main className="catering-auth-shell">
-      <section className="catering-auth-card">
-        <span className="catering-kicker">
-          <Building2 size={16} />
-          Şirket üyelik girişi
-        </span>
-        <h1>Bugünkü yemek kişi sayınızı bildirin.</h1>
-        <p>Catering firmanızın size verdiği üyelik koduyla girin, kişi sayısını gönderin ve yemek sonrası toplama onayı verin.</p>
+    <main className="catering-auth-shell portal-login-shell">
+      <section className="portal-login-card">
+        <div className="portal-login-visual">
+          <span className="catering-kicker">
+            <Sparkles size={16} />
+            Şirket müşteri portalı
+          </span>
+          <h1>Günlük yemek bildirimi için giriş yap.</h1>
+          <p>Size verilen üyelik koduyla girin; bugünkü kişi sayısını ve aylık yemek listesini kendi panelinizden yönetin.</p>
 
-        <form className="catering-auth-form" onSubmit={handleSubmit}>
+          <div className="login-proof-grid">
+            <article>
+              <ShieldCheck size={22} />
+              <strong>Üyelik kodu</strong>
+              <span>Catering panelinden oluşturulur</span>
+            </article>
+            <article>
+              <Building2 size={22} />
+              <strong>Müşteri paneli</strong>
+              <span>Günlük adet ve aylık menü</span>
+            </article>
+          </div>
+        </div>
+
+        <form className="catering-auth-form portal-login-form" onSubmit={handleSubmit}>
+          <span className="catering-kicker">Giriş</span>
           <label>
             <span>Üyelik kodu</span>
             <div>
@@ -42,9 +61,10 @@ export function CompanyLogin() {
           </label>
           {error ? <p className="form-error">{error}</p> : null}
           <button className="catering-primary-button" type="submit">
-            Giriş yap
+            Müşteri paneline gir
             <ArrowRight size={18} />
           </button>
+          <small>Demo kodları: aytek, kuzey-lojistik, orion-tekstil</small>
         </form>
       </section>
     </main>
