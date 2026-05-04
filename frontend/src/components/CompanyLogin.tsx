@@ -1,28 +1,30 @@
-import { ArrowRight, Building2, KeyRound, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, Building2, LockKeyhole, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import type { FormEvent } from "react";
 import { useState } from "react";
-import { getDemoCompanyByCode, normalizeCode } from "../lib/demo-store";
+import { authenticateDemoUser } from "../lib/demo-store";
 
 export function CompanyLogin() {
-  const [code, setCode] = useState("aytek");
+  const [username, setUsername] = useState("admin");
+  const [password, setPassword] = useState("admin123");
   const [error, setError] = useState("");
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const normalizedCode = normalizeCode(code);
-    const company = getDemoCompanyByCode(normalizedCode);
+    setError("");
 
-    if (!normalizedCode) {
-      setError("Üyelik kodunu girmen gerekiyor.");
+    const user = authenticateDemoUser({ username, password });
+
+    if (!user) {
+      setError("Kullanıcı adı veya şifre hatalı.");
       return;
     }
 
-    if (!company) {
-      setError("Bu kodla kayıtlı aktif şirket bulunamadı. Demo için aytek kodunu deneyebilirsin.");
+    if (user.role === "admin") {
+      window.location.href = "/catering";
       return;
     }
 
-    window.location.href = `/uye/${encodeURIComponent(company.code)}`;
+    window.location.href = `/uye/${encodeURIComponent(user.companyCode ?? "")}`;
   }
 
   return (
@@ -31,21 +33,21 @@ export function CompanyLogin() {
         <div className="portal-login-visual">
           <span className="catering-kicker">
             <Sparkles size={16} />
-            Şirket müşteri portalı
+            Tek giriş ekranı
           </span>
-          <h1>Günlük yemek bildirimi için giriş yap.</h1>
-          <p>Size verilen üyelik koduyla girin; bugünkü kişi sayısını ve aylık yemek listesini kendi panelinizden yönetin.</p>
+          <h1>Rolüne göre doğru panele gir.</h1>
+          <p>Admin hesabı catering yönetim paneline, müşteri hesabı kendi şirket paneline yönlendirilir.</p>
 
           <div className="login-proof-grid">
             <article>
               <ShieldCheck size={22} />
-              <strong>Üyelik kodu</strong>
-              <span>Catering panelinden oluşturulur</span>
+              <strong>Admin</strong>
+              <span>Üyelik oluşturur ve günlük adetleri görür</span>
             </article>
             <article>
               <Building2 size={22} />
-              <strong>Müşteri paneli</strong>
-              <span>Günlük adet ve aylık menü</span>
+              <strong>Müşteri</strong>
+              <span>Günlük kişi sayısı ve aylık menü</span>
             </article>
           </div>
         </div>
@@ -53,18 +55,25 @@ export function CompanyLogin() {
         <form className="catering-auth-form portal-login-form" onSubmit={handleSubmit}>
           <span className="catering-kicker">Giriş</span>
           <label>
-            <span>Üyelik kodu</span>
+            <span>Kullanıcı adı</span>
             <div>
-              <KeyRound size={18} />
-              <input value={code} onChange={(event) => setCode(event.target.value)} placeholder="ornek-sirket-kodu" />
+              <UserRound size={18} />
+              <input value={username} onChange={(event) => setUsername(event.target.value)} placeholder="admin" />
+            </div>
+          </label>
+          <label>
+            <span>Şifre</span>
+            <div>
+              <LockKeyhole size={18} />
+              <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••" />
             </div>
           </label>
           {error ? <p className="form-error">{error}</p> : null}
           <button className="catering-primary-button" type="submit">
-            Müşteri paneline gir
+            Giriş yap
             <ArrowRight size={18} />
           </button>
-          <small>Demo kodları: aytek, kuzey-lojistik, orion-tekstil</small>
+          <small>Demo: admin/admin123 veya aytek/123456</small>
         </form>
       </section>
     </main>

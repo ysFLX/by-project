@@ -31,6 +31,14 @@ type DemoState = {
   nextRequest: number;
 };
 
+export type DemoUser = {
+  username: string;
+  password: string;
+  role: "admin" | "customer";
+  companyCode?: string;
+  displayName: string;
+};
+
 const storageKey = "by-catering-frontend-demo";
 
 const seedCompanies: DemoCompany[] = [
@@ -81,6 +89,36 @@ const seedRequests: DemoMealRequest[] = [
     headcount: 68,
     status: "submitted",
     updatedAt: "2026-05-04T08:41:00.000Z"
+  }
+];
+
+const demoUsers: DemoUser[] = [
+  {
+    username: "admin",
+    password: "admin123",
+    role: "admin",
+    displayName: "Maharet Catering"
+  },
+  {
+    username: "aytek",
+    password: "123456",
+    role: "customer",
+    companyCode: "aytek",
+    displayName: "Aytek Yazılım"
+  },
+  {
+    username: "kuzey",
+    password: "123456",
+    role: "customer",
+    companyCode: "kuzey-lojistik",
+    displayName: "Kuzey Lojistik"
+  },
+  {
+    username: "orion",
+    password: "123456",
+    role: "customer",
+    companyCode: "orion-tekstil",
+    displayName: "Orion Tekstil"
   }
 ];
 
@@ -187,6 +225,26 @@ export function listDemoCompanies() {
 export function getDemoCompanyByCode(code: string) {
   const normalizedCode = normalizeCode(code);
   return getDemoState().companies.find((company) => company.code === normalizedCode && company.active) ?? null;
+}
+
+export function authenticateDemoUser(input: { username: string; password: string }) {
+  const username = input.username.trim().toLocaleLowerCase("tr-TR");
+  const password = input.password.trim();
+  const user = demoUsers.find((item) => item.username === username && item.password === password) ?? null;
+
+  if (!user) {
+    return null;
+  }
+
+  if (user.role === "customer" && (!user.companyCode || !getDemoCompanyByCode(user.companyCode))) {
+    return null;
+  }
+
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem("by-catering-demo-session", JSON.stringify({ username: user.username, role: user.role, companyCode: user.companyCode }));
+  }
+
+  return user;
 }
 
 export function createDemoCompany(input: { name: string; code?: string; contactName?: string }) {
