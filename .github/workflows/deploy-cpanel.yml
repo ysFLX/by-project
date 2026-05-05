@@ -54,13 +54,27 @@ jobs:
           FTP_PORT: ${{ secrets.FTP_PORT }}
           FTP_SERVER_DIR: ${{ secrets.FTP_SERVER_DIR }}
         run: |
-          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" -p "${FTP_PORT:-21}" "$FTP_SERVER" <<EOF
+          for attempt in 1 2 3; do
+            if lftp -u "$FTP_USERNAME","$FTP_PASSWORD" -p "${FTP_PORT:-21}" "$FTP_SERVER" <<EOF
           set ftp:ssl-force true
           set ftp:ssl-protect-data true
           set ftp:passive-mode true
-          set ssl:verify-certificate no
+          set ftp:sync-mode true
+          set cmd:parallel 1
           set net:timeout 30
-          set net:max-retries 2
-          mirror --reverse --delete --verbose frontend/dist/ "$FTP_SERVER_DIR"
+          set net:max-retries 1
+          set net:reconnect-interval-base 20
+          set net:reconnect-interval-multiplier 2
+          set ssl:verify-certificate no
+          mirror --reverse --delete --verbose --parallel=1 frontend/dist/ "$FTP_SERVER_DIR"
           bye
           EOF
+            then
+              exit 0
+            fi
+
+            echo "FTP server rejected the upload, waiting before retry $attempt/3..."
+            sleep 90
+          done
+
+          exit 1
