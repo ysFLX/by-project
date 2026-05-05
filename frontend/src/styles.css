@@ -54,7 +54,7 @@ a {
 
 .catering-home-shell,
 .catering-dashboard-shell {
-  padding: 28px;
+  padding: 22px;
 }
 
 .catering-home-nav,
@@ -79,9 +79,9 @@ a {
 .catering-home-nav {
   background: rgba(255, 252, 244, 0.74);
   border: 1px solid rgba(29, 78, 50, 0.14);
-  border-radius: 30px;
+  border-radius: 24px;
   box-shadow: 0 18px 50px rgba(37, 55, 42, 0.08);
-  padding: 12px 14px;
+  padding: 10px 12px;
 }
 
 .catering-brand,
@@ -101,14 +101,14 @@ a {
 .catering-brand > span {
   align-items: center;
   background: #1f6f46;
-  border-radius: 18px;
+  border-radius: 14px;
   color: #fff8e8;
   display: inline-flex;
   font-weight: 900;
-  height: 48px;
+  height: 44px;
   justify-content: center;
-  letter-spacing: -0.08em;
-  width: 48px;
+  letter-spacing: 0;
+  width: 44px;
 }
 
 .catering-brand strong,
@@ -189,9 +189,9 @@ a {
 .catering-hero-section {
   align-items: stretch;
   display: grid;
-  gap: 28px;
-  grid-template-columns: minmax(0, 1.15fr) minmax(340px, 0.85fr);
-  padding: 76px 0 32px;
+  gap: 22px;
+  grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.72fr);
+  padding: 54px 0 18px;
 }
 
 .catering-hero-copy,
@@ -202,12 +202,13 @@ a {
   backdrop-filter: blur(18px);
   background: rgba(255, 252, 244, 0.78);
   border: 1px solid rgba(29, 78, 50, 0.14);
-  border-radius: 34px;
+  border-radius: 24px;
   box-shadow: 0 24px 70px rgba(37, 55, 42, 0.1);
 }
 
 .catering-hero-copy {
-  padding: clamp(32px, 6vw, 68px);
+  display: grid;
+  padding: clamp(30px, 5vw, 54px);
 }
 
 .catering-kicker {
@@ -221,32 +222,31 @@ a {
 }
 
 .catering-hero-copy h1 {
-  font-size: clamp(2.6rem, 6vw, 5.5rem);
-  letter-spacing: -0.08em;
-  line-height: 0.9;
-  margin: 20px 0;
-  max-width: 920px;
+  font-size: 4.35rem;
+  letter-spacing: 0;
+  line-height: 0.94;
+  margin: 18px 0;
+  max-width: 780px;
 }
 
 .catering-hero-copy p {
-  font-size: 1.08rem;
-  line-height: 1.75;
-  margin: 0 0 28px;
-  max-width: 760px;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  margin: 0 0 24px;
+  max-width: 680px;
 }
 
 .catering-live-card {
-  align-content: space-between;
   display: grid;
-  gap: 24px;
-  padding: 28px;
+  gap: 16px;
+  padding: 22px;
 }
 
 .live-card-top {
   background: #173f2a;
-  border-radius: 26px;
+  border-radius: 18px;
   color: #fff8e8;
-  padding: 26px;
+  padding: 22px;
 }
 
 .live-card-top span,
@@ -255,8 +255,8 @@ a {
 }
 
 .live-card-top strong {
-  font-size: 2rem;
-  letter-spacing: -0.04em;
+  font-size: 1.75rem;
+  letter-spacing: 0;
   margin-top: 8px;
 }
 
@@ -277,13 +277,34 @@ a {
 }
 
 .live-card-grid article {
-  padding: 20px;
+  align-items: flex-start;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 28px minmax(0, 1fr);
+  padding: 16px;
 }
 
 .live-card-grid svg,
 .catering-flow-grid svg,
 .catering-metric-grid svg {
   color: #c77729;
+}
+
+.live-card-grid small,
+.live-card-note {
+  color: #61705d;
+  display: block;
+}
+
+.live-card-note {
+  align-items: center;
+  background: rgba(31, 111, 70, 0.08);
+  border: 1px solid rgba(29, 78, 50, 0.1);
+  border-radius: 16px;
+  display: flex;
+  font-weight: 900;
+  gap: 10px;
+  padding: 14px 16px;
 }
 
 .catering-metric-strip,
@@ -295,29 +316,29 @@ a {
 
 .catering-metric-strip {
   grid-template-columns: repeat(4, 1fr);
-  padding: 18px 0 26px;
+  padding: 14px 0 18px;
 }
 
 .catering-metric-strip article,
 .catering-metric-grid article {
-  padding: 20px;
+  padding: 18px;
 }
 
 .catering-metric-strip strong,
 .catering-metric-grid strong {
   display: block;
-  font-size: 2rem;
-  letter-spacing: -0.06em;
+  font-size: 1.85rem;
+  letter-spacing: 0;
 }
 
 .catering-flow-grid {
   grid-template-columns: repeat(4, 1fr);
-  padding-bottom: 56px;
+  padding-bottom: 34px;
 }
 
 .catering-flow-grid article {
-  min-height: 230px;
-  padding: 24px;
+  min-height: 190px;
+  padding: 20px;
   position: relative;
 }
 
@@ -332,7 +353,7 @@ a {
 
 .catering-flow-grid strong {
   font-size: 1.15rem;
-  margin: 38px 0 10px;
+  margin: 34px 0 10px;
 }
 
 .catering-auth-shell,
@@ -629,8 +650,27 @@ a {
     flex-wrap: wrap;
   }
 
+  .catering-hero-section {
+    padding-top: 28px;
+  }
+
+  .catering-hero-copy h1 {
+    font-size: 3rem;
+  }
+
   .member-code-pill {
     width: fit-content;
+  }
+}
+
+@media (max-width: 560px) {
+  .catering-hero-copy h1 {
+    font-size: 2.35rem;
+  }
+
+  .catering-hero-copy,
+  .catering-live-card {
+    padding: 18px;
   }
 }
 

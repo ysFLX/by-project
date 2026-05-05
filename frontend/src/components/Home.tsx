@@ -1,33 +1,50 @@
-import { ArrowRight, BadgeCheck, Building2, CalendarCheck2, ClipboardList, PackageCheck, Truck, UsersRound } from "lucide-react";
+import {
+  ArrowRight,
+  BadgeCheck,
+  Building2,
+  CalendarCheck2,
+  CheckCircle2,
+  ClipboardList,
+  Clock3,
+  PackageCheck,
+  Truck,
+  UsersRound
+} from "lucide-react";
 
 const flow = [
   {
     icon: Building2,
-    title: "Şirket üyeliği ver",
-    text: "Catering firması yemek verdiği her şirkete tek bir üyelik kodu oluşturur."
+    title: "Şirketleri tanımla",
+    text: "Her müşteriye özel giriş kodu ver; kişi sayısı ve durumlar tek panelde toplansın."
   },
   {
     icon: UsersRound,
-    title: "Günlük kişi sayısı gelsin",
-    text: "Şirket sabah siteye girip bugün kaç kişilik yemek alacağını bildirir."
+    title: "Sabah adetini al",
+    text: "Şirketler günlük yemek sayısını girer, mutfak toplam porsiyonu net görür."
   },
   {
     icon: BadgeCheck,
-    title: "Yemek yenildi onayı",
-    text: "Yemekten sonra şirket tek tuşla tabakların toplanabilir olduğunu işaretler."
+    title: "Yenildi bilgisini izle",
+    text: "Yemekten sonra firmalar tek dokunuşla toplama hazır bilgisini gönderir."
   },
   {
     icon: PackageCheck,
-    title: "Toplama operasyonu",
-    text: "Catering ekibi hangi şirketten boş tabak toplanacağını panelden görür."
+    title: "Toplama sırasını yönet",
+    text: "Ekip hangi noktaya gideceğini, hangisinin beklediğini ve hangisinin bittiğini bilir."
   }
 ];
 
 const metrics = [
-  { value: "B2B", label: "catering odağı" },
-  { value: "1 kod", label: "şirket üyeliği" },
-  { value: "2 adım", label: "adet + yenildi" },
-  { value: "canlı", label: "operasyon paneli" }
+  { value: "42", label: "bugünkü porsiyon" },
+  { value: "8", label: "aktif şirket" },
+  { value: "5", label: "toplama bekliyor" },
+  { value: "2 dk", label: "günlük giriş süresi" }
+];
+
+const timeline = [
+  { icon: CalendarCheck2, time: "08:30", title: "Kişi sayısı alındı", detail: "Beyaz Plaza 18 porsiyon" },
+  { icon: ClipboardList, time: "11:45", title: "Dağıtım planlandı", detail: "3 rota, 8 teslimat noktası" },
+  { icon: CheckCircle2, time: "13:20", title: "Yenildi onayı geldi", detail: "5 şirket toplama bekliyor" }
 ];
 
 export function Home() {
@@ -55,10 +72,10 @@ export function Home() {
             <Truck size={16} />
             Şirketlere yemek dağıtan firmalar için
           </span>
-          <h1>Her sabah kaç porsiyon çıkacağını net gör, yemekten sonra toplama sırasını kaçırma.</h1>
+          <h1>Günlük porsiyon ve toplama takibini tek ekranda yönet.</h1>
           <p>
-            Şirket üyeliği üzerinden çalışan sade bir catering akışı: şirket kişi sayısını girer, catering porsiyonu
-            planlar, yemek sonrası tabak toplama onayı düşer.
+            Müşteri şirketler sabah kişi sayısını girer. Catering ekibi toplam porsiyonu, yenildi onaylarını ve toplama
+            sırasını canlı panelden takip eder.
           </p>
           <div className="catering-hero-actions">
             <a className="catering-primary-button" href="/catering">
@@ -74,24 +91,27 @@ export function Home() {
         <aside className="catering-live-card" aria-label="Catering operasyon özeti">
           <div className="live-card-top">
             <span>Bugünkü operasyon</span>
-            <strong>Yemek dağıtımı</strong>
+            <strong>Dağıtım durumu</strong>
           </div>
           <div className="live-card-grid">
-            <article>
-              <CalendarCheck2 size={20} />
-              <span>Sabah</span>
-              <strong>Kişi sayısı</strong>
-            </article>
-            <article>
-              <ClipboardList size={20} />
-              <span>Öğlen</span>
-              <strong>Porsiyon planı</strong>
-            </article>
-            <article>
-              <PackageCheck size={20} />
-              <span>Yemek sonrası</span>
-              <strong>Toplanabilir</strong>
-            </article>
+            {timeline.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <article key={item.title}>
+                  <Icon size={20} />
+                  <div>
+                    <span>{item.time}</span>
+                    <strong>{item.title}</strong>
+                    <small>{item.detail}</small>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+          <div className="live-card-note">
+            <Clock3 size={18} />
+            <span>Son güncelleme: bugün 13:24</span>
           </div>
         </aside>
       </section>
