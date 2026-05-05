@@ -355,9 +355,9 @@ export function CateringDashboard() {
     <main className="catering-dashboard-shell admin-dashboard-shell">
       <aside className="admin-sidebar">
         <a className="catering-brand admin-brand" href="/">
-          <span>BY</span>
+          <span>MY</span>
           <div>
-            <strong>Catering</strong>
+            <strong>Maharet Yemek</strong>
             <small>Admin panel</small>
           </div>
         </a>

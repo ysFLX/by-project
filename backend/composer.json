@@ -1,8 +1,8 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "by-catering/backend",
+    "name": "maharet-yemek/backend",
     "type": "project",
-    "description": "BY Catering Laravel API.",
+    "description": "Maharet Yemek Laravel API.",
     "keywords": ["laravel", "api", "catering"],
     "license": "MIT",
     "require": {

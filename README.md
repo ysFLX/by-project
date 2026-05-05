@@ -1,4 +1,4 @@
-# BY Catering
+# Maharet Yemek
 
 React frontend ve Laravel API iki temiz klasorde tutulur:
 
@@ -36,9 +36,15 @@ MySQL ayarlari `backend/.env.example` icinde hazir:
 
 ```env
 DB_CONNECTION=mysql
-DB_DATABASE=by_catering
-DB_USERNAME=root
+DB_DATABASE=maharet_yemek
+DB_USERNAME=maharet_user
 DB_PASSWORD=
+```
+
+cPanel kurulum notları için:
+
+```text
+backend/DEPLOY-CPANEL.md
 ```
 
 ## Akis

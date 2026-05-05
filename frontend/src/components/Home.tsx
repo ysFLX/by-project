@@ -95,9 +95,9 @@ export function Home() {
     <main className="catering-home-shell">
       <nav className="catering-home-nav" aria-label="Ana navigasyon">
         <a className="catering-brand" href="/">
-          <span>BY</span>
+          <span>MY</span>
           <div>
-            <strong>BY Catering</strong>
+            <strong>Maharet Yemek</strong>
             <small>Kurumsal yemek operasyonu</small>
           </div>
         </a>
@@ -253,7 +253,7 @@ export function Home() {
           </span>
           <h2>Telefon, mesaj ve defter arasında kalan günlük operasyonu tek düzene indir.</h2>
           <p>
-            BY Catering, şirket yemek hizmetinde en çok kaçan dört noktayı sade bir akışa bağlar: adet bildirimi,
+            Maharet Yemek, şirket yemek hizmetinde en çok kaçan dört noktayı sade bir akışa bağlar: adet bildirimi,
             dağıtım planı, yenildi onayı ve tabak toplama.
           </p>
         </div>

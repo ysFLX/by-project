@@ -46,7 +46,7 @@ type DemoState = {
   nextRequest: number;
 };
 
-const storageKey = "by-catering-frontend-demo";
+const storageKey = "maharet-yemek-frontend-demo";
 
 const seedCompanies: DemoCompany[] = [
   {
@@ -122,7 +122,7 @@ const seedUsers: DemoUser[] = [
     username: "admin",
     password: "admin123",
     role: "admin",
-    displayName: "BY Catering"
+    displayName: "Maharet Yemek"
   },
   {
     username: "aytek",
@@ -274,7 +274,7 @@ export function authenticateDemoUser(input: { username: string; password: string
     return null;
   }
 
-  window.localStorage.setItem("by-catering-demo-session", JSON.stringify({ username: user.username, role: user.role, companyCode: user.companyCode }));
+  window.localStorage.setItem("maharet-yemek-demo-session", JSON.stringify({ username: user.username, role: user.role, companyCode: user.companyCode }));
   return user;
 }
 
