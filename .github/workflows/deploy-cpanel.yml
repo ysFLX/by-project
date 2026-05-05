@@ -1,9 +1,6 @@
 name: Deploy cPanel frontend
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
