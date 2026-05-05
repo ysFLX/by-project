@@ -2,22 +2,27 @@
 
 Bu dosya backend tarafini cPanel MySQL ile calistirmak icin kisa kontroldur.
 
-## Onerilen Klasor Duzeni
+## Gecici Klasor Duzeni
 
-En temiz kurulum:
+Subdomain DNS beklemeden calismak icin gecici kurulum:
 
 ```text
 /home/catering/maharet-api
-/home/catering/maharet-api/public
+/home/catering/public_html/backend
 ```
 
-cPanel'de `api.cateringhizmet.com.tr` subdomain'i olusturup document root olarak sunu sec:
+Laravel dosyalarinin tamami `maharet-api` icinde kalir. Ana sitenin altinda sadece public giris dosyalari bulunur:
 
 ```text
-/home/catering/maharet-api/public
+/home/catering/public_html/backend/index.php
+/home/catering/public_html/backend/.htaccess
 ```
 
-Laravel dosyalarinin tamami `maharet-api` icinde kalir, internete sadece `public` klasoru acilir.
+Test adresi:
+
+```text
+https://cateringhizmet.com.tr/backend/api/health
+```
 
 ## 1. Ortam Dosyasi
 
@@ -70,7 +75,7 @@ meal_request_counters
 API calisinca su endpoint veritabani baglantisini da test eder:
 
 ```text
-https://api.cateringhizmet.com.tr/api/health
+https://cateringhizmet.com.tr/backend/api/health
 ```
 
 Beklenen cevap:
@@ -88,7 +93,7 @@ Beklenen cevap:
 Frontend `.env` dosyasinda API adresi backend domainine cevrilmeli:
 
 ```env
-VITE_API_BASE_URL=https://api.cateringhizmet.com.tr/api
+VITE_API_BASE_URL=https://cateringhizmet.com.tr/backend/api
 ```
 
 Sonra frontend icin tekrar `npm run build` alinir.
