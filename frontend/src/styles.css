@@ -144,6 +144,10 @@ a {
   text-decoration: none;
 }
 
+.catering-home-nav a.catering-nav-button {
+  color: #fff8e8;
+}
+
 .catering-nav-button,
 .catering-primary-button,
 .catering-secondary-button {
@@ -454,6 +458,102 @@ a {
   gap: 18px;
   grid-template-columns: minmax(0, 1fr) minmax(330px, 0.44fr);
   padding: 6px 0 18px;
+}
+
+.catering-detail-section,
+.daily-checklist-grid {
+  display: grid;
+  gap: 18px;
+  margin: 0;
+  max-width: none;
+}
+
+.catering-detail-section {
+  grid-template-columns: minmax(0, 0.9fr) minmax(420px, 0.7fr);
+  padding: 0 0 18px;
+}
+
+.catering-detail-copy,
+.catering-pain-list article,
+.daily-checklist-grid article {
+  background: rgba(255, 252, 244, 0.78);
+  border: 1px solid rgba(29, 78, 50, 0.14);
+  border-radius: 8px;
+  box-shadow: 0 18px 48px rgba(37, 55, 42, 0.08);
+}
+
+.catering-detail-copy {
+  padding: clamp(26px, 4vw, 44px);
+}
+
+.catering-detail-copy h2 {
+  font-size: 2.8rem;
+  line-height: 1.05;
+  margin: 12px 0 16px;
+  max-width: 860px;
+}
+
+.catering-detail-copy p {
+  color: #61705d;
+  font-size: 1.04rem;
+  line-height: 1.7;
+  margin: 0;
+  max-width: 780px;
+}
+
+.catering-pain-list {
+  display: grid;
+  gap: 12px;
+}
+
+.catering-pain-list article {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 28px minmax(0, 1fr);
+  padding: 18px;
+}
+
+.catering-pain-list svg {
+  color: #1f6f46;
+}
+
+.catering-pain-list span {
+  font-weight: 900;
+}
+
+.daily-checklist-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 0 0 18px;
+}
+
+.daily-checklist-grid article {
+  display: grid;
+  gap: 10px;
+  min-height: 168px;
+  padding: 20px;
+}
+
+.daily-checklist-grid article > span {
+  align-items: center;
+  background: #173f2a;
+  border-radius: 999px;
+  color: #fff8e8;
+  display: inline-flex;
+  font-weight: 900;
+  height: 34px;
+  justify-content: center;
+  width: 34px;
+}
+
+.daily-checklist-grid strong {
+  font-size: 1.18rem;
+}
+
+.daily-checklist-grid p {
+  color: #61705d;
+  line-height: 1.55;
+  margin: 0;
 }
 
 .catering-ops-table,
@@ -858,9 +958,11 @@ a {
 
   .catering-hero-section,
   .catering-ops-section,
+  .catering-detail-section,
   .catering-dashboard-grid,
   .catering-metric-strip,
   .catering-flow-grid,
+  .daily-checklist-grid,
   .catering-metric-grid {
     grid-template-columns: 1fr;
   }

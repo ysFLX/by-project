@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   ClipboardList,
   Clock3,
+  FileSpreadsheet,
   MapPin,
   PackageCheck,
   Route,
@@ -19,12 +20,12 @@ const flow = [
   {
     icon: Building2,
     title: "Şirketleri tanımla",
-    text: "Her müşteriye özel giriş kodu ver; kişi sayısı ve durumlar tek panelde toplansın.",
+    text: "Her müşteriye özel giriş kodu ver; kişi sayısı, adres, yetkili ve teslimat notu tek yerde toplansın.",
   },
   {
     icon: UsersRound,
     title: "Sabah adetini al",
-    text: "Şirketler günlük yemek sayısını girer, mutfak toplam porsiyonu net görür.",
+    text: "Şirketler günlük yemek sayısını girer, mutfak toplam porsiyonu erken saatte net görür.",
   },
   {
     icon: BadgeCheck,
@@ -39,67 +40,22 @@ const flow = [
 ];
 
 const metrics = [
-  {
-    value: "42",
-    label: "bugünkü porsiyon",
-    hint: "Sabah bildirilen toplam adet",
-  },
+  { value: "42", label: "bugünkü porsiyon", hint: "Sabah bildirilen toplam adet" },
   { value: "8", label: "aktif şirket", hint: "Günlük sipariş veren müşteri" },
-  {
-    value: "5",
-    label: "toplama bekliyor",
-    hint: "Yenildi onayı gelen noktalar",
-  },
-  {
-    value: "2 dk",
-    label: "günlük giriş süresi",
-    hint: "Şirketlerin ortalama bildirimi",
-  },
+  { value: "5", label: "toplama bekliyor", hint: "Yenildi onayı gelen noktalar" },
+  { value: "2 dk", label: "günlük giriş süresi", hint: "Şirketlerin ortalama bildirimi" },
 ];
 
 const timeline = [
-  {
-    icon: CalendarCheck2,
-    time: "08:30",
-    title: "Kişi sayısı alındı",
-    detail: "Beyaz Plaza 18 porsiyon",
-    tone: "ready",
-  },
-  {
-    icon: ClipboardList,
-    time: "11:45",
-    title: "Dağıtım planlandı",
-    detail: "3 rota, 8 teslimat noktası",
-    tone: "active",
-  },
-  {
-    icon: CheckCircle2,
-    time: "13:20",
-    title: "Yenildi onayı geldi",
-    detail: "5 şirket toplama bekliyor",
-    tone: "done",
-  },
+  { icon: CalendarCheck2, time: "08:30", title: "Kişi sayısı alındı", detail: "Beyaz Plaza 18 porsiyon", tone: "ready" },
+  { icon: ClipboardList, time: "11:45", title: "Dağıtım planlandı", detail: "3 rota, 8 teslimat noktası", tone: "active" },
+  { icon: CheckCircle2, time: "13:20", title: "Yenildi onayı geldi", detail: "5 şirket toplama bekliyor", tone: "done" },
 ];
 
 const routes = [
-  {
-    company: "Beyaz Plaza",
-    area: "Maslak",
-    count: 18,
-    status: "Toplama hazır",
-  },
-  {
-    company: "Nova Yazılım",
-    area: "Ataşehir",
-    count: 12,
-    status: "Yemek dağıtıldı",
-  },
-  {
-    company: "Kuzey Lojistik",
-    area: "İkitelli",
-    count: 7,
-    status: "Porsiyon bekliyor",
-  },
+  { company: "Beyaz Plaza", area: "Maslak", count: 18, status: "Toplama hazır" },
+  { company: "Nova Yazılım", area: "Ataşehir", count: 12, status: "Yemek dağıtıldı" },
+  { company: "Kuzey Lojistik", area: "İkitelli", count: 7, status: "Porsiyon bekliyor" },
 ];
 
 const panels = [
@@ -120,6 +76,20 @@ const panels = [
   },
 ];
 
+const painPoints = [
+  "WhatsApp mesajlarından kişi sayısı toplama",
+  "Hangi şirket yedi, hangisi bekliyor karışıklığı",
+  "Toplama ekibinin sahada yanlış sırayla ilerlemesi",
+  "Gün sonunda porsiyon ve teslimat bilgisinin dağınık kalması",
+];
+
+const dailyChecklist = [
+  { title: "Sabah bildirimleri", text: "Şirketlerden gelen adetler otomatik listelenir." },
+  { title: "Dağıtım kontrolü", text: "Porsiyon planı ve teslimat noktaları aynı tabloda görünür." },
+  { title: "Yemek sonrası", text: "Toplanabilir onayı gelen firmalar ayrı takip edilir." },
+  { title: "Gün sonu kayıt", text: "Hangi şirkete kaç porsiyon gittiği geriye dönük izlenir." },
+];
+
 export function Home() {
   return (
     <main className="catering-home-shell">
@@ -132,10 +102,12 @@ export function Home() {
           </div>
         </a>
         <div>
+          <a href="#akis">Akış</a>
+          <a href="#takip">Canlı takip</a>
           <a href="/giris">Şirket girişi</a>
           <a className="catering-nav-button" href="/catering">
             <Sparkles size={17} />
-            Catering paneli
+            Paneli aç
           </a>
         </div>
       </nav>
@@ -146,13 +118,10 @@ export function Home() {
             <Truck size={16} />
             Şirketlere yemek dağıtan firmalar için
           </span>
-          <h1>
-            Catering operasyonunu sabah adetinden tabak toplamaya kadar yönet.
-          </h1>
+          <h1>Catering operasyonunu sabah adetinden tabak toplamaya kadar yönet.</h1>
           <p>
-            Müşteri şirketler günlük kişi sayısını girer. Sen porsiyonu planlar,
-            teslimat durumunu izler, yemek sonrası toplama listesini aynı
-            ekrandan yönetirsin.
+            Müşteri şirketler günlük kişi sayısını girer. Sen porsiyonu planlar, teslimat durumunu izler, yemek sonrası
+            toplama listesini aynı ekrandan yönetirsin.
           </p>
           <div className="hero-proof-row" aria-label="Operasyon kapsamı">
             <span>Günlük porsiyon</span>
@@ -170,10 +139,7 @@ export function Home() {
           </div>
         </div>
 
-        <aside
-          className="catering-live-card"
-          aria-label="Catering operasyon özeti"
-        >
+        <aside className="catering-live-card" aria-label="Catering operasyon özeti">
           <div className="live-card-top live-dashboard-head">
             <div>
               <span>Bugünkü operasyon</span>
@@ -237,10 +203,7 @@ export function Home() {
         ))}
       </section>
 
-      <section
-        className="catering-ops-section"
-        aria-label="Canlı operasyon görünümü"
-      >
+      <section className="catering-ops-section" id="takip" aria-label="Canlı operasyon görünümü">
         <div className="catering-ops-table">
           <div className="section-title-row">
             <div>
@@ -284,7 +247,39 @@ export function Home() {
         </div>
       </section>
 
-      <section className="catering-flow-grid" aria-label="Catering iş akışı">
+      <section className="catering-detail-section" aria-label="Catering operasyon detayları">
+        <div className="catering-detail-copy">
+          <span className="catering-kicker">
+            <FileSpreadsheet size={16} />
+            Dağınık takibi toparla
+          </span>
+          <h2>Telefon, mesaj ve defter arasında kalan günlük operasyonu tek düzene indir.</h2>
+          <p>
+            BY Catering, şirket yemek hizmetinde en çok kaçan dört noktayı sade bir akışa bağlar: adet bildirimi,
+            dağıtım planı, yenildi onayı ve tabak toplama.
+          </p>
+        </div>
+        <div className="catering-pain-list">
+          {painPoints.map((item) => (
+            <article key={item}>
+              <CheckCircle2 size={20} />
+              <span>{item}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="daily-checklist-grid" aria-label="Günlük kullanım planı">
+        {dailyChecklist.map((item, index) => (
+          <article key={item.title}>
+            <span>{index + 1}</span>
+            <strong>{item.title}</strong>
+            <p>{item.text}</p>
+          </article>
+        ))}
+      </section>
+
+      <section className="catering-flow-grid" id="akis" aria-label="Catering iş akışı">
         {flow.map((item, index) => {
           const Icon = item.icon;
 
