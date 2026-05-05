@@ -12,67 +12,112 @@ import {
   ShieldCheck,
   Sparkles,
   Truck,
-  UsersRound
+  UsersRound,
 } from "lucide-react";
 
 const flow = [
   {
     icon: Building2,
     title: "Şirketleri tanımla",
-    text: "Her müşteriye özel giriş kodu ver; kişi sayısı ve durumlar tek panelde toplansın."
+    text: "Her müşteriye özel giriş kodu ver; kişi sayısı ve durumlar tek panelde toplansın.",
   },
   {
     icon: UsersRound,
     title: "Sabah adetini al",
-    text: "Şirketler günlük yemek sayısını girer, mutfak toplam porsiyonu net görür."
+    text: "Şirketler günlük yemek sayısını girer, mutfak toplam porsiyonu net görür.",
   },
   {
     icon: BadgeCheck,
     title: "Yenildi bilgisini izle",
-    text: "Yemekten sonra firmalar tek dokunuşla toplama hazır bilgisini gönderir."
+    text: "Yemekten sonra firmalar tek dokunuşla toplama hazır bilgisini gönderir.",
   },
   {
     icon: PackageCheck,
     title: "Toplama sırasını yönet",
-    text: "Ekip hangi noktaya gideceğini, hangisinin beklediğini ve hangisinin bittiğini bilir."
-  }
+    text: "Ekip hangi noktaya gideceğini, hangisinin beklediğini ve hangisinin bittiğini bilir.",
+  },
 ];
 
 const metrics = [
-  { value: "42", label: "bugünkü porsiyon", hint: "Sabah bildirilen toplam adet" },
+  {
+    value: "42",
+    label: "bugünkü porsiyon",
+    hint: "Sabah bildirilen toplam adet",
+  },
   { value: "8", label: "aktif şirket", hint: "Günlük sipariş veren müşteri" },
-  { value: "5", label: "toplama bekliyor", hint: "Yenildi onayı gelen noktalar" },
-  { value: "2 dk", label: "günlük giriş süresi", hint: "Şirketlerin ortalama bildirimi" }
+  {
+    value: "5",
+    label: "toplama bekliyor",
+    hint: "Yenildi onayı gelen noktalar",
+  },
+  {
+    value: "2 dk",
+    label: "günlük giriş süresi",
+    hint: "Şirketlerin ortalama bildirimi",
+  },
 ];
 
 const timeline = [
-  { icon: CalendarCheck2, time: "08:30", title: "Kişi sayısı alındı", detail: "Beyaz Plaza 18 porsiyon", tone: "ready" },
-  { icon: ClipboardList, time: "11:45", title: "Dağıtım planlandı", detail: "3 rota, 8 teslimat noktası", tone: "active" },
-  { icon: CheckCircle2, time: "13:20", title: "Yenildi onayı geldi", detail: "5 şirket toplama bekliyor", tone: "done" }
+  {
+    icon: CalendarCheck2,
+    time: "08:30",
+    title: "Kişi sayısı alındı",
+    detail: "Beyaz Plaza 18 porsiyon",
+    tone: "ready",
+  },
+  {
+    icon: ClipboardList,
+    time: "11:45",
+    title: "Dağıtım planlandı",
+    detail: "3 rota, 8 teslimat noktası",
+    tone: "active",
+  },
+  {
+    icon: CheckCircle2,
+    time: "13:20",
+    title: "Yenildi onayı geldi",
+    detail: "5 şirket toplama bekliyor",
+    tone: "done",
+  },
 ];
 
 const routes = [
-  { company: "Beyaz Plaza", area: "Maslak", count: 18, status: "Toplama hazır" },
-  { company: "Nova Yazılım", area: "Ataşehir", count: 12, status: "Yemek dağıtıldı" },
-  { company: "Kuzey Lojistik", area: "İkitelli", count: 7, status: "Porsiyon bekliyor" }
+  {
+    company: "Beyaz Plaza",
+    area: "Maslak",
+    count: 18,
+    status: "Toplama hazır",
+  },
+  {
+    company: "Nova Yazılım",
+    area: "Ataşehir",
+    count: 12,
+    status: "Yemek dağıtıldı",
+  },
+  {
+    company: "Kuzey Lojistik",
+    area: "İkitelli",
+    count: 7,
+    status: "Porsiyon bekliyor",
+  },
 ];
 
 const panels = [
   {
     icon: ShieldCheck,
     title: "Şirket girişleri kontrollü",
-    text: "Her müşteriye özel kod verilir. Kim kaç porsiyon istedi, ne zaman onayladı, panelde kayıtlı kalır."
+    text: "Her müşteriye özel kod verilir. Kim kaç porsiyon istedi, ne zaman onayladı, panelde kayıtlı kalır.",
   },
   {
     icon: Route,
     title: "Ekip için net sıra",
-    text: "Toplama bekleyen şirketler ayrılır; ekip boş tabak için nereye gideceğini liste halinde görür."
+    text: "Toplama bekleyen şirketler ayrılır; ekip boş tabak için nereye gideceğini liste halinde görür.",
   },
   {
     icon: MapPin,
     title: "Adres ve notlar tek yerde",
-    text: "Şirket adresi, yetkili kişi, telefon ve teslimat notu operasyon ekranından takip edilir."
-  }
+    text: "Şirket adresi, yetkili kişi, telefon ve teslimat notu operasyon ekranından takip edilir.",
+  },
 ];
 
 export function Home() {
@@ -101,10 +146,13 @@ export function Home() {
             <Truck size={16} />
             Şirketlere yemek dağıtan firmalar için
           </span>
-          <h1>Catering operasyonunu sabah adetinden tabak toplamaya kadar yönet.</h1>
+          <h1>
+            Catering operasyonunu sabah adetinden tabak toplamaya kadar yönet.
+          </h1>
           <p>
-            Müşteri şirketler günlük kişi sayısını girer. Sen porsiyonu planlar, teslimat durumunu izler, yemek sonrası
-            toplama listesini aynı ekrandan yönetirsin.
+            Müşteri şirketler günlük kişi sayısını girer. Sen porsiyonu planlar,
+            teslimat durumunu izler, yemek sonrası toplama listesini aynı
+            ekrandan yönetirsin.
           </p>
           <div className="hero-proof-row" aria-label="Operasyon kapsamı">
             <span>Günlük porsiyon</span>
@@ -122,7 +170,10 @@ export function Home() {
           </div>
         </div>
 
-        <aside className="catering-live-card" aria-label="Catering operasyon özeti">
+        <aside
+          className="catering-live-card"
+          aria-label="Catering operasyon özeti"
+        >
           <div className="live-card-top live-dashboard-head">
             <div>
               <span>Bugünkü operasyon</span>
@@ -186,7 +237,10 @@ export function Home() {
         ))}
       </section>
 
-      <section className="catering-ops-section" aria-label="Canlı operasyon görünümü">
+      <section
+        className="catering-ops-section"
+        aria-label="Canlı operasyon görünümü"
+      >
         <div className="catering-ops-table">
           <div className="section-title-row">
             <div>
