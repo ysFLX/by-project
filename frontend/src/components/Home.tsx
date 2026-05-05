@@ -6,7 +6,10 @@ import {
   CheckCircle2,
   ClipboardList,
   Clock3,
+  MapPin,
   PackageCheck,
+  Route,
+  ShieldCheck,
   Truck,
   UsersRound
 } from "lucide-react";
@@ -35,16 +38,40 @@ const flow = [
 ];
 
 const metrics = [
-  { value: "42", label: "bugünkü porsiyon" },
-  { value: "8", label: "aktif şirket" },
-  { value: "5", label: "toplama bekliyor" },
-  { value: "2 dk", label: "günlük giriş süresi" }
+  { value: "42", label: "bugünkü porsiyon", hint: "Sabah bildirilen toplam adet" },
+  { value: "8", label: "aktif şirket", hint: "Günlük sipariş veren müşteri" },
+  { value: "5", label: "toplama bekliyor", hint: "Yenildi onayı gelen noktalar" },
+  { value: "2 dk", label: "günlük giriş süresi", hint: "Şirketlerin ortalama bildirimi" }
 ];
 
 const timeline = [
   { icon: CalendarCheck2, time: "08:30", title: "Kişi sayısı alındı", detail: "Beyaz Plaza 18 porsiyon" },
   { icon: ClipboardList, time: "11:45", title: "Dağıtım planlandı", detail: "3 rota, 8 teslimat noktası" },
   { icon: CheckCircle2, time: "13:20", title: "Yenildi onayı geldi", detail: "5 şirket toplama bekliyor" }
+];
+
+const routes = [
+  { company: "Beyaz Plaza", area: "Maslak", count: 18, status: "Toplama hazır" },
+  { company: "Nova Yazılım", area: "Ataşehir", count: 12, status: "Yemek dağıtıldı" },
+  { company: "Kuzey Lojistik", area: "İkitelli", count: 7, status: "Porsiyon bekliyor" }
+];
+
+const panels = [
+  {
+    icon: ShieldCheck,
+    title: "Şirket girişleri kontrollü",
+    text: "Her müşteriye özel kod verilir. Kim kaç porsiyon istedi, ne zaman onayladı, panelde kayıtlı kalır."
+  },
+  {
+    icon: Route,
+    title: "Ekip için net sıra",
+    text: "Toplama bekleyen şirketler ayrılır; ekip boş tabak için nereye gideceğini liste halinde görür."
+  },
+  {
+    icon: MapPin,
+    title: "Adres ve notlar tek yerde",
+    text: "Şirket adresi, yetkili kişi, telefon ve teslimat notu operasyon ekranından takip edilir."
+  }
 ];
 
 export function Home() {
@@ -72,10 +99,10 @@ export function Home() {
             <Truck size={16} />
             Şirketlere yemek dağıtan firmalar için
           </span>
-          <h1>Günlük porsiyon ve toplama takibini tek ekranda yönet.</h1>
+          <h1>Catering operasyonunu sabah adetinden tabak toplamaya kadar yönet.</h1>
           <p>
-            Müşteri şirketler sabah kişi sayısını girer. Catering ekibi toplam porsiyonu, yenildi onaylarını ve toplama
-            sırasını canlı panelden takip eder.
+            Müşteri şirketler günlük kişi sayısını girer. Sen porsiyonu planlar, teslimat durumunu izler, yemek sonrası
+            toplama listesini aynı ekrandan yönetirsin.
           </p>
           <div className="catering-hero-actions">
             <a className="catering-primary-button" href="/catering">
@@ -121,8 +148,53 @@ export function Home() {
           <article key={metric.label}>
             <strong>{metric.value}</strong>
             <span>{metric.label}</span>
+            <small>{metric.hint}</small>
           </article>
         ))}
+      </section>
+
+      <section className="catering-ops-section" aria-label="Canlı operasyon görünümü">
+        <div className="catering-ops-table">
+          <div className="section-title-row">
+            <div>
+              <span className="catering-kicker">Canlı takip</span>
+              <h2>Bugünün şirket listesi</h2>
+            </div>
+            <a className="catering-secondary-button" href="/catering">
+              Tümünü gör
+            </a>
+          </div>
+          <div className="ops-table-head">
+            <span>Şirket</span>
+            <span>Bölge</span>
+            <span>Porsiyon</span>
+            <span>Durum</span>
+          </div>
+          {routes.map((route) => (
+            <article className="ops-table-row" key={route.company}>
+              <strong>{route.company}</strong>
+              <span>{route.area}</span>
+              <span>{route.count} kişi</span>
+              <em>{route.status}</em>
+            </article>
+          ))}
+        </div>
+
+        <div className="catering-feature-stack">
+          {panels.map((panel) => {
+            const Icon = panel.icon;
+
+            return (
+              <article key={panel.title}>
+                <Icon size={22} />
+                <div>
+                  <strong>{panel.title}</strong>
+                  <p>{panel.text}</p>
+                </div>
+              </article>
+            );
+          })}
+        </div>
       </section>
 
       <section className="catering-flow-grid" aria-label="Catering iş akışı">
