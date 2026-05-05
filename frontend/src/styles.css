@@ -74,15 +74,16 @@ a {
   align-items: center;
   display: flex;
   justify-content: space-between;
-  gap: 18px;
+  gap: 24px;
 }
 
 .catering-home-nav {
   background: rgba(255, 252, 244, 0.74);
   border: 1px solid rgba(29, 78, 50, 0.14);
-  border-radius: 8px;
+  border-radius: 10px;
   box-shadow: 0 18px 50px rgba(37, 55, 42, 0.08);
-  padding: 12px 14px;
+  min-height: 112px;
+  padding: 16px 18px;
   width: 100%;
 }
 
@@ -93,6 +94,10 @@ a {
   align-items: center;
   display: flex;
   gap: 12px;
+}
+
+.catering-home-nav > div {
+  gap: 18px;
 }
 
 .catering-brand {
@@ -140,7 +145,10 @@ a {
 }
 
 .catering-home-nav a {
+  align-items: center;
+  display: inline-flex;
   font-weight: 800;
+  min-height: 44px;
   text-decoration: none;
 }
 
@@ -180,7 +188,16 @@ a {
 }
 
 .catering-nav-button {
-  min-width: 176px;
+  font-size: 1rem;
+  line-height: 1;
+  min-height: 54px;
+  min-width: 190px;
+  padding: 0 22px;
+  white-space: nowrap;
+}
+
+.catering-nav-button svg {
+  flex: 0 0 auto;
 }
 
 .catering-nav-button:hover,

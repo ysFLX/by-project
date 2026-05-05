@@ -102,12 +102,10 @@ export function Home() {
           </div>
         </a>
         <div>
-          <a href="#akis">Akış</a>
-          <a href="#takip">Canlı takip</a>
           <a href="/giris">Şirket girişi</a>
           <a className="catering-nav-button" href="/catering">
             <Sparkles size={17} />
-            Paneli aç
+            Catering Paneli
           </a>
         </div>
       </nav>
