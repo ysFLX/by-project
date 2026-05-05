@@ -1,12 +1,29 @@
 # Maharet Yemek Laravel API cPanel Kurulum
 
-Bu dosya backend tarafını cPanel MySQL ile çalıştırmak için kısa kontroldür.
+Bu dosya backend tarafini cPanel MySQL ile calistirmak icin kisa kontroldur.
 
-## 1. Ortam Dosyası
+## Onerilen Klasor Duzeni
 
-cPanel üzerinde `backend/.env` oluştur ve `backend/.env.cpanel.example` içeriğini temel al.
+En temiz kurulum:
 
-Gerçek veritabanı bilgileri sadece `.env` dosyasına yazılmalı:
+```text
+/home/catering/maharet-api
+/home/catering/maharet-api/public
+```
+
+cPanel'de `api.cateringhizmet.com.tr` subdomain'i olusturup document root olarak sunu sec:
+
+```text
+/home/catering/maharet-api/public
+```
+
+Laravel dosyalarinin tamami `maharet-api` icinde kalir, internete sadece `public` klasoru acilir.
+
+## 1. Ortam Dosyasi
+
+cPanel uzerinde `maharet-api/.env` dosyasi bulunmali.
+
+Gercek veritabani bilgileri sadece `.env` dosyasina yazilmali:
 
 ```env
 DB_HOST=localhost
@@ -18,9 +35,9 @@ DB_PASSWORD=cpanel_database_password
 
 Bu bilgileri GitHub'a veya repoya ekleme.
 
-## 2. İlk Komutlar
+## 2. SSH veya cPanel Terminal Varsa
 
-SSH varsa backend klasöründe:
+`maharet-api` klasorunde:
 
 ```bash
 composer install --no-dev --optimize-autoloader
@@ -30,12 +47,30 @@ php artisan config:cache
 php artisan route:cache
 ```
 
-## 3. Bağlantı Kontrolü
+Bu paket `vendor` klasoruyle hazir geldigi icin Composer yoksa bile uygulama acilabilir. Yine de SSH varsa yukaridaki komutlar en temiz kurulumdur.
 
-API çalışınca şu endpoint veritabanı bağlantısını da test eder:
+## 3. SSH Yoksa
+
+SSH veya cPanel Terminal yoksa phpMyAdmin'de su dosyayi ice aktar:
 
 ```text
-/api/health
+database/maharet_schema.sql
+```
+
+Bu dosya uygulamanin ana tablolarini olusturur:
+
+```text
+client_companies
+meal_requests
+meal_request_counters
+```
+
+## 4. Baglanti Kontrolu
+
+API calisinca su endpoint veritabani baglantisini da test eder:
+
+```text
+https://api.cateringhizmet.com.tr/api/health
 ```
 
 Beklenen cevap:
@@ -48,12 +83,12 @@ Beklenen cevap:
 }
 ```
 
-## 4. Frontend API Adresi
+## 5. Frontend API Adresi
 
-Frontend `.env` dosyasında API adresi backend domainine çevrilmeli:
+Frontend `.env` dosyasinda API adresi backend domainine cevrilmeli:
 
 ```env
-VITE_API_BASE_URL=https://api.maharetyemek.com.tr/api
+VITE_API_BASE_URL=https://api.cateringhizmet.com.tr/api
 ```
 
-Sonra frontend için tekrar `npm run build` alınır.
+Sonra frontend icin tekrar `npm run build` alinir.
