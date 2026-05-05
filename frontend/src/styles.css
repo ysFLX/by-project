@@ -54,7 +54,7 @@ a {
 
 .catering-home-shell,
 .catering-dashboard-shell {
-  padding: 18px 24px 40px;
+  padding: 16px 22px 40px;
 }
 
 .catering-home-nav,
@@ -66,7 +66,7 @@ a {
 .catering-dashboard-grid,
 .catering-metric-grid {
   margin: 0;
-  max-width: 1480px;
+  max-width: none;
 }
 
 .catering-home-nav,
@@ -80,10 +80,10 @@ a {
 .catering-home-nav {
   background: rgba(255, 252, 244, 0.74);
   border: 1px solid rgba(29, 78, 50, 0.14);
-  border-radius: 24px;
+  border-radius: 8px;
   box-shadow: 0 18px 50px rgba(37, 55, 42, 0.08);
-  padding: 10px 12px;
-  width: min(100%, 1480px);
+  padding: 12px 14px;
+  width: 100%;
 }
 
 .catering-brand,
@@ -149,7 +149,7 @@ a {
 .catering-secondary-button {
   align-items: center;
   border: 0;
-  border-radius: 999px;
+  border-radius: 8px;
   cursor: pointer;
   display: inline-flex;
   font: inherit;
@@ -164,8 +164,8 @@ a {
 
 .catering-nav-button,
 .catering-primary-button {
-  background: #173f2a;
-  box-shadow: 0 16px 30px rgba(23, 63, 42, 0.22);
+  background: linear-gradient(135deg, #173f2a, #10251b);
+  box-shadow: 0 14px 28px rgba(23, 63, 42, 0.22);
   color: #fff8e8;
 }
 
@@ -173,6 +173,10 @@ a {
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(23, 63, 42, 0.14);
   color: #173f2a;
+}
+
+.catering-nav-button {
+  min-width: 176px;
 }
 
 .catering-nav-button:hover,
@@ -191,9 +195,9 @@ a {
 .catering-hero-section {
   align-items: stretch;
   display: grid;
-  gap: 22px;
-  grid-template-columns: minmax(0, 0.95fr) minmax(390px, 0.62fr);
-  padding: 34px 0 18px;
+  gap: 18px;
+  grid-template-columns: minmax(0, 0.88fr) minmax(460px, 0.72fr);
+  padding: 24px 0 16px;
 }
 
 .catering-hero-copy,
@@ -204,13 +208,15 @@ a {
   backdrop-filter: blur(18px);
   background: rgba(255, 252, 244, 0.78);
   border: 1px solid rgba(29, 78, 50, 0.14);
-  border-radius: 24px;
-  box-shadow: 0 24px 70px rgba(37, 55, 42, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 20px 54px rgba(37, 55, 42, 0.1);
 }
 
 .catering-hero-copy {
   display: grid;
-  padding: clamp(30px, 5vw, 54px);
+  align-content: center;
+  min-height: 520px;
+  padding: clamp(34px, 5vw, 64px);
 }
 
 .catering-kicker {
@@ -224,31 +230,65 @@ a {
 }
 
 .catering-hero-copy h1 {
-  font-size: 3.65rem;
+  font-size: 4.15rem;
   letter-spacing: 0;
   line-height: 1;
   margin: 18px 0;
-  max-width: 860px;
+  max-width: 960px;
 }
 
 .catering-hero-copy p {
   font-size: 1.05rem;
   line-height: 1.65;
+  margin: 0 0 18px;
+  max-width: 760px;
+}
+
+.hero-proof-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
   margin: 0 0 24px;
-  max-width: 680px;
+}
+
+.hero-proof-row span {
+  background: rgba(31, 111, 70, 0.08);
+  border: 1px solid rgba(29, 78, 50, 0.12);
+  border-radius: 999px;
+  color: #173f2a;
+  font-weight: 900;
+  padding: 9px 12px;
 }
 
 .catering-live-card {
   display: grid;
-  gap: 16px;
-  padding: 22px;
+  gap: 14px;
+  min-height: 520px;
+  padding: 18px;
 }
 
 .live-card-top {
   background: #173f2a;
-  border-radius: 18px;
+  border-radius: 8px;
   color: #fff8e8;
-  padding: 22px;
+  padding: 20px;
+}
+
+.live-dashboard-head {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.live-dashboard-head em {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  color: #fff8e8;
+  font-style: normal;
+  font-weight: 900;
+  padding: 8px 10px;
 }
 
 .live-card-top span,
@@ -257,9 +297,33 @@ a {
 }
 
 .live-card-top strong {
-  font-size: 1.75rem;
+  font-size: 1.9rem;
   letter-spacing: 0;
   margin-top: 8px;
+}
+
+.live-dashboard-stats {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.live-dashboard-stats article {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(29, 78, 50, 0.1);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.live-dashboard-stats strong {
+  display: block;
+  font-size: 1.85rem;
+  line-height: 1;
+}
+
+.live-dashboard-stats span {
+  color: #61705d;
+  font-weight: 900;
 }
 
 .live-card-grid {
@@ -275,7 +339,7 @@ a {
 .meal-request-row {
   background: rgba(255, 255, 255, 0.68);
   border: 1px solid rgba(29, 78, 50, 0.12);
-  border-radius: 24px;
+  border-radius: 8px;
 }
 
 .live-card-grid article {
@@ -283,7 +347,17 @@ a {
   display: grid;
   gap: 12px;
   grid-template-columns: 28px minmax(0, 1fr);
-  padding: 16px;
+  padding: 14px;
+}
+
+.live-card-grid article.timeline-active {
+  background: #fff7ed;
+  border-color: rgba(199, 119, 41, 0.28);
+}
+
+.live-card-grid article.timeline-done {
+  background: #ecfdf5;
+  border-color: rgba(22, 101, 52, 0.18);
 }
 
 .live-card-grid svg,
@@ -302,11 +376,46 @@ a {
   align-items: center;
   background: rgba(31, 111, 70, 0.08);
   border: 1px solid rgba(29, 78, 50, 0.1);
-  border-radius: 16px;
+  border-radius: 8px;
   display: flex;
   font-weight: 900;
   gap: 10px;
   padding: 14px 16px;
+}
+
+.route-preview-list {
+  display: grid;
+  gap: 8px;
+}
+
+.route-preview-list article {
+  align-items: center;
+  background: #fff;
+  border: 1px solid rgba(29, 78, 50, 0.1);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  padding: 12px 14px;
+}
+
+.route-preview-list span {
+  font-weight: 900;
+}
+
+.route-preview-list strong {
+  color: #173f2a;
+  white-space: nowrap;
+}
+
+.route-preview-list em {
+  background: #eef2ff;
+  border-radius: 999px;
+  color: #3730a3;
+  font-style: normal;
+  font-weight: 900;
+  padding: 7px 9px;
+  white-space: nowrap;
 }
 
 .catering-metric-strip,
@@ -318,7 +427,7 @@ a {
 
 .catering-metric-strip {
   grid-template-columns: repeat(4, 1fr);
-  padding: 14px 0 18px;
+  padding: 0 0 16px;
 }
 
 .catering-metric-strip article,
@@ -351,7 +460,7 @@ a {
 .catering-feature-stack article {
   background: rgba(255, 252, 244, 0.78);
   border: 1px solid rgba(29, 78, 50, 0.14);
-  border-radius: 18px;
+  border-radius: 8px;
   box-shadow: 0 18px 48px rgba(37, 55, 42, 0.08);
 }
 
@@ -393,7 +502,7 @@ a {
   align-items: center;
   background: rgba(255, 255, 255, 0.7);
   border: 1px solid rgba(29, 78, 50, 0.1);
-  border-radius: 12px;
+  border-radius: 8px;
   margin-top: 10px;
   padding: 14px;
 }
@@ -779,6 +888,16 @@ a {
 
   .member-code-pill {
     width: fit-content;
+  }
+}
+
+@media (min-width: 1500px) {
+  .catering-hero-section {
+    grid-template-columns: minmax(0, 1fr) minmax(560px, 0.68fr);
+  }
+
+  .catering-hero-copy h1 {
+    font-size: 4.55rem;
   }
 }
 

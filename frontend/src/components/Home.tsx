@@ -10,6 +10,7 @@ import {
   PackageCheck,
   Route,
   ShieldCheck,
+  Sparkles,
   Truck,
   UsersRound
 } from "lucide-react";
@@ -45,9 +46,9 @@ const metrics = [
 ];
 
 const timeline = [
-  { icon: CalendarCheck2, time: "08:30", title: "Kişi sayısı alındı", detail: "Beyaz Plaza 18 porsiyon" },
-  { icon: ClipboardList, time: "11:45", title: "Dağıtım planlandı", detail: "3 rota, 8 teslimat noktası" },
-  { icon: CheckCircle2, time: "13:20", title: "Yenildi onayı geldi", detail: "5 şirket toplama bekliyor" }
+  { icon: CalendarCheck2, time: "08:30", title: "Kişi sayısı alındı", detail: "Beyaz Plaza 18 porsiyon", tone: "ready" },
+  { icon: ClipboardList, time: "11:45", title: "Dağıtım planlandı", detail: "3 rota, 8 teslimat noktası", tone: "active" },
+  { icon: CheckCircle2, time: "13:20", title: "Yenildi onayı geldi", detail: "5 şirket toplama bekliyor", tone: "done" }
 ];
 
 const routes = [
@@ -88,6 +89,7 @@ export function Home() {
         <div>
           <a href="/giris">Şirket girişi</a>
           <a className="catering-nav-button" href="/catering">
+            <Sparkles size={17} />
             Catering paneli
           </a>
         </div>
@@ -104,6 +106,11 @@ export function Home() {
             Müşteri şirketler günlük kişi sayısını girer. Sen porsiyonu planlar, teslimat durumunu izler, yemek sonrası
             toplama listesini aynı ekrandan yönetirsin.
           </p>
+          <div className="hero-proof-row" aria-label="Operasyon kapsamı">
+            <span>Günlük porsiyon</span>
+            <span>Şirket üyeliği</span>
+            <span>Toplama listesi</span>
+          </div>
           <div className="catering-hero-actions">
             <a className="catering-primary-button" href="/catering">
               Paneli aç
@@ -116,16 +123,33 @@ export function Home() {
         </div>
 
         <aside className="catering-live-card" aria-label="Catering operasyon özeti">
-          <div className="live-card-top">
-            <span>Bugünkü operasyon</span>
-            <strong>Dağıtım durumu</strong>
+          <div className="live-card-top live-dashboard-head">
+            <div>
+              <span>Bugünkü operasyon</span>
+              <strong>Dağıtım durumu</strong>
+            </div>
+            <em>Canlı</em>
+          </div>
+          <div className="live-dashboard-stats">
+            <article>
+              <strong>42</strong>
+              <span>Porsiyon</span>
+            </article>
+            <article>
+              <strong>8</strong>
+              <span>Şirket</span>
+            </article>
+            <article>
+              <strong>5</strong>
+              <span>Toplama</span>
+            </article>
           </div>
           <div className="live-card-grid">
             {timeline.map((item) => {
               const Icon = item.icon;
 
               return (
-                <article key={item.title}>
+                <article className={`timeline-${item.tone}`} key={item.title}>
                   <Icon size={20} />
                   <div>
                     <span>{item.time}</span>
@@ -139,6 +163,15 @@ export function Home() {
           <div className="live-card-note">
             <Clock3 size={18} />
             <span>Son güncelleme: bugün 13:24</span>
+          </div>
+          <div className="route-preview-list">
+            {routes.slice(0, 2).map((route) => (
+              <article key={route.company}>
+                <span>{route.company}</span>
+                <strong>{route.count} kişi</strong>
+                <em>{route.status}</em>
+              </article>
+            ))}
           </div>
         </aside>
       </section>
