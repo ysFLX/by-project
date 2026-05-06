@@ -13,12 +13,16 @@ class ClientCompanyController extends Controller
 {
     public function index(): JsonResponse
     {
-        $companies = ClientCompany::query()
-            ->orderBy('name')
-            ->get()
-            ->map(fn (ClientCompany $company) => $this->serializeCompany($company));
+        try {
+            $companies = ClientCompany::query()
+                ->orderBy('name')
+                ->get()
+                ->map(fn (ClientCompany $company) => $this->serializeCompany($company));
 
-        return response()->json(['companies' => $companies]);
+            return response()->json(['companies' => $companies]);
+        } catch (\Throwable $exception) {
+            return response()->json(['message' => 'Client companies hata: '.$exception->getMessage()], 500);
+        }
     }
 
     public function store(Request $request): JsonResponse

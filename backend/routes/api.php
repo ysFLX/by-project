@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\ClientCompanyController;
 use App\Http\Controllers\Api\MealRequestController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 Route::post('/auth/login', function () {
@@ -41,6 +42,31 @@ Route::get('/health', function () {
         'app' => config('app.name'),
         'database' => config('database.default'),
         'time' => now()->toISOString(),
+    ]);
+});
+
+Route::get('/debug/schema', function () {
+    $tables = ['client_companies', 'meal_requests', 'meal_request_counters'];
+
+    return response()->json([
+        'database' => config('database.connections.mysql.database'),
+        'tables' => collect($tables)->mapWithKeys(function (string $table) {
+            try {
+                return [
+                    $table => [
+                        'exists' => Schema::hasTable($table),
+                        'columns' => Schema::hasTable($table) ? Schema::getColumnListing($table) : [],
+                    ],
+                ];
+            } catch (Throwable $exception) {
+                return [
+                    $table => [
+                        'exists' => false,
+                        'error' => $exception->getMessage(),
+                    ],
+                ];
+            }
+        }),
     ]);
 });
 
