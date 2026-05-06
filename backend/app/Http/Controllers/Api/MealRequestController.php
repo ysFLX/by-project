@@ -17,20 +17,24 @@ class MealRequestController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $serviceDate = $request->query('serviceDate', now()->toDateString());
-        $companyCode = $request->query('companyCode');
+        try {
+            $serviceDate = $request->query('serviceDate', now()->toDateString());
+            $companyCode = $request->query('companyCode');
 
-        $requests = MealRequest::query()
-            ->with('company')
-            ->whereDate('service_date', $serviceDate)
-            ->when($companyCode, function ($query) use ($companyCode) {
-                $query->whereHas('company', fn ($companyQuery) => $companyQuery->where('code', Str::slug($companyCode)));
-            })
-            ->latest('updated_at')
-            ->get()
-            ->map(fn (MealRequest $mealRequest) => $this->serializeMealRequest($mealRequest));
+            $requests = MealRequest::query()
+                ->with('company')
+                ->whereDate('service_date', $serviceDate)
+                ->when($companyCode, function ($query) use ($companyCode) {
+                    $query->whereHas('company', fn ($companyQuery) => $companyQuery->where('code', Str::slug($companyCode)));
+                })
+                ->latest('updated_at')
+                ->get()
+                ->map(fn (MealRequest $mealRequest) => $this->serializeMealRequest($mealRequest));
 
-        return response()->json(['requests' => $requests]);
+            return response()->json(['requests' => $requests]);
+        } catch (\Throwable $exception) {
+            return response()->json(['message' => 'Meal requests hata: '.$exception->getMessage()], 500);
+        }
     }
 
     public function store(Request $request): JsonResponse
