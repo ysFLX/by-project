@@ -111,39 +111,44 @@ class ClientCompanyController extends Controller
 
     public function login(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'username' => ['required', 'string', 'max:120'],
-            'password' => ['required', 'string', 'max:255'],
-        ]);
+        try {
+            $username = Str::slug((string) $request->input('username'));
+            $password = (string) $request->input('password');
 
-        $username = Str::slug($validated['username']);
+            if ($username === 'admin' && hash_equals((string) env('ADMIN_PASSWORD', 'admin123'), $password)) {
+                return response()->json([
+                    'user' => [
+                        'username' => 'admin',
+                        'role' => 'admin',
+                        'displayName' => config('app.name'),
+                    ],
+                ]);
+            }
 
-        if ($username === 'admin' && hash_equals((string) env('ADMIN_PASSWORD', 'admin123'), $validated['password'])) {
+            $validated = $request->validate([
+                'username' => ['required', 'string', 'max:120'],
+                'password' => ['required', 'string', 'max:255'],
+            ]);
+
+            $company = ClientCompany::where('username', Str::slug($validated['username']))
+                ->where('active', true)
+                ->first();
+
+            if (! $company || ! $company->password_hash || ! Hash::check($validated['password'], $company->password_hash)) {
+                return response()->json(['message' => 'Kullanici adi veya sifre hatali.'], 422);
+            }
+
             return response()->json([
                 'user' => [
-                    'username' => 'admin',
-                    'role' => 'admin',
-                    'displayName' => config('app.name'),
+                    'username' => $company->username,
+                    'role' => 'customer',
+                    'companyCode' => $company->code,
+                    'displayName' => $company->name,
                 ],
             ]);
+        } catch (\Throwable $exception) {
+            return response()->json(['message' => 'Backend hata: '.$exception->getMessage()], 500);
         }
-
-        $company = ClientCompany::where('username', $username)
-            ->where('active', true)
-            ->first();
-
-        if (! $company || ! $company->password_hash || ! Hash::check($validated['password'], $company->password_hash)) {
-            return response()->json(['message' => 'Kullanici adi veya sifre hatali.'], 422);
-        }
-
-        return response()->json([
-            'user' => [
-                'username' => $company->username,
-                'role' => 'customer',
-                'companyCode' => $company->code,
-                'displayName' => $company->name,
-            ],
-        ]);
     }
 
     private function makeCompanyCode(string $name): string
