@@ -29,16 +29,8 @@ import {
 } from "lucide-react";
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
-import {
-  createDemoCompany,
-  deleteDemoCompany,
-  listDemoCompanies,
-  listDemoRequests,
-  updateDemoCompany,
-  updateDemoRequestStatus,
-  type DemoCompany,
-  type DemoMealRequest
-} from "../lib/demo-store";
+import { apiFetch } from "../lib/api";
+import type { ClientCompany, MealRequest } from "../lib/types";
 
 type AdminView = "overview" | "companies" | "menu" | "reports" | "settings";
 
@@ -95,8 +87,8 @@ function getCompanyInitials(name: string) {
 
 export function CateringDashboard() {
   const [adminView, setAdminView] = useState<AdminView>("overview");
-  const [companies, setCompanies] = useState<DemoCompany[]>([]);
-  const [requests, setRequests] = useState<DemoMealRequest[]>([]);
+  const [companies, setCompanies] = useState<ClientCompany[]>([]);
+  const [requests, setRequests] = useState<MealRequest[]>([]);
   const [serviceDate, setServiceDate] = useState(todayKey());
   const [companyName, setCompanyName] = useState("");
   const [username, setUsername] = useState("");
@@ -168,7 +160,7 @@ export function CateringDashboard() {
     );
   }, [companies, companySearchTerm]);
 
-  function selectCompany(company: DemoCompany | null) {
+  function selectCompany(company: ClientCompany | null) {
     if (!company) {
       setSelectedCompanyId("");
       setEditName("");
@@ -191,22 +183,33 @@ export function CateringDashboard() {
     setEditNotes(company.notes ?? "");
   }
 
-  function loadDashboard() {
+  async function loadDashboard() {
     setIsLoading(true);
-    const nextCompanies = listDemoCompanies();
-    setCompanies(nextCompanies);
-    setRequests(listDemoRequests({ serviceDate }));
-    setLastUpdatedAt(formatTime(new Date().toISOString()));
+    setError("");
 
-    if (!selectedCompanyId && nextCompanies[0]) {
-      selectCompany(nextCompanies[0]);
+    try {
+      const [companiesPayload, requestsPayload] = await Promise.all([
+        apiFetch<{ companies: ClientCompany[] }>("/client-companies"),
+        apiFetch<{ requests: MealRequest[] }>(`/meal-requests?serviceDate=${encodeURIComponent(serviceDate)}`)
+      ]);
+
+      const nextCompanies = companiesPayload.companies;
+      setCompanies(nextCompanies);
+      setRequests(requestsPayload.requests);
+      setLastUpdatedAt(formatTime(new Date().toISOString()));
+
+      if (!selectedCompanyId && nextCompanies[0]) {
+        selectCompany(nextCompanies[0]);
+      }
+
+      if (selectedCompanyId && !nextCompanies.some((company) => company.id === selectedCompanyId)) {
+        selectCompany(nextCompanies[0] ?? null);
+      }
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Panel verileri yuklenemedi.");
+    } finally {
+      setIsLoading(false);
     }
-
-    if (selectedCompanyId && !nextCompanies.some((company) => company.id === selectedCompanyId)) {
-      selectCompany(nextCompanies[0] ?? null);
-    }
-
-    setIsLoading(false);
   }
 
   useEffect(() => {
@@ -228,23 +231,26 @@ export function CateringDashboard() {
     setNotes("");
   }
 
-  function createCompany(event: FormEvent<HTMLFormElement>) {
+  async function createCompany(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSaving(true);
     setMessage("");
     setError("");
 
     try {
-      const company = createDemoCompany({
-        name: companyName,
-        username,
-        password,
-        contactName,
-        phone,
-        email,
-        address,
-        taxNumber,
-        notes
+      const { company } = await apiFetch<{ company: ClientCompany }>("/client-companies", {
+        method: "POST",
+        body: {
+          name: companyName,
+          username,
+          password,
+          contactName,
+          phone,
+          email,
+          address,
+          taxNumber,
+          notes
+        }
       });
 
       setMessage(`${company.name} hesabı oluşturuldu. Kullanıcı adı: ${company.username ?? company.code}`);
@@ -260,7 +266,7 @@ export function CateringDashboard() {
     }
   }
 
-  function saveCompanyDetails(event: FormEvent<HTMLFormElement>) {
+  async function saveCompanyDetails(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!selectedCompany) {
@@ -272,14 +278,17 @@ export function CateringDashboard() {
     setError("");
 
     try {
-      const updatedCompany = updateDemoCompany(selectedCompany.id, {
-        name: editName,
-        contactName: editContactName,
-        phone: editPhone,
-        email: editEmail,
-        address: editAddress,
-        taxNumber: editTaxNumber,
-        notes: editNotes
+      const { company: updatedCompany } = await apiFetch<{ company: ClientCompany }>(`/client-companies/${selectedCompany.id}`, {
+        method: "PUT",
+        body: {
+          name: editName,
+          contactName: editContactName,
+          phone: editPhone,
+          email: editEmail,
+          address: editAddress,
+          taxNumber: editTaxNumber,
+          notes: editNotes
+        }
       });
 
       setMessage(`${updatedCompany.name} bilgileri güncellendi.`);
@@ -292,8 +301,8 @@ export function CateringDashboard() {
     }
   }
 
-  function removeCompany(company: DemoCompany) {
-    const confirmed = window.confirm(`${company.name} üyeliğini silmek istiyor musun? Bu demo panelde şirkete ait günlük bildirimler de kaldırılır.`);
+  async function removeCompany(company: ClientCompany) {
+    const confirmed = window.confirm(`${company.name} üyeliğini silmek istiyor musun? Şirkete ait günlük bildirimler de kaldırılır.`);
 
     if (!confirmed) {
       return;
@@ -304,7 +313,9 @@ export function CateringDashboard() {
     setError("");
 
     try {
-      deleteDemoCompany(company.id);
+      await apiFetch<{ message: string }>(`/client-companies/${company.id}`, {
+        method: "DELETE"
+      });
       setMessage(`${company.name} üyeliği silindi.`);
       selectCompany(null);
       loadDashboard();
@@ -315,12 +326,22 @@ export function CateringDashboard() {
     }
   }
 
-  function markCollected(requestNo: string) {
+  async function markCollected(requestNo: string) {
     setIsSaving(true);
     setError("");
-    const updatedRequest = updateDemoRequestStatus(requestNo, "collected");
-    setRequests((current) => current.map((request) => (request.requestNo === requestNo && updatedRequest ? updatedRequest : request)));
-    setIsSaving(false);
+
+    try {
+      const { request: updatedRequest } = await apiFetch<{ request: MealRequest }>(`/meal-requests/${requestNo}`, {
+        method: "PATCH",
+        body: { status: "collected" }
+      });
+
+      setRequests((current) => current.map((request) => (request.requestNo === requestNo ? updatedRequest : request)));
+    } catch (statusError) {
+      setError(statusError instanceof Error ? statusError.message : "Talep durumu guncellenemedi.");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   function openCreateModal() {
@@ -348,7 +369,7 @@ export function CateringDashboard() {
         : adminView === "reports"
           ? "Günlük adetler, bildirim oranı ve operasyon yükünü takip et."
           : adminView === "settings"
-            ? "Demo panel görünümü ve operasyon tercihlerini düzenle."
+            ? "Panel görünümü ve operasyon tercihlerini düzenle."
             : "Üyelikleri oluştur, şirketlerin günlük yemek adetlerini takip et ve operasyonu tek ekrandan yönet.";
 
   return (
@@ -701,22 +722,22 @@ export function CateringDashboard() {
             <article>
               <Settings size={24} />
               <div>
-                <strong>Frontend demo modu</strong>
-                <small>Veriler tarayıcı localStorage alanında tutuluyor.</small>
+                <strong>Canli API modu</strong>
+                <small>Sirketler ve gunluk adetler backend veritabanindan okunuyor.</small>
               </div>
             </article>
             <article>
               <Factory size={24} />
               <div>
                 <strong>Firma paneli</strong>
-                <small>Admin kullanıcı: admin / admin123</small>
+                <small>Admin kullanici: admin / backend ortam sifresi</small>
               </div>
             </article>
             <article>
               <Users size={24} />
               <div>
                 <strong>Müşteri paneli</strong>
-                <small>Örnek kullanıcı: aytek / 123456</small>
+                <small>Musteri kullanicilari admin panelden olusturulur.</small>
               </div>
             </article>
           </section>

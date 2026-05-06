@@ -2,20 +2,17 @@ import { CalendarDays, CheckCircle2, ChefHat, ClipboardList, LogOut, Send, Soup,
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
-  getDemoCompanyByCode,
   getMonthlyDemoMenu,
-  listDemoRequests,
-  upsertDemoMealRequest,
-  type DemoCompany,
-  type DemoMealRequest
 } from "../lib/demo-store";
+import { apiFetch } from "../lib/api";
+import type { ClientCompany, MealRequest } from "../lib/types";
 
 type Props = {
   companyCode: string;
 };
 
 function todayKey() {
-  return "2026-04-01";
+  return new Date().toISOString().slice(0, 10);
 }
 
 function formatDate(value: string) {
@@ -73,8 +70,8 @@ function buildMenuWeeks(menu: ReturnType<typeof getMonthlyDemoMenu>, referenceDa
 }
 
 export function CompanyMealPortal({ companyCode }: Props) {
-  const [company, setCompany] = useState<DemoCompany | null>(null);
-  const [request, setRequest] = useState<DemoMealRequest | null>(null);
+  const [company, setCompany] = useState<ClientCompany | null>(null);
+  const [request, setRequest] = useState<MealRequest | null>(null);
   const [serviceDate, setServiceDate] = useState(todayKey());
   const [headcount, setHeadcount] = useState("24");
   const [note, setNote] = useState("");
@@ -85,21 +82,27 @@ export function CompanyMealPortal({ companyCode }: Props) {
   const menuWeeks = useMemo(() => buildMenuWeeks(monthlyMenu, serviceDate), [monthlyMenu, serviceDate]);
   const todaysMenu = monthlyMenu.find((menuDay) => menuDay.date === serviceDate) ?? null;
 
-  function loadPortalData() {
-    const currentCompany = getDemoCompanyByCode(companyCode);
-    setCompany(currentCompany);
+  async function loadPortalData() {
+    setError("");
 
-    if (!currentCompany) {
+    try {
+      const { company: currentCompany } = await apiFetch<{ company: ClientCompany }>(`/client-companies/${encodeURIComponent(companyCode)}`);
+      setCompany(currentCompany);
+
+      const { requests } = await apiFetch<{ requests: MealRequest[] }>(
+        `/meal-requests?companyCode=${encodeURIComponent(currentCompany.code)}&serviceDate=${encodeURIComponent(serviceDate)}`
+      );
+      const currentRequest = requests[0] ?? null;
+      setRequest(currentRequest);
+
+      if (currentRequest) {
+        setHeadcount(String(currentRequest.headcount));
+        setNote(currentRequest.note ?? "");
+      }
+    } catch (loadError) {
+      setCompany(null);
       setRequest(null);
-      return;
-    }
-
-    const currentRequest = listDemoRequests({ companyCode: currentCompany.code, serviceDate })[0] ?? null;
-    setRequest(currentRequest);
-
-    if (currentRequest) {
-      setHeadcount(String(currentRequest.headcount));
-      setNote(currentRequest.note ?? "");
+      setError(loadError instanceof Error ? loadError.message : "Sirket bilgisi yuklenemedi.");
     }
   }
 
@@ -107,23 +110,47 @@ export function CompanyMealPortal({ companyCode }: Props) {
     loadPortalData();
   }, [companyCode, serviceDate]);
 
-  function submitHeadcount(event: FormEvent<HTMLFormElement>) {
+  async function submitHeadcount(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
     setError("");
 
     try {
-      const savedRequest = upsertDemoMealRequest({
-        companyCode,
-        serviceDate,
-        headcount: Number(headcount),
-        note
+      const { request: savedRequest } = await apiFetch<{ request: MealRequest }>("/meal-requests", {
+        method: "POST",
+        body: {
+          companyCode,
+          serviceDate,
+          headcount: Number(headcount),
+          note
+        }
       });
 
       setRequest(savedRequest);
       setMessage("Bugünkü yemek adediniz catering paneline düştü.");
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Kişi sayısı kaydedilemedi.");
+    }
+  }
+
+  async function markEaten() {
+    if (!request) {
+      return;
+    }
+
+    setMessage("");
+    setError("");
+
+    try {
+      const { request: updatedRequest } = await apiFetch<{ request: MealRequest }>(`/meal-requests/${request.requestNo}`, {
+        method: "PATCH",
+        body: { status: "eaten" }
+      });
+
+      setRequest(updatedRequest);
+      setMessage("Yemek yenildi bilgisi catering paneline gonderildi.");
+    } catch (statusError) {
+      setError(statusError instanceof Error ? statusError.message : "Durum guncellenemedi.");
     }
   }
 
@@ -236,6 +263,12 @@ export function CompanyMealPortal({ companyCode }: Props) {
                 <Send size={18} />
                 Catering paneline gönder
               </button>
+              {request && request.status === "submitted" ? (
+                <button className="catering-secondary-button" type="button" onClick={markEaten}>
+                  <CheckCircle2 size={18} />
+                  Yemek yenildi
+                </button>
+              ) : null}
             </form>
           </article>
         </section>

@@ -48,6 +48,7 @@ Bu bilgileri GitHub'a veya repoya ekleme.
 composer install --no-dev --optimize-autoloader
 php artisan key:generate --force
 php artisan migrate --force
+php artisan db:seed --force
 php artisan config:cache
 php artisan route:cache
 ```
@@ -68,6 +69,19 @@ Bu dosya uygulamanin ana tablolarini olusturur:
 client_companies
 meal_requests
 meal_request_counters
+```
+
+Var olan kurulumda phpMyAdmin kullaniyorsan ve tablolar daha once acildiysa su kolonlarin da `client_companies`
+tablosunda oldugunu kontrol et:
+
+```text
+username
+password_hash
+phone
+email
+address
+tax_number
+notes
 ```
 
 ## 4. Baglanti Kontrolu

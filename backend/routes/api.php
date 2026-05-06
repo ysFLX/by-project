@@ -16,8 +16,12 @@ Route::get('/health', function () {
     ]);
 });
 
+Route::post('/auth/login', [ClientCompanyController::class, 'login']);
+
 Route::get('/client-companies', [ClientCompanyController::class, 'index']);
 Route::post('/client-companies', [ClientCompanyController::class, 'store']);
+Route::put('/client-companies/{clientCompany}', [ClientCompanyController::class, 'update']);
+Route::delete('/client-companies/{clientCompany}', [ClientCompanyController::class, 'destroy']);
 Route::get('/client-companies/{companyCode}', [ClientCompanyController::class, 'showByCode']);
 
 Route::get('/meal-requests', [MealRequestController::class, 'index']);

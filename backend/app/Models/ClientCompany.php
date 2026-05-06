@@ -12,9 +12,20 @@ class ClientCompany extends Model
 
     protected $fillable = [
         'code',
+        'username',
+        'password_hash',
         'name',
         'contact_name',
+        'phone',
+        'email',
+        'address',
+        'tax_number',
+        'notes',
         'active',
+    ];
+
+    protected $hidden = [
+        'password_hash',
     ];
 
     protected $casts = [

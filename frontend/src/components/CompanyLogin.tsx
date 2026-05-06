@@ -1,30 +1,45 @@
 import { ArrowRight, Building2, LockKeyhole, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import type { FormEvent } from "react";
 import { useState } from "react";
-import { authenticateDemoUser } from "../lib/demo-store";
+import { apiFetch } from "../lib/api";
 
 export function CompanyLogin() {
   const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("admin123");
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    setIsLoading(true);
 
-    const user = authenticateDemoUser({ username, password });
+    try {
+      const { user } = await apiFetch<{
+        user: {
+          username: string;
+          role: "admin" | "customer";
+          companyCode?: string;
+          displayName: string;
+        };
+      }>("/auth/login", {
+        method: "POST",
+        body: { username, password }
+      });
 
-    if (!user) {
-      setError("Kullanıcı adı veya şifre hatalı.");
-      return;
+      window.localStorage.setItem("maharet-yemek-session", JSON.stringify(user));
+
+      if (user.role === "admin") {
+        window.location.href = "/catering";
+        return;
+      }
+
+      window.location.href = `/uye/${encodeURIComponent(user.companyCode ?? "")}`;
+    } catch (loginError) {
+      setError(loginError instanceof Error ? loginError.message : "Kullanici adi veya sifre hatali.");
+    } finally {
+      setIsLoading(false);
     }
-
-    if (user.role === "admin") {
-      window.location.href = "/catering";
-      return;
-    }
-
-    window.location.href = `/uye/${encodeURIComponent(user.companyCode ?? "")}`;
   }
 
   return (
@@ -33,47 +48,47 @@ export function CompanyLogin() {
         <div className="portal-login-visual">
           <span className="catering-kicker">
             <Sparkles size={16} />
-            Tek giriş ekranı
+            Tek giris ekrani
           </span>
-          <h1>Rolüne göre doğru panele gir.</h1>
-          <p>Admin hesabı catering yönetim paneline, müşteri hesabı kendi şirket paneline yönlendirilir.</p>
+          <h1>Rolune gore dogru panele gir.</h1>
+          <p>Admin hesabi catering yonetim paneline, musteri hesabi kendi sirket paneline yonlendirilir.</p>
 
           <div className="login-proof-grid">
             <article>
               <ShieldCheck size={22} />
               <strong>Admin</strong>
-              <span>Üyelik oluşturur ve günlük adetleri görür</span>
+              <span>Uyelik olusturur ve gunluk adetleri gorur</span>
             </article>
             <article>
               <Building2 size={22} />
-              <strong>Müşteri</strong>
-              <span>Günlük kişi sayısı ve aylık menü</span>
+              <strong>Musteri</strong>
+              <span>Gunluk kisi sayisi ve aylik menu</span>
             </article>
           </div>
         </div>
 
         <form className="catering-auth-form portal-login-form" onSubmit={handleSubmit}>
-          <span className="catering-kicker">Giriş</span>
+          <span className="catering-kicker">Giris</span>
           <label>
-            <span>Kullanıcı adı</span>
+            <span>Kullanici adi</span>
             <div>
               <UserRound size={18} />
               <input value={username} onChange={(event) => setUsername(event.target.value)} placeholder="admin" />
             </div>
           </label>
           <label>
-            <span>Şifre</span>
+            <span>Sifre</span>
             <div>
               <LockKeyhole size={18} />
-              <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••" />
+              <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="******" />
             </div>
           </label>
           {error ? <p className="form-error">{error}</p> : null}
-          <button className="catering-primary-button" type="submit">
-            Giriş yap
+          <button className="catering-primary-button" type="submit" disabled={isLoading}>
+            {isLoading ? "Giris yapiliyor" : "Giris yap"}
             <ArrowRight size={18} />
           </button>
-          <small>Demo: admin/admin123 veya aytek/123456 · Canlı deploy testi aktif</small>
+          <small>Admin: admin / belirlenen sifre. Musteri hesabi admin panelden olusur.</small>
         </form>
       </section>
     </main>

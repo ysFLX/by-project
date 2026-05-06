@@ -1,13 +1,21 @@
 CREATE TABLE IF NOT EXISTS `client_companies` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `code` VARCHAR(255) NOT NULL,
+  `username` VARCHAR(255) NULL,
+  `password_hash` VARCHAR(255) NULL,
   `name` VARCHAR(255) NOT NULL,
   `contact_name` VARCHAR(255) NULL,
+  `phone` VARCHAR(255) NULL,
+  `email` VARCHAR(255) NULL,
+  `address` VARCHAR(255) NULL,
+  `tax_number` VARCHAR(255) NULL,
+  `notes` TEXT NULL,
   `active` TINYINT(1) NOT NULL DEFAULT 1,
   `created_at` TIMESTAMP NULL,
   `updated_at` TIMESTAMP NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `client_companies_code_unique` (`code`),
+  UNIQUE KEY `client_companies_username_unique` (`username`),
   KEY `client_companies_active_index` (`active`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
