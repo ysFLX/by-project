@@ -52,10 +52,20 @@ Route::get('/debug/schema', function () {
         'database' => config('database.connections.mysql.database'),
         'tables' => collect($tables)->mapWithKeys(function (string $table) {
             try {
+                $columns = Schema::hasTable($table)
+                    ? DB::table('information_schema.columns')
+                        ->select(['column_name', 'column_type', 'column_key', 'extra', 'is_nullable', 'column_default'])
+                        ->whereRaw('table_schema = DATABASE()')
+                        ->where('table_name', $table)
+                        ->orderBy('ordinal_position')
+                        ->get()
+                    : [];
+
                 return [
                     $table => [
                         'exists' => Schema::hasTable($table),
                         'columns' => Schema::hasTable($table) ? Schema::getColumnListing($table) : [],
+                        'details' => $columns,
                     ],
                 ];
             } catch (Throwable $exception) {

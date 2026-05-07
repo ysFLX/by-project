@@ -51,19 +51,26 @@ class ClientCompanyController extends Controller
             return response()->json(['message' => 'Bu kullanici adi zaten kullaniliyor.'], 422);
         }
 
-        $company = ClientCompany::create([
-            'name' => $validated['name'],
-            'code' => $code,
-            'username' => $username,
-            'password_hash' => Hash::make($validated['password'] ?? Str::random(10)),
-            'contact_name' => $validated['contactName'] ?? null,
-            'phone' => $validated['phone'] ?? null,
-            'email' => $validated['email'] ?? null,
-            'address' => $validated['address'] ?? null,
-            'tax_number' => $validated['taxNumber'] ?? null,
-            'notes' => $validated['notes'] ?? null,
-            'active' => true,
-        ]);
+        try {
+            $company = ClientCompany::create([
+                'name' => $validated['name'],
+                'code' => $code,
+                'username' => $username,
+                'password_hash' => Hash::make($validated['password'] ?? Str::random(10)),
+                'contact_name' => $validated['contactName'] ?? null,
+                'phone' => $validated['phone'] ?? null,
+                'email' => $validated['email'] ?? null,
+                'address' => $validated['address'] ?? null,
+                'tax_number' => $validated['taxNumber'] ?? null,
+                'notes' => $validated['notes'] ?? null,
+                'active' => true,
+            ]);
+        } catch (\Throwable $exception) {
+            return response()->json([
+                'message' => 'Client company olusturma hata: '.$exception->getMessage(),
+                'type' => $exception::class,
+            ], 500);
+        }
 
         return response()->json(['company' => $this->serializeCompany($company)], 201);
     }

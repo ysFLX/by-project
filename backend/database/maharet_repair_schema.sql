@@ -80,7 +80,28 @@ BEGIN
   END IF;
 END//
 
+DROP PROCEDURE IF EXISTS maharet_fix_auto_increment_id//
+CREATE PROCEDURE maharet_fix_auto_increment_id(IN table_name_value VARCHAR(64))
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = table_name_value
+      AND COLUMN_NAME = 'id'
+      AND EXTRA NOT LIKE '%auto_increment%'
+  ) THEN
+    SET @maharet_sql = CONCAT('ALTER TABLE `', table_name_value, '` MODIFY `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT');
+    PREPARE maharet_stmt FROM @maharet_sql;
+    EXECUTE maharet_stmt;
+    DEALLOCATE PREPARE maharet_stmt;
+  END IF;
+END//
+
 DELIMITER ;
+
+CALL maharet_fix_auto_increment_id('client_companies');
+CALL maharet_fix_auto_increment_id('meal_requests');
 
 CALL maharet_add_column_if_missing('client_companies', 'username', '`username` VARCHAR(255) NULL AFTER `code`');
 CALL maharet_add_column_if_missing('client_companies', 'password_hash', '`password_hash` VARCHAR(255) NULL AFTER `username`');
@@ -110,3 +131,4 @@ INSERT IGNORE INTO `meal_request_counters` (`key`, `next_value`) VALUES ('meal_r
 
 DROP PROCEDURE IF EXISTS maharet_add_column_if_missing;
 DROP PROCEDURE IF EXISTS maharet_add_index_if_missing;
+DROP PROCEDURE IF EXISTS maharet_fix_auto_increment_id;
