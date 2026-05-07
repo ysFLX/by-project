@@ -70,12 +70,87 @@ Route::get('/debug/schema', function () {
     ]);
 });
 
-Route::get('/client-companies', [ClientCompanyController::class, 'index']);
+Route::get('/client-companies', function () {
+    try {
+        $companies = DB::table('client_companies')
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($company) => [
+                'id' => (string) $company->id,
+                'code' => $company->code,
+                'username' => $company->username,
+                'name' => $company->name,
+                'contactName' => $company->contact_name,
+                'phone' => $company->phone,
+                'email' => $company->email,
+                'address' => $company->address,
+                'taxNumber' => $company->tax_number,
+                'notes' => $company->notes,
+                'active' => (bool) $company->active,
+                'createdAt' => $company->created_at,
+                'updatedAt' => $company->updated_at,
+            ]);
+
+        return response()->json(['companies' => $companies]);
+    } catch (Throwable $exception) {
+        return response()->json([
+            'message' => 'Client companies hata: '.$exception->getMessage(),
+            'type' => $exception::class,
+        ], 500);
+    }
+});
 Route::post('/client-companies', [ClientCompanyController::class, 'store']);
 Route::put('/client-companies/{clientCompany}', [ClientCompanyController::class, 'update']);
 Route::delete('/client-companies/{clientCompany}', [ClientCompanyController::class, 'destroy']);
 Route::get('/client-companies/{companyCode}', [ClientCompanyController::class, 'showByCode']);
 
-Route::get('/meal-requests', [MealRequestController::class, 'index']);
+Route::get('/meal-requests', function () {
+    try {
+        $serviceDate = request()->query('serviceDate', now()->toDateString());
+        $companyCode = request()->query('companyCode');
+
+        $requests = DB::table('meal_requests')
+            ->join('client_companies', 'client_companies.id', '=', 'meal_requests.client_company_id')
+            ->select([
+                'meal_requests.request_no',
+                'meal_requests.client_company_id',
+                'meal_requests.service_date',
+                'meal_requests.headcount',
+                'meal_requests.status',
+                'meal_requests.note',
+                'meal_requests.created_at',
+                'meal_requests.eaten_at',
+                'meal_requests.collected_at',
+                'meal_requests.updated_at',
+                'client_companies.code as company_code',
+                'client_companies.name as company_name',
+            ])
+            ->whereDate('meal_requests.service_date', $serviceDate)
+            ->when($companyCode, fn ($query) => $query->where('client_companies.code', Str::slug((string) $companyCode)))
+            ->orderByDesc('meal_requests.updated_at')
+            ->get()
+            ->map(fn ($mealRequest) => [
+                'requestNo' => $mealRequest->request_no,
+                'companyId' => (string) $mealRequest->client_company_id,
+                'companyCode' => $mealRequest->company_code,
+                'companyName' => $mealRequest->company_name,
+                'serviceDate' => $mealRequest->service_date,
+                'headcount' => (int) $mealRequest->headcount,
+                'status' => $mealRequest->status,
+                'note' => $mealRequest->note,
+                'submittedAt' => $mealRequest->created_at,
+                'eatenAt' => $mealRequest->eaten_at,
+                'collectedAt' => $mealRequest->collected_at,
+                'updatedAt' => $mealRequest->updated_at,
+            ]);
+
+        return response()->json(['requests' => $requests]);
+    } catch (Throwable $exception) {
+        return response()->json([
+            'message' => 'Meal requests hata: '.$exception->getMessage(),
+            'type' => $exception::class,
+        ], 500);
+    }
+});
 Route::post('/meal-requests', [MealRequestController::class, 'store']);
 Route::patch('/meal-requests/{requestNo}', [MealRequestController::class, 'updateStatus']);
