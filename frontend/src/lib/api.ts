@@ -7,6 +7,8 @@ type RequestOptions = Omit<RequestInit, "body"> & {
 export async function apiFetch<T>(path: string, options: RequestOptions = {}) {
   const headers = new Headers(options.headers);
 
+  headers.set("Accept", "application/json");
+
   if (options.body && !(options.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
