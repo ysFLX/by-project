@@ -14,6 +14,7 @@ class ClientCompany extends Model
         'code',
         'username',
         'password_hash',
+        'account_type',
         'name',
         'contact_name',
         'phone',

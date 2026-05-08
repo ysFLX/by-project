@@ -89,6 +89,7 @@ Route::get('/client-companies', function () {
                 'id' => (string) $company->id,
                 'code' => $company->code,
                 'username' => $company->username,
+                'accountType' => $company->account_type ?? 'corporate',
                 'name' => $company->name,
                 'contactName' => $company->contact_name,
                 'phone' => $company->phone,

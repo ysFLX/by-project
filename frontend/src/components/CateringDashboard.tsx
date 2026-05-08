@@ -28,11 +28,17 @@ import {
   X
 } from "lucide-react";
 import type { FormEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "../lib/api";
 import type { ClientCompany, MealRequest } from "../lib/types";
 
-type AdminView = "overview" | "companies" | "menu" | "reports" | "settings";
+type AdminView = "overview" | "companies" | "menu" | "monthlyTracking" | "reports" | "settings";
+type AccountType = "individual" | "corporate";
+type MonthlyTrackingDay = {
+  date: string;
+  requests: MealRequest[];
+  total: number;
+};
 
 const statusMeta = {
   submitted: {
@@ -56,12 +62,37 @@ const adminViews = [
   { id: "overview", label: "Günlük takip", icon: LayoutDashboard },
   { id: "companies", label: "Üye şirketler", icon: Building2 },
   { id: "menu", label: "Aylık menü", icon: ChefHat },
+  { id: "monthlyTracking", label: "Aylik yemek takibi", icon: ClipboardList },
   { id: "reports", label: "Raporlar", icon: BarChart3 },
   { id: "settings", label: "Ayarlar", icon: Settings }
 ] satisfies { id: AdminView; label: string; icon: typeof LayoutDashboard }[];
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function currentMonthKey() {
+  return todayKey().slice(0, 7);
+}
+
+function getMonthDays(monthKey: string) {
+  const [year, month] = monthKey.split("-").map(Number);
+
+  if (!year || !month) {
+    return [];
+  }
+
+  const dayCount = new Date(year, month, 0).getDate();
+
+  return Array.from({ length: dayCount }, (_, index) => `${monthKey}-${String(index + 1).padStart(2, "0")}`);
+}
+
+function formatDateLabel(value: string) {
+  return new Intl.DateTimeFormat("tr-TR", {
+    day: "2-digit",
+    month: "long",
+    weekday: "long"
+  }).format(new Date(`${value}T12:00:00`));
 }
 
 function formatTime(value?: string | null) {
@@ -85,14 +116,29 @@ function getCompanyInitials(name: string) {
     .toLocaleUpperCase("tr-TR");
 }
 
+function createLoginSlug(value: string) {
+  return value
+    .trim()
+    .toLocaleLowerCase("tr-TR")
+    .replace(/ğ/g, "g")
+    .replace(/ü/g, "u")
+    .replace(/ş/g, "s")
+    .replace(/ı/g, "i")
+    .replace(/ö/g, "o")
+    .replace(/ç/g, "c")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export function CateringDashboard() {
   const [adminView, setAdminView] = useState<AdminView>("overview");
   const [companies, setCompanies] = useState<ClientCompany[]>([]);
   const [requests, setRequests] = useState<MealRequest[]>([]);
   const [serviceDate, setServiceDate] = useState(todayKey());
+  const [trackingMonth, setTrackingMonth] = useState(currentMonthKey());
+  const [monthlyTrackingDays, setMonthlyTrackingDays] = useState<MonthlyTrackingDay[]>([]);
+  const [accountType, setAccountType] = useState<AccountType>("corporate");
   const [companyName, setCompanyName] = useState("");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const [contactName, setContactName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -112,9 +158,13 @@ export function CateringDashboard() {
   const [lastUpdatedAt, setLastUpdatedAt] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMonthlyLoading, setIsMonthlyLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const selectedCompanyIdRef = useRef("");
+  const generatedUsername = createLoginSlug(companyName);
+  const generatedPassword = generatedUsername ? `${generatedUsername}!` : "";
 
   const selectedCompany = companies.find((company) => company.id === selectedCompanyId) ?? companies[0] ?? null;
   const activeCompanyCount = companies.filter((company) => company.active).length;
@@ -122,6 +172,8 @@ export function CateringDashboard() {
   const submittedCount = requests.filter((request) => request.status === "submitted").length;
   const reportedCompanyCount = new Set(requests.map((request) => request.companyId)).size;
   const missingCompanyCount = Math.max(0, activeCompanyCount - reportedCompanyCount);
+  const monthlyTotalHeadcount = monthlyTrackingDays.reduce((sum, day) => sum + day.total, 0);
+  const monthlyReportedDayCount = monthlyTrackingDays.filter((day) => day.total > 0).length;
 
   const requestRows = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLocaleLowerCase("tr-TR");
@@ -162,6 +214,7 @@ export function CateringDashboard() {
 
   function selectCompany(company: ClientCompany | null) {
     if (!company) {
+      selectedCompanyIdRef.current = "";
       setSelectedCompanyId("");
       setEditName("");
       setEditContactName("");
@@ -173,6 +226,7 @@ export function CateringDashboard() {
       return;
     }
 
+    selectedCompanyIdRef.current = company.id;
     setSelectedCompanyId(company.id);
     setEditName(company.name);
     setEditContactName(company.contactName ?? "");
@@ -198,17 +252,53 @@ export function CateringDashboard() {
       setRequests(requestsPayload.requests);
       setLastUpdatedAt(formatTime(new Date().toISOString()));
 
-      if (!selectedCompanyId && nextCompanies[0]) {
+      const currentSelectedCompanyId = selectedCompanyIdRef.current;
+
+      if (!currentSelectedCompanyId && nextCompanies[0]) {
         selectCompany(nextCompanies[0]);
       }
 
-      if (selectedCompanyId && !nextCompanies.some((company) => company.id === selectedCompanyId)) {
+      if (currentSelectedCompanyId && !nextCompanies.some((company) => company.id === currentSelectedCompanyId)) {
         selectCompany(nextCompanies[0] ?? null);
       }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Panel verileri yuklenemedi.");
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function loadMonthlyTracking() {
+    const days = getMonthDays(trackingMonth);
+
+    if (days.length === 0) {
+      setMonthlyTrackingDays([]);
+      return;
+    }
+
+    setIsMonthlyLoading(true);
+    setError("");
+
+    try {
+      const payloads = await Promise.all(
+        days.map((day) => apiFetch<{ requests: MealRequest[] }>(`/meal-requests?serviceDate=${encodeURIComponent(day)}`))
+      );
+
+      setMonthlyTrackingDays(
+        days.map((day, index) => {
+          const dayRequests = payloads[index].requests;
+
+          return {
+            date: day,
+            requests: dayRequests,
+            total: dayRequests.reduce((sum, request) => sum + request.headcount, 0)
+          };
+        })
+      );
+    } catch (monthlyError) {
+      setError(monthlyError instanceof Error ? monthlyError.message : "Aylik yemek takibi yuklenemedi.");
+    } finally {
+      setIsMonthlyLoading(false);
     }
   }
 
@@ -219,10 +309,15 @@ export function CateringDashboard() {
     return () => window.clearInterval(interval);
   }, [serviceDate]);
 
+  useEffect(() => {
+    if (adminView === "monthlyTracking") {
+      loadMonthlyTracking();
+    }
+  }, [adminView, trackingMonth]);
+
   function resetCreateForm() {
+    setAccountType("corporate");
     setCompanyName("");
-    setUsername("");
-    setPassword("");
     setContactName("");
     setPhone("");
     setEmail("");
@@ -241,9 +336,10 @@ export function CateringDashboard() {
       const { company } = await apiFetch<{ company: ClientCompany }>("/client-companies", {
         method: "POST",
         body: {
+          accountType,
           name: companyName,
-          username,
-          password,
+          username: generatedUsername,
+          password: generatedPassword,
           contactName,
           phone,
           email,
@@ -355,7 +451,9 @@ export function CateringDashboard() {
       ? "Üye şirket yönetimi"
       : adminView === "menu"
         ? "Aylık menü planı"
-        : adminView === "reports"
+        : adminView === "monthlyTracking"
+          ? "Aylik yemek takibi"
+          : adminView === "reports"
           ? "Operasyon raporları"
           : adminView === "settings"
             ? "Panel ayarları"
@@ -366,7 +464,9 @@ export function CateringDashboard() {
       ? "Müşteri şirketleri, yetkili kişileri, adresleri ve iletişim bilgilerini tek yerden yönet."
       : adminView === "menu"
         ? "Müşterinin göreceği aylık yemek listesini kontrol et."
-        : adminView === "reports"
+        : adminView === "monthlyTracking"
+          ? "Secili ayda her gun hangi musteriden kac porsiyon istendigini takip et."
+          : adminView === "reports"
           ? "Günlük adetler, bildirim oranı ve operasyon yükünü takip et."
           : adminView === "settings"
             ? "Panel görünümü ve operasyon tercihlerini düzenle."
@@ -694,6 +794,75 @@ export function CateringDashboard() {
           </section>
         ) : null}
 
+        {adminView === "monthlyTracking" ? (
+          <section className="admin-section-panel monthly-tracking-panel">
+            <div className="panel-title-row orders-panel-title">
+              <div>
+                <h2>Aylik yemek takibi</h2>
+                <p>
+                  {isMonthlyLoading
+                    ? "Ay icindeki yemek bildirimleri yukleniyor."
+                    : `${monthlyReportedDayCount} gunde toplam ${monthlyTotalHeadcount} porsiyon bildirildi.`}
+                </p>
+              </div>
+              <div className="admin-toolbar monthly-toolbar">
+                <label className="dashboard-date-filter">
+                  <CalendarDays size={17} />
+                  <input type="month" value={trackingMonth} onChange={(event) => setTrackingMonth(event.target.value)} />
+                </label>
+                <button className="admin-icon-button" type="button" onClick={loadMonthlyTracking} aria-label="Aylik takibi yenile">
+                  {isMonthlyLoading ? <Loader2 size={18} /> : <RefreshCcw size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="monthly-summary-grid">
+              <article>
+                <span>Ay toplamı</span>
+                <strong>{monthlyTotalHeadcount}</strong>
+                <small>porsiyon</small>
+              </article>
+              <article>
+                <span>Bildirim olan gün</span>
+                <strong>{monthlyReportedDayCount}</strong>
+                <small>{getMonthDays(trackingMonth).length} gün içinde</small>
+              </article>
+              <article>
+                <span>Aktif üye</span>
+                <strong>{activeCompanyCount}</strong>
+                <small>müşteri hesabı</small>
+              </article>
+            </div>
+
+            <div className="monthly-tracking-list">
+              {monthlyTrackingDays.map((day) => (
+                <article className={day.total > 0 ? "has-orders" : ""} key={day.date}>
+                  <div className="monthly-day-head">
+                    <div>
+                      <strong>{formatDateLabel(day.date)}</strong>
+                      <small>{day.date}</small>
+                    </div>
+                    <span>{day.total} porsiyon</span>
+                  </div>
+
+                  {day.requests.length === 0 ? (
+                    <p className="empty-state compact">Bu gün için yemek adedi bildirilmedi.</p>
+                  ) : (
+                    <div className="monthly-company-orders">
+                      {day.requests.map((request) => (
+                        <div key={request.requestNo}>
+                          <span>{request.companyName}</span>
+                          <strong>{request.headcount}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
         {adminView === "reports" ? (
           <section className="admin-section-panel admin-control-grid">
             <article>
@@ -770,6 +939,14 @@ export function CateringDashboard() {
             </div>
 
             <form className="company-create-form modal-company-form" onSubmit={createCompany}>
+              <div className="membership-type-control" role="radiogroup" aria-label="Üyelik türü">
+                <button className={accountType === "individual" ? "active" : ""} type="button" onClick={() => setAccountType("individual")}>
+                  Bireysel
+                </button>
+                <button className={accountType === "corporate" ? "active" : ""} type="button" onClick={() => setAccountType("corporate")}>
+                  Kurumsal
+                </button>
+              </div>
               <div className="detail-form-grid">
                 <label>
                   <span>Şirket adı</span>
@@ -777,11 +954,11 @@ export function CateringDashboard() {
                 </label>
                 <label>
                   <span>Kullanıcı adı</span>
-                  <input value={username} onChange={(event) => setUsername(event.target.value)} placeholder="Örn: kuzey" />
+                  <input value={generatedUsername} readOnly placeholder="Şirket adından oluşur" />
                 </label>
                 <label>
                   <span>Şifre</span>
-                  <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="En az 4 karakter" />
+                  <input value={generatedPassword} readOnly placeholder="Kullanıcı adının sonuna ! eklenir" />
                 </label>
                 <label>
                   <span>Yetkili kişi</span>
@@ -796,8 +973,8 @@ export function CateringDashboard() {
                   <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="operasyon@firma.com" />
                 </label>
                 <label>
-                  <span>Vergi numarası</span>
-                  <input value={taxNumber} onChange={(event) => setTaxNumber(event.target.value)} placeholder="Vergi / cari no" />
+                  <span>{accountType === "individual" ? "TC kimlik numarası" : "Vergi kimlik numarası"}</span>
+                  <input value={taxNumber} onChange={(event) => setTaxNumber(event.target.value)} placeholder={accountType === "individual" ? "Opsiyonel" : "Vergi / cari no"} />
                 </label>
                 <label>
                   <span>Adres</span>

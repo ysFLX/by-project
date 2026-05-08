@@ -34,6 +34,19 @@ foreach ([
     }
 }
 
+try {
+    require $appPath.'/vendor/autoload.php';
+    $app = require $appPath.'/bootstrap/app.php';
+    $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+
+    if (! Illuminate\Support\Facades\Schema::hasColumn('client_companies', 'account_type')) {
+        Illuminate\Support\Facades\DB::statement("ALTER TABLE `client_companies` ADD COLUMN `account_type` VARCHAR(255) NOT NULL DEFAULT 'corporate' AFTER `password_hash`");
+        $result['writtenFiles'][] = ['path' => 'database.client_companies.account_type', 'bytes' => 0, 'md5' => null];
+    }
+} catch (Throwable $exception) {
+    $result['errors'][] = 'Could not ensure account_type column: '.$exception->getMessage();
+}
+
 $routes = <<<'PHP'
 <?php
 
@@ -51,6 +64,7 @@ $serializeCompany = function ($company): array {
         'id' => (string) $company->id,
         'code' => $company->code,
         'username' => $company->username,
+        'accountType' => $company->account_type ?? 'corporate',
         'name' => $company->name,
         'contactName' => $company->contact_name,
         'phone' => $company->phone,
@@ -183,6 +197,7 @@ Route::get('/client-companies', function () use ($serializeCompany) {
 Route::post('/client-companies', function () use ($serializeCompany) {
     $validated = request()->validate([
         'name' => ['required', 'string', 'max:255'],
+        'accountType' => ['nullable', 'string', 'in:individual,corporate'],
         'code' => ['nullable', 'string', 'max:120'],
         'username' => ['nullable', 'string', 'max:120'],
         'password' => ['nullable', 'string', 'min:4', 'max:255'],
@@ -215,6 +230,7 @@ Route::post('/client-companies', function () use ($serializeCompany) {
             'code' => $code,
             'username' => $username,
             'password_hash' => Hash::make($validated['password'] ?? Str::random(10)),
+            'account_type' => $validated['accountType'] ?? 'corporate',
             'contact_name' => $validated['contactName'] ?? null,
             'phone' => $validated['phone'] ?? null,
             'email' => $validated['email'] ?? null,
@@ -462,4 +478,3 @@ if (function_exists('opcache_reset')) {
 
 header('Content-Type: application/json; charset=utf-8');
 echo json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-

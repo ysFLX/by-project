@@ -1,4 +1,4 @@
-import { CalendarDays, CheckCircle2, ChefHat, ClipboardList, LogOut, Send, Soup, UsersRound, Utensils } from "lucide-react";
+import { CalendarDays, CheckCircle2, ChefHat, ClipboardList, LogOut, Send, Soup, Table2, UsersRound, Utensils } from "lucide-react";
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -13,6 +13,22 @@ type Props = {
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function currentMonthKey() {
+  return todayKey().slice(0, 7);
+}
+
+function getMonthDays(monthKey: string) {
+  const [year, month] = monthKey.split("-").map(Number);
+
+  if (!year || !month) {
+    return [];
+  }
+
+  const dayCount = new Date(year, month, 0).getDate();
+
+  return Array.from({ length: dayCount }, (_, index) => `${monthKey}-${String(index + 1).padStart(2, "0")}`);
 }
 
 function formatDate(value: string) {
@@ -73,6 +89,9 @@ export function CompanyMealPortal({ companyCode }: Props) {
   const [company, setCompany] = useState<ClientCompany | null>(null);
   const [request, setRequest] = useState<MealRequest | null>(null);
   const [serviceDate, setServiceDate] = useState(todayKey());
+  const [trackingMonth, setTrackingMonth] = useState(currentMonthKey());
+  const [monthlyRequests, setMonthlyRequests] = useState<MealRequest[]>([]);
+  const [isMonthlyLoading, setIsMonthlyLoading] = useState(false);
   const [headcount, setHeadcount] = useState("24");
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
@@ -81,6 +100,7 @@ export function CompanyMealPortal({ companyCode }: Props) {
   const monthlyMenu = useMemo(() => getMonthlyDemoMenu(serviceDate), [serviceDate]);
   const menuWeeks = useMemo(() => buildMenuWeeks(monthlyMenu, serviceDate), [monthlyMenu, serviceDate]);
   const todaysMenu = monthlyMenu.find((menuDay) => menuDay.date === serviceDate) ?? null;
+  const monthlyTotalHeadcount = monthlyRequests.reduce((sum, monthlyRequest) => sum + monthlyRequest.headcount, 0);
 
   async function loadPortalData() {
     setError("");
@@ -99,6 +119,8 @@ export function CompanyMealPortal({ companyCode }: Props) {
         setHeadcount(String(currentRequest.headcount));
         setNote(currentRequest.note ?? "");
       }
+
+      loadMonthlyRequests(currentCompany);
     } catch (loadError) {
       setCompany(null);
       setRequest(null);
@@ -106,9 +128,39 @@ export function CompanyMealPortal({ companyCode }: Props) {
     }
   }
 
+  async function loadMonthlyRequests(currentCompany = company) {
+    if (!currentCompany) {
+      return;
+    }
+
+    setIsMonthlyLoading(true);
+    setError("");
+
+    try {
+      const days = getMonthDays(trackingMonth);
+      const payloads = await Promise.all(
+        days.map((day) =>
+          apiFetch<{ requests: MealRequest[] }>(
+            `/meal-requests?companyCode=${encodeURIComponent(currentCompany.code)}&serviceDate=${encodeURIComponent(day)}`
+          )
+        )
+      );
+
+      setMonthlyRequests(payloads.flatMap((payload) => payload.requests).sort((first, second) => first.serviceDate.localeCompare(second.serviceDate)));
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Aylik yemek takibi yuklenemedi.");
+    } finally {
+      setIsMonthlyLoading(false);
+    }
+  }
+
   useEffect(() => {
     loadPortalData();
   }, [companyCode, serviceDate]);
+
+  useEffect(() => {
+    loadMonthlyRequests();
+  }, [trackingMonth]);
 
   async function submitHeadcount(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -127,6 +179,11 @@ export function CompanyMealPortal({ companyCode }: Props) {
       });
 
       setRequest(savedRequest);
+      setMonthlyRequests((current) => {
+        const withoutSavedDay = current.filter((monthlyRequest) => monthlyRequest.serviceDate !== savedRequest.serviceDate);
+
+        return [...withoutSavedDay, savedRequest].sort((first, second) => first.serviceDate.localeCompare(second.serviceDate));
+      });
       setMessage("Bugünkü yemek adediniz catering paneline düştü.");
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Kişi sayısı kaydedilemedi.");
@@ -188,6 +245,10 @@ export function CompanyMealPortal({ companyCode }: Props) {
           <a href="#menu">
             <ClipboardList size={18} />
             Aylık menü
+          </a>
+          <a href="#aylik-takip">
+            <Table2 size={18} />
+            Aylik yemek takibi
           </a>
         </nav>
 
@@ -302,6 +363,54 @@ export function CompanyMealPortal({ companyCode }: Props) {
                   <div className="monthly-menu-cell empty" key={`empty-${weekIndex}-${dayIndex}`} />
                 )
               )
+            )}
+          </div>
+        </section>
+
+        <section className="monthly-menu-section customer-monthly-tracking" id="aylik-takip">
+          <div className="panel-title-row">
+            <div>
+              <h2>Aylik yemek takibi</h2>
+              <p>Bu ay hangi gun kac kisilik siparis verdiginizi tablo olarak gorun.</p>
+            </div>
+            <label className="dashboard-date-filter">
+              <CalendarDays size={17} />
+              <input type="month" value={trackingMonth} onChange={(event) => setTrackingMonth(event.target.value)} />
+            </label>
+          </div>
+
+          <div className="customer-tracking-summary">
+            <article>
+              <span>Ay toplamı</span>
+              <strong>{monthlyTotalHeadcount}</strong>
+              <small>kişilik sipariş</small>
+            </article>
+            <article>
+              <span>Sipariş verilen gün</span>
+              <strong>{monthlyRequests.length}</strong>
+              <small>{formatMonth(`${trackingMonth}-01`)}</small>
+            </article>
+          </div>
+
+          <div className="customer-tracking-table">
+            <div className="customer-tracking-head">
+              <span>Tarih</span>
+              <span>Sipariş adedi</span>
+              <span>Açıklama</span>
+            </div>
+
+            {isMonthlyLoading ? (
+              <p className="empty-state compact">Aylik yemek takibi yukleniyor.</p>
+            ) : monthlyRequests.length === 0 ? (
+              <p className="empty-state compact">Secili ay icin henuz yemek siparisi verilmedi.</p>
+            ) : (
+              monthlyRequests.map((monthlyRequest) => (
+                <div className="customer-tracking-row" key={monthlyRequest.requestNo}>
+                  <span>{formatDate(monthlyRequest.serviceDate)}</span>
+                  <strong>{monthlyRequest.headcount} kişilik</strong>
+                  <em>{monthlyRequest.serviceDate} tarihinde {monthlyRequest.headcount} kişilik sipariş verilmiştir.</em>
+                </div>
+              ))
             )}
           </div>
         </section>

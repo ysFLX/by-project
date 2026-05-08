@@ -29,6 +29,7 @@ class ClientCompanyController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'accountType' => ['nullable', 'string', 'in:individual,corporate'],
             'code' => ['nullable', 'string', 'max:120'],
             'username' => ['nullable', 'string', 'max:120'],
             'password' => ['nullable', 'string', 'min:4', 'max:255'],
@@ -57,6 +58,7 @@ class ClientCompanyController extends Controller
                 'code' => $code,
                 'username' => $username,
                 'password_hash' => Hash::make($validated['password'] ?? Str::random(10)),
+                'account_type' => $validated['accountType'] ?? 'corporate',
                 'contact_name' => $validated['contactName'] ?? null,
                 'phone' => $validated['phone'] ?? null,
                 'email' => $validated['email'] ?? null,
@@ -183,6 +185,7 @@ class ClientCompanyController extends Controller
             'code' => $company->code,
             'username' => $company->username,
             'name' => $company->name,
+            'accountType' => $company->account_type ?? 'corporate',
             'contactName' => $company->contact_name,
             'phone' => $company->phone,
             'email' => $company->email,

@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS `client_companies` (
   `code` VARCHAR(255) NOT NULL,
   `username` VARCHAR(255) NULL,
   `password_hash` VARCHAR(255) NULL,
+  `account_type` VARCHAR(255) NOT NULL DEFAULT 'corporate',
   `name` VARCHAR(255) NOT NULL,
   `contact_name` VARCHAR(255) NULL,
   `phone` VARCHAR(255) NULL,
@@ -105,6 +106,7 @@ CALL maharet_fix_auto_increment_id('meal_requests');
 
 CALL maharet_add_column_if_missing('client_companies', 'username', '`username` VARCHAR(255) NULL AFTER `code`');
 CALL maharet_add_column_if_missing('client_companies', 'password_hash', '`password_hash` VARCHAR(255) NULL AFTER `username`');
+CALL maharet_add_column_if_missing('client_companies', 'account_type', '`account_type` VARCHAR(255) NOT NULL DEFAULT ''corporate'' AFTER `password_hash`');
 CALL maharet_add_column_if_missing('client_companies', 'phone', '`phone` VARCHAR(255) NULL AFTER `contact_name`');
 CALL maharet_add_column_if_missing('client_companies', 'email', '`email` VARCHAR(255) NULL AFTER `phone`');
 CALL maharet_add_column_if_missing('client_companies', 'address', '`address` VARCHAR(255) NULL AFTER `email`');

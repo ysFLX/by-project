@@ -4,6 +4,7 @@ export type ClientCompany = {
   id: string;
   code: string;
   username?: string | null;
+  accountType?: "individual" | "corporate" | null;
   name: string;
   contactName?: string | null;
   phone?: string | null;

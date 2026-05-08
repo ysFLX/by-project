@@ -1568,6 +1568,31 @@ a {
   padding: clamp(28px, 4vw, 44px);
 }
 
+.membership-type-control {
+  background: rgba(23, 63, 42, 0.08);
+  border: 1px solid rgba(23, 63, 42, 0.12);
+  border-radius: 14px;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 6px;
+}
+
+.membership-type-control button {
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  color: #324237;
+  cursor: pointer;
+  font-weight: 900;
+  min-height: 44px;
+}
+
+.membership-type-control button.active {
+  background: #123d27;
+  color: #fff;
+}
+
 @media (max-width: 820px) {
   .admin-create-modal {
     grid-template-columns: 1fr;
@@ -1831,6 +1856,90 @@ a {
   line-height: 1.5;
 }
 
+.customer-monthly-tracking {
+  display: grid;
+  gap: 18px;
+}
+
+.customer-tracking-summary {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.customer-tracking-summary article {
+  background: #f7faf8;
+  border: 1px solid rgba(23, 63, 42, 0.1);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+}
+
+.customer-tracking-summary span,
+.customer-tracking-summary small {
+  color: #61705d;
+  font-weight: 800;
+}
+
+.customer-tracking-summary strong {
+  color: #10251b;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.customer-tracking-table {
+  border: 1px solid rgba(23, 63, 42, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.customer-tracking-head,
+.customer-tracking-row {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(170px, 0.85fr) minmax(130px, 0.45fr) minmax(0, 1.3fr);
+}
+
+.customer-tracking-head {
+  background: #123d27;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 12px 14px;
+  text-transform: uppercase;
+}
+
+.customer-tracking-row {
+  align-items: center;
+  border-top: 1px solid rgba(23, 63, 42, 0.1);
+  padding: 14px;
+}
+
+.customer-tracking-row span,
+.customer-tracking-row strong,
+.customer-tracking-row em {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.customer-tracking-row span {
+  color: #172019;
+  font-weight: 900;
+}
+
+.customer-tracking-row strong {
+  color: #c77729;
+  font-size: 1.15rem;
+}
+
+.customer-tracking-row em {
+  color: #61705d;
+  font-style: normal;
+  font-weight: 800;
+}
+
 .customer-empty-card {
   align-self: center;
   justify-self: center;
@@ -1941,6 +2050,108 @@ a {
   margin: 0 auto;
   max-width: 1280px;
   padding: 24px;
+}
+
+.monthly-tracking-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.monthly-toolbar {
+  justify-content: end;
+}
+
+.monthly-summary-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.monthly-summary-grid article {
+  background: #f7faf8;
+  border: 1px solid rgba(23, 63, 42, 0.1);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+}
+
+.monthly-summary-grid span,
+.monthly-summary-grid small {
+  color: #61705d;
+  font-weight: 800;
+}
+
+.monthly-summary-grid strong {
+  color: #10251b;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.monthly-tracking-list {
+  display: grid;
+  gap: 12px;
+}
+
+.monthly-tracking-list article {
+  border: 1px solid rgba(23, 63, 42, 0.1);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.monthly-tracking-list article.has-orders {
+  border-color: rgba(31, 111, 70, 0.28);
+}
+
+.monthly-day-head,
+.monthly-company-orders div {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.monthly-day-head strong,
+.monthly-company-orders span {
+  color: #172019;
+  font-weight: 900;
+}
+
+.monthly-day-head small {
+  color: #61705d;
+  display: block;
+  font-weight: 800;
+  margin-top: 2px;
+}
+
+.monthly-day-head > span {
+  background: #123d27;
+  border-radius: 999px;
+  color: #fff;
+  font-weight: 900;
+  padding: 8px 12px;
+}
+
+.monthly-company-orders {
+  display: grid;
+  gap: 8px;
+}
+
+.monthly-company-orders div {
+  background: #f7faf8;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.monthly-company-orders strong {
+  color: #c77729;
+  font-size: 1.2rem;
+}
+
+.empty-state.compact {
+  padding: 12px;
 }
 
 .company-management-layout {
