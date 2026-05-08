@@ -1,7 +1,7 @@
 import { ArrowRight, Building2, LockKeyhole, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import type { FormEvent } from "react";
 import { useState } from "react";
-import { apiFetch } from "../lib/api";
+import { apiFetch } from "../services/api";
 
 export function CompanyLogin() {
   const [username, setUsername] = useState("admin");

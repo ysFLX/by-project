@@ -3,9 +3,9 @@ import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
   getMonthlyDemoMenu,
-} from "../lib/demo-store";
-import { apiFetch } from "../lib/api";
-import type { ClientCompany, MealRequest } from "../lib/types";
+} from "../data/demo-store";
+import { apiFetch } from "../services/api";
+import type { ClientCompany, MealRequest } from "../types/api";
 
 type Props = {
   companyCode: string;

@@ -1,7 +1,7 @@
-import { CateringDashboard } from "./components/CateringDashboard";
-import { CompanyLogin } from "./components/CompanyLogin";
-import { CompanyMealPortal } from "./components/CompanyMealPortal";
-import { Home } from "./components/Home";
+import { CateringDashboard } from "./pages/CateringDashboard";
+import { CompanyLogin } from "./pages/CompanyLogin";
+import { CompanyMealPortal } from "./pages/CompanyMealPortal";
+import { Home } from "./pages/Home";
 
 function getCompanyCode(pathname: string) {
   const match = pathname.match(/^\/uye\/([^/]+)/);

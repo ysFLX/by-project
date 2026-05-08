@@ -29,8 +29,8 @@ import {
 } from "lucide-react";
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { apiFetch } from "../lib/api";
-import type { ClientCompany, MealRequest } from "../lib/types";
+import { apiFetch } from "../services/api";
+import type { ClientCompany, MealRequest } from "../types/api";
 
 type AdminView = "overview" | "companies" | "menu" | "monthlyTracking" | "reports" | "settings";
 type AccountType = "individual" | "corporate";
