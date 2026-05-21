@@ -1,4 +1,4 @@
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api").replace(/\/$/, "");
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "https://cateringhizmet.com.tr/backend/api").replace(/\/$/, "");
 
 type RequestOptions = Omit<RequestInit, "body"> & {
   body?: BodyInit | Record<string, unknown> | null;
@@ -15,20 +15,21 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}) {
 
   const response = await fetch(`${apiBaseUrl}${path}`, {
     ...options,
+    credentials: "include",
     headers,
     body: options.body && !(options.body instanceof FormData) ? JSON.stringify(options.body) : (options.body as BodyInit | null | undefined)
   });
 
   const responseText = await response.text();
-  const payload = responseText
-    ? (() => {
-        try {
-          return JSON.parse(responseText) as T & { message?: string };
-        } catch {
-          return { message: responseText.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() } as T & { message?: string };
-        }
-      })()
-    : ({} as T & { message?: string });
+  let payload = {} as T & { message?: string };
+
+  if (responseText) {
+    try {
+      payload = JSON.parse(responseText) as T & { message?: string };
+    } catch {
+      throw new Error("Backend JSON yerine sayfa dondurdu. API adresini kontrol et.");
+    }
+  }
 
   if (!response.ok) {
     throw new Error(payload.message ?? "İşlem tamamlanamadı.");

@@ -7,6 +7,7 @@ use App\Models\ClientCompany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class ClientCompanyController extends Controller
@@ -53,12 +54,11 @@ class ClientCompanyController extends Controller
         }
 
         try {
-            $company = ClientCompany::create([
+            $attributes = [
                 'name' => $validated['name'],
                 'code' => $code,
                 'username' => $username,
                 'password_hash' => Hash::make($validated['password'] ?? Str::random(10)),
-                'account_type' => $validated['accountType'] ?? 'corporate',
                 'contact_name' => $validated['contactName'] ?? null,
                 'phone' => $validated['phone'] ?? null,
                 'email' => $validated['email'] ?? null,
@@ -66,7 +66,13 @@ class ClientCompanyController extends Controller
                 'tax_number' => $validated['taxNumber'] ?? null,
                 'notes' => $validated['notes'] ?? null,
                 'active' => true,
-            ]);
+            ];
+
+            if (Schema::hasColumn('client_companies', 'account_type')) {
+                $attributes['account_type'] = $validated['accountType'] ?? 'corporate';
+            }
+
+            $company = ClientCompany::create($attributes);
         } catch (\Throwable $exception) {
             return response()->json([
                 'message' => 'Client company olusturma hata: '.$exception->getMessage(),
@@ -113,7 +119,12 @@ class ClientCompanyController extends Controller
 
     public function showByCode(string $companyCode): JsonResponse
     {
-        $company = ClientCompany::where('code', Str::slug($companyCode))->first();
+        $slug = Str::slug($companyCode);
+        $company = ClientCompany::where(function ($query) use ($slug) {
+            $query->where('code', $slug)->orWhere('username', $slug);
+        })
+            ->where('active', true)
+            ->first();
 
         if (! $company) {
             return response()->json(['message' => 'Sirket uyeligi bulunamadi.'], 404);
@@ -143,7 +154,10 @@ class ClientCompanyController extends Controller
                 'password' => ['required', 'string', 'max:255'],
             ]);
 
-            $company = ClientCompany::where('username', Str::slug($validated['username']))
+            $loginSlug = Str::slug($validated['username']);
+            $company = ClientCompany::where(function ($query) use ($loginSlug) {
+                $query->where('username', $loginSlug)->orWhere('code', $loginSlug);
+            })
                 ->where('active', true)
                 ->first();
 

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class MealRequest extends Model
 {
@@ -34,5 +35,11 @@ class MealRequest extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(ClientCompany::class, 'client_company_id');
+    }
+
+    public function people(): BelongsToMany
+    {
+        return $this->belongsToMany(CompanyPerson::class, 'meal_request_people')
+            ->withTimestamps();
     }
 }

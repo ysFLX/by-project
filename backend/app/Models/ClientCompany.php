@@ -23,6 +23,8 @@ class ClientCompany extends Model
         'tax_number',
         'notes',
         'active',
+        'role',
+        'hidden',
     ];
 
     protected $hidden = [
@@ -31,10 +33,16 @@ class ClientCompany extends Model
 
     protected $casts = [
         'active' => 'boolean',
+        'hidden' => 'boolean',
     ];
 
     public function mealRequests(): HasMany
     {
         return $this->hasMany(MealRequest::class);
+    }
+
+    public function people(): HasMany
+    {
+        return $this->hasMany(CompanyPerson::class);
     }
 }

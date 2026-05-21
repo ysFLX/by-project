@@ -17,6 +17,18 @@ export type ClientCompany = {
   updatedAt: string;
 };
 
+export type CompanyPerson = {
+  id: string;
+  companyId: string;
+  name: string;
+  department?: string | null;
+  employeeCode?: string | null;
+  notes?: string | null;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type MealRequest = {
   requestNo: string;
   companyId: string;
@@ -30,4 +42,23 @@ export type MealRequest = {
   eatenAt?: string | null;
   collectedAt?: string | null;
   updatedAt: string;
+  people?: Pick<CompanyPerson, "id" | "name" | "department" | "employeeCode">[];
+};
+
+export type MenuDocument = {
+  id: string;
+  month: string;
+  title: string;
+  fileName: string;
+  url: string;
+  size: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type MenuDay = {
+  date: string;
+  items: string[];
+  calories?: number | null;
+  updatedAt?: string | null;
 };
