@@ -22,6 +22,8 @@ class ClientCompany extends Model
         'address',
         'tax_number',
         'notes',
+        'meal_unit_price',
+        'meal_vat_enabled',
         'active',
         'role',
         'hidden',
@@ -34,6 +36,8 @@ class ClientCompany extends Model
     protected $casts = [
         'active' => 'boolean',
         'hidden' => 'boolean',
+        'meal_unit_price' => 'decimal:2',
+        'meal_vat_enabled' => 'boolean',
     ];
 
     public function mealRequests(): HasMany

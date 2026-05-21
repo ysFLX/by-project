@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS `client_companies` (
   `address` VARCHAR(255) NULL,
   `tax_number` VARCHAR(255) NULL,
   `notes` TEXT NULL,
+  `meal_unit_price` DECIMAL(10,2) NOT NULL DEFAULT 170.00,
+  `meal_vat_enabled` TINYINT(1) NOT NULL DEFAULT 0,
   `active` TINYINT(1) NOT NULL DEFAULT 1,
   `created_at` TIMESTAMP NULL,
   `updated_at` TIMESTAMP NULL,

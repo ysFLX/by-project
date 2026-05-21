@@ -12,6 +12,8 @@ export type ClientCompany = {
   address?: string | null;
   taxNumber?: string | null;
   notes?: string | null;
+  mealUnitPrice?: number | null;
+  mealVatEnabled?: boolean | null;
   active: boolean;
   createdAt: string;
   updatedAt: string;

@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS `client_companies` (
   `address` VARCHAR(255) NULL,
   `tax_number` VARCHAR(255) NULL,
   `notes` TEXT NULL,
+  `meal_unit_price` DECIMAL(10,2) NOT NULL DEFAULT 170.00,
+  `meal_vat_enabled` TINYINT(1) NOT NULL DEFAULT 0,
   `active` TINYINT(1) NOT NULL DEFAULT 1,
   `created_at` TIMESTAMP NULL,
   `updated_at` TIMESTAMP NULL,
@@ -112,6 +114,8 @@ CALL maharet_add_column_if_missing('client_companies', 'email', '`email` VARCHAR
 CALL maharet_add_column_if_missing('client_companies', 'address', '`address` VARCHAR(255) NULL AFTER `email`');
 CALL maharet_add_column_if_missing('client_companies', 'tax_number', '`tax_number` VARCHAR(255) NULL AFTER `address`');
 CALL maharet_add_column_if_missing('client_companies', 'notes', '`notes` TEXT NULL AFTER `tax_number`');
+CALL maharet_add_column_if_missing('client_companies', 'meal_unit_price', '`meal_unit_price` DECIMAL(10,2) NOT NULL DEFAULT 170.00 AFTER `notes`');
+CALL maharet_add_column_if_missing('client_companies', 'meal_vat_enabled', '`meal_vat_enabled` TINYINT(1) NOT NULL DEFAULT 0 AFTER `meal_unit_price`');
 CALL maharet_add_index_if_missing('client_companies', 'client_companies_username_unique', 'UNIQUE KEY `client_companies_username_unique` (`username`)');
 
 CALL maharet_add_column_if_missing('meal_requests', 'request_no', '`request_no` VARCHAR(255) NOT NULL AFTER `id`');

@@ -30,8 +30,8 @@ if (! function_exists('requestHasValidAdminToken')) {
     }
 }
 
-if (! function_exists('ensureAccountRoleColumns')) {
-    function ensureAccountRoleColumns(): void
+if (! function_exists('ensureAccountColumns')) {
+    function ensureAccountColumns(): void
     {
         if (! Schema::hasTable('client_companies')) {
             return;
@@ -48,13 +48,25 @@ if (! function_exists('ensureAccountRoleColumns')) {
                 $table->boolean('hidden')->default(false);
             });
         }
+
+        if (! Schema::hasColumn('client_companies', 'meal_unit_price')) {
+            Schema::table('client_companies', function (\Illuminate\Database\Schema\Blueprint $table) {
+                $table->decimal('meal_unit_price', 10, 2)->default(170);
+            });
+        }
+
+        if (! Schema::hasColumn('client_companies', 'meal_vat_enabled')) {
+            Schema::table('client_companies', function (\Illuminate\Database\Schema\Blueprint $table) {
+                $table->boolean('meal_vat_enabled')->default(false);
+            });
+        }
     }
 }
 
 if (! function_exists('seedSystemAccounts')) {
     function seedSystemAccounts(): void
     {
-        ensureAccountRoleColumns();
+        ensureAccountColumns();
 
         if (! Schema::hasTable('client_companies')) {
             return;
@@ -750,6 +762,8 @@ Route::get('/client-companies', function () {
                     'address' => $company->address,
                     'taxNumber' => $company->tax_number,
                     'notes' => $company->notes,
+                    'mealUnitPrice' => (float) ($company->meal_unit_price ?? 170),
+                    'mealVatEnabled' => (bool) ($company->meal_vat_enabled ?? false),
                     'active' => (bool) $company->active,
                     'createdAt' => $company->created_at,
                     'updatedAt' => $company->updated_at,
@@ -769,7 +783,7 @@ Route::post('/client-companies', function () {
     }
 
     try {
-        ensureAccountRoleColumns();
+        ensureAccountColumns();
 
         $validated = request()->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -783,6 +797,8 @@ Route::post('/client-companies', function () {
             'address' => ['nullable', 'string', 'max:255'],
             'taxNumber' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'mealUnitPrice' => ['nullable', 'numeric', 'min:0', 'max:999999'],
+            'mealVatEnabled' => ['nullable', 'boolean'],
         ]);
 
         $baseCode = Str::slug($validated['code'] ?? $validated['username'] ?? $validated['name']);
@@ -809,6 +825,8 @@ Route::post('/client-companies', function () {
             'address' => $validated['address'] ?? null,
             'tax_number' => $validated['taxNumber'] ?? null,
             'notes' => $validated['notes'] ?? null,
+            'meal_unit_price' => $validated['mealUnitPrice'] ?? 170,
+            'meal_vat_enabled' => $validated['mealVatEnabled'] ?? false,
             'active' => true,
             'created_at' => $now,
             'updated_at' => $now,
@@ -842,6 +860,8 @@ Route::post('/client-companies', function () {
                 'address' => $company->address,
                 'taxNumber' => $company->tax_number,
                 'notes' => $company->notes,
+                'mealUnitPrice' => (float) ($company->meal_unit_price ?? 170),
+                'mealVatEnabled' => (bool) ($company->meal_vat_enabled ?? false),
                 'active' => (bool) $company->active,
                 'createdAt' => $company->created_at,
                 'updatedAt' => $company->updated_at,
@@ -860,7 +880,7 @@ Route::put('/client-companies/{clientCompany}', function (string $clientCompany)
     }
 
     try {
-        ensureAccountRoleColumns();
+        ensureAccountColumns();
 
         $company = DB::table('client_companies')->where('id', $clientCompany)->first();
 
@@ -880,6 +900,9 @@ Route::put('/client-companies/{clientCompany}', function (string $clientCompany)
             'address' => ['nullable', 'string', 'max:255'],
             'taxNumber' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'mealUnitPrice' => ['nullable', 'numeric', 'min:0', 'max:999999'],
+            'mealVatEnabled' => ['nullable', 'boolean'],
+            'password' => ['nullable', 'string', 'min:4', 'max:255'],
             'active' => ['nullable', 'boolean'],
         ]);
 
@@ -901,6 +924,18 @@ Route::put('/client-companies/{clientCompany}', function (string $clientCompany)
             $updates['notes'] = $validated['notes'] ?? null;
         }
 
+        if (Schema::hasColumn('client_companies', 'meal_unit_price')) {
+            $updates['meal_unit_price'] = $validated['mealUnitPrice'] ?? (float) ($company->meal_unit_price ?? 170);
+        }
+
+        if (Schema::hasColumn('client_companies', 'meal_vat_enabled')) {
+            $updates['meal_vat_enabled'] = $validated['mealVatEnabled'] ?? (bool) ($company->meal_vat_enabled ?? false);
+        }
+
+        if (! empty($validated['password'])) {
+            $updates['password_hash'] = Illuminate\Support\Facades\Hash::make($validated['password']);
+        }
+
         DB::table('client_companies')->where('id', $clientCompany)->update($updates);
         $updatedCompany = DB::table('client_companies')->where('id', $clientCompany)->first();
 
@@ -917,6 +952,8 @@ Route::put('/client-companies/{clientCompany}', function (string $clientCompany)
                 'address' => $updatedCompany->address,
                 'taxNumber' => $updatedCompany->tax_number ?? null,
                 'notes' => $updatedCompany->notes ?? null,
+                'mealUnitPrice' => (float) ($updatedCompany->meal_unit_price ?? 170),
+                'mealVatEnabled' => (bool) ($updatedCompany->meal_vat_enabled ?? false),
                 'active' => (bool) $updatedCompany->active,
                 'createdAt' => $updatedCompany->created_at,
                 'updatedAt' => $updatedCompany->updated_at,
@@ -930,6 +967,49 @@ Route::put('/client-companies/{clientCompany}', function (string $clientCompany)
     } catch (Throwable $exception) {
         return response()->json([
             'message' => 'Sirket guncelleme hata: '.$exception->getMessage(),
+            'type' => $exception::class,
+        ], 500);
+    }
+});
+Route::patch('/client-companies/{companyCode}/password', function (string $companyCode) {
+    try {
+        ensureAccountColumns();
+
+        $validated = request()->validate([
+            'currentPassword' => ['required', 'string', 'max:255'],
+            'password' => ['required', 'string', 'min:4', 'max:255'],
+        ]);
+
+        $loginSlug = Str::slug($companyCode);
+        $company = DB::table('client_companies')
+            ->where(function ($query) use ($loginSlug) {
+                $query->where('code', $loginSlug)->orWhere('username', $loginSlug);
+            })
+            ->where('active', true)
+            ->first();
+
+        if (! $company || ($company->role ?? 'customer') !== 'customer' || (bool) ($company->hidden ?? false)) {
+            return response()->json(['message' => 'Sirket uyeligi bulunamadi.'], 404);
+        }
+
+        if (! ($company->password_hash ?? null) || ! Illuminate\Support\Facades\Hash::check($validated['currentPassword'], $company->password_hash)) {
+            return response()->json(['message' => 'Mevcut sifre hatali.'], 422);
+        }
+
+        DB::table('client_companies')->where('id', $company->id)->update([
+            'password_hash' => Illuminate\Support\Facades\Hash::make($validated['password']),
+            'updated_at' => now(),
+        ]);
+
+        return response()->json(['message' => 'Sifre guncellendi.']);
+    } catch (\Illuminate\Validation\ValidationException $exception) {
+        return response()->json([
+            'message' => collect($exception->errors())->flatten()->first() ?? 'Sifre bilgileri gecersiz.',
+            'errors' => $exception->errors(),
+        ], 422);
+    } catch (Throwable $exception) {
+        return response()->json([
+            'message' => 'Sifre guncelleme hata: '.$exception->getMessage(),
             'type' => $exception::class,
         ], 500);
     }
@@ -984,7 +1064,7 @@ Route::delete('/client-companies/{clientCompany}', function (string $clientCompa
 });
 Route::get('/client-companies/{companyCode}/people', function (string $companyCode) {
     try {
-        ensureAccountRoleColumns();
+        ensureAccountColumns();
 
         $company = DB::table('client_companies')
             ->where(function ($query) use ($companyCode) {
@@ -1029,7 +1109,7 @@ Route::get('/client-companies/{companyCode}/people', function (string $companyCo
 });
 Route::post('/client-companies/{companyCode}/people', function (string $companyCode) {
     try {
-        ensureAccountRoleColumns();
+        ensureAccountColumns();
 
         $company = DB::table('client_companies')
             ->where(function ($query) use ($companyCode) {
@@ -1086,7 +1166,7 @@ Route::post('/client-companies/{companyCode}/people', function (string $companyC
 });
 Route::patch('/client-companies/{companyCode}/people/{person}', function (string $companyCode, string $person) {
     try {
-        ensureAccountRoleColumns();
+        ensureAccountColumns();
 
         $company = DB::table('client_companies')
             ->where(function ($query) use ($companyCode) {
@@ -1144,7 +1224,7 @@ Route::patch('/client-companies/{companyCode}/people/{person}', function (string
 });
 Route::delete('/client-companies/{companyCode}/people/{person}', function (string $companyCode, string $person) {
     try {
-        ensureAccountRoleColumns();
+        ensureAccountColumns();
 
         $company = DB::table('client_companies')
             ->where(function ($query) use ($companyCode) {
@@ -1184,7 +1264,7 @@ Route::delete('/client-companies/{companyCode}/people/{person}', function (strin
 });
 Route::get('/client-companies/{companyCode}', function (string $companyCode) {
     try {
-        ensureAccountRoleColumns();
+        ensureAccountColumns();
 
         $slug = Str::slug($companyCode);
         $company = DB::table('client_companies')
@@ -1217,6 +1297,8 @@ Route::get('/client-companies/{companyCode}', function (string $companyCode) {
                 'address' => $company->address,
                 'taxNumber' => $company->tax_number,
                 'notes' => $company->notes,
+                'mealUnitPrice' => (float) ($company->meal_unit_price ?? 170),
+                'mealVatEnabled' => (bool) ($company->meal_vat_enabled ?? false),
                 'active' => (bool) $company->active,
                 'createdAt' => $company->created_at,
                 'updatedAt' => $company->updated_at,

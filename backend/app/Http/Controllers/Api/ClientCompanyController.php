@@ -40,6 +40,8 @@ class ClientCompanyController extends Controller
             'address' => ['nullable', 'string', 'max:255'],
             'taxNumber' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'mealUnitPrice' => ['nullable', 'numeric', 'min:0', 'max:999999'],
+            'mealVatEnabled' => ['nullable', 'boolean'],
         ]);
 
         $code = Str::slug($validated['code'] ?? $validated['username'] ?? $this->makeCompanyCode($validated['name']));
@@ -65,6 +67,8 @@ class ClientCompanyController extends Controller
                 'address' => $validated['address'] ?? null,
                 'tax_number' => $validated['taxNumber'] ?? null,
                 'notes' => $validated['notes'] ?? null,
+                'meal_unit_price' => $validated['mealUnitPrice'] ?? 170,
+                'meal_vat_enabled' => $validated['mealVatEnabled'] ?? false,
                 'active' => true,
             ];
 
@@ -93,10 +97,13 @@ class ClientCompanyController extends Controller
             'address' => ['nullable', 'string', 'max:255'],
             'taxNumber' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'mealUnitPrice' => ['nullable', 'numeric', 'min:0', 'max:999999'],
+            'mealVatEnabled' => ['nullable', 'boolean'],
+            'password' => ['nullable', 'string', 'min:4', 'max:255'],
             'active' => ['nullable', 'boolean'],
         ]);
 
-        $clientCompany->update([
+        $updates = [
             'name' => $validated['name'],
             'contact_name' => $validated['contactName'] ?? null,
             'phone' => $validated['phone'] ?? null,
@@ -104,10 +111,45 @@ class ClientCompanyController extends Controller
             'address' => $validated['address'] ?? null,
             'tax_number' => $validated['taxNumber'] ?? null,
             'notes' => $validated['notes'] ?? null,
+            'meal_unit_price' => $validated['mealUnitPrice'] ?? $clientCompany->meal_unit_price ?? 170,
+            'meal_vat_enabled' => $validated['mealVatEnabled'] ?? $clientCompany->meal_vat_enabled ?? false,
             'active' => $validated['active'] ?? $clientCompany->active,
-        ]);
+        ];
+
+        if (! empty($validated['password'])) {
+            $updates['password_hash'] = Hash::make($validated['password']);
+        }
+
+        $clientCompany->update($updates);
 
         return response()->json(['company' => $this->serializeCompany($clientCompany->fresh())]);
+    }
+
+    public function updatePassword(Request $request, string $companyCode): JsonResponse
+    {
+        $validated = $request->validate([
+            'currentPassword' => ['required', 'string', 'max:255'],
+            'password' => ['required', 'string', 'min:4', 'max:255'],
+        ]);
+
+        $loginSlug = Str::slug($companyCode);
+        $company = ClientCompany::where(function ($query) use ($loginSlug) {
+            $query->where('code', $loginSlug)->orWhere('username', $loginSlug);
+        })
+            ->where('active', true)
+            ->first();
+
+        if (! $company || ($company->role ?? 'customer') !== 'customer' || $company->hidden) {
+            return response()->json(['message' => 'Sirket uyeligi bulunamadi.'], 404);
+        }
+
+        if (! $company->password_hash || ! Hash::check($validated['currentPassword'], $company->password_hash)) {
+            return response()->json(['message' => 'Mevcut sifre hatali.'], 422);
+        }
+
+        $company->update(['password_hash' => Hash::make($validated['password'])]);
+
+        return response()->json(['message' => 'Sifre guncellendi.']);
     }
 
     public function destroy(ClientCompany $clientCompany): JsonResponse
@@ -206,6 +248,8 @@ class ClientCompanyController extends Controller
             'address' => $company->address,
             'taxNumber' => $company->tax_number,
             'notes' => $company->notes,
+            'mealUnitPrice' => (float) ($company->meal_unit_price ?? 170),
+            'mealVatEnabled' => (bool) ($company->meal_vat_enabled ?? false),
             'active' => $company->active,
             'createdAt' => $company->created_at?->toISOString(),
             'updatedAt' => $company->updated_at?->toISOString(),

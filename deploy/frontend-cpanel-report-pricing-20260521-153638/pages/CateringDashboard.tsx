@@ -33,7 +33,6 @@ import {
 } from "lucide-react";
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FeedbackModal } from "../components/FeedbackModal";
 import { apiFetch } from "../services/api";
 import { clearSession } from "../services/session";
 import type { ClientCompany, MealRequest, MenuDay } from "../types/api";
@@ -1026,7 +1025,7 @@ export function CateringDashboard() {
         : adminView === "monthlyTracking"
           ? "Gunluk siparis takibi"
           : adminView === "reports"
-          ? "Fatura raporları"
+          ? "Operasyon raporları"
           : "Catering yönetim paneli";
 
   const pageDescription =
@@ -1037,7 +1036,7 @@ export function CateringDashboard() {
         : adminView === "monthlyTracking"
           ? "Secilen tarihte siparis veren firmalari ve gunun durumunu incele."
           : adminView === "reports"
-          ? "Firma fiyatlarini, fatura secimini ve aylik tahsilat toplamlarini yonet."
+          ? "Günlük adetler, bildirim oranı ve operasyon yükünü takip et."
           : "Üyelikleri oluştur, şirketlerin günlük yemek adetlerini takip et ve operasyonu tek ekrandan yönet.";
 
   return (
@@ -1108,6 +1107,9 @@ export function CateringDashboard() {
             </button>
           </div>
         </header>
+
+        {message ? <p className="form-success admin-flash">{message}</p> : null}
+        {error ? <p className="form-error admin-flash">{error}</p> : null}
 
         <section className="catering-metric-grid admin-metric-grid">
           <article className="highlight">
@@ -1826,6 +1828,7 @@ export function CateringDashboard() {
                 <span>Operasyon notu</span>
                 <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Teslimat, özel porsiyon veya ödeme notu" />
               </label>
+              {error ? <p className="form-error">{error}</p> : null}
               <button className="catering-primary-button" type="submit" disabled={isSaving}>
                 <Plus size={18} />
                 Kullanıcıyı oluştur
@@ -1857,9 +1860,6 @@ export function CateringDashboard() {
           </section>
         </div>
       ) : null}
-
-      {error ? <FeedbackModal tone="error" message={error} onClose={() => setError("")} /> : null}
-      {!error && message ? <FeedbackModal tone="success" message={message} onClose={() => setMessage("")} /> : null}
     </main>
   );
 }

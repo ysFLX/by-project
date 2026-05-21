@@ -6,6 +6,7 @@ import react from "@vitejs/plugin-react";
 function exposeComponentSources(): Plugin {
   const projectRoot = __dirname;
   const pagesDir = resolve(projectRoot, "src/pages");
+  const componentsDir = resolve(projectRoot, "src/components");
   const files = [
     "Home.tsx",
     "CompanyLogin.tsx",
@@ -43,6 +44,14 @@ function exposeComponentSources(): Plugin {
         mkdirSync(dirname(targetPath), { recursive: true });
         writeFileSync(targetPath, readFileSync(sourcePath, "utf8"), "utf8");
       }
+
+      const componentsOutputDir = resolve(projectRoot, "dist/components");
+      mkdirSync(componentsOutputDir, { recursive: true });
+      writeFileSync(
+        join(componentsOutputDir, "FeedbackModal.tsx"),
+        readFileSync(join(componentsDir, "FeedbackModal.tsx"), "utf8"),
+        "utf8"
+      );
     },
   };
 }

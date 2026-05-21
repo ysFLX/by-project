@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   getMonthlyDemoMenu,
 } from "../data/demo-store";
-import { FeedbackModal } from "../components/FeedbackModal";
 import { apiFetch } from "../services/api";
 import { clearSession } from "../services/session";
 import type { ClientCompany, CompanyPerson, MealRequest, MenuDay } from "../types/api";
@@ -702,6 +701,8 @@ export function CompanyMealPortal({ companyCode }: Props) {
                 <span>Not</span>
                 <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Örn: 2 vejetaryen, 1 glutensiz, servis 12:30..." disabled={!canEditHeadcount} />
               </label>
+              {error ? <p className="form-error">{error}</p> : null}
+              {message ? <p className="form-success">{message}</p> : null}
               <button className="catering-primary-button" type="submit" disabled={!canEditHeadcount}>
                 <Send size={18} />
                 {request ? "Bildirimi guncelle" : "Catering paneline gönder"}
@@ -935,6 +936,8 @@ export function CompanyMealPortal({ companyCode }: Props) {
               <span>Yeni sifre tekrar</span>
               <input type="password" value={newPasswordAgain} onChange={(event) => setNewPasswordAgain(event.target.value)} minLength={4} required />
             </label>
+            {error ? <p className="form-error">{error}</p> : null}
+            {message ? <p className="form-success">{message}</p> : null}
             <button className="catering-primary-button" type="submit" disabled={isPasswordSaving}>
               <KeyRound size={18} />
               Sifreyi kaydet
@@ -989,9 +992,6 @@ export function CompanyMealPortal({ companyCode }: Props) {
           </section>
         </div>
       ) : null}
-
-      {error ? <FeedbackModal tone="error" message={error} onClose={() => setError("")} /> : null}
-      {!error && message ? <FeedbackModal tone="success" message={message} onClose={() => setMessage("")} /> : null}
     </main>
   );
 }
