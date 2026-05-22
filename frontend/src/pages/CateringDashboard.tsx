@@ -84,6 +84,18 @@ const adminViews = [
   { id: "monthlyTracking", label: "Aylik yemek takibi", icon: ClipboardList },
   { id: "reports", label: "Raporlar", icon: BarChart3 }
 ] satisfies { id: AdminView; label: string; icon: typeof LayoutDashboard }[];
+const ADMIN_VIEW_STORAGE_KEY = "maharet-admin-view";
+const adminViewIds = adminViews.map((view) => view.id) as AdminView[];
+
+function getInitialAdminView(): AdminView {
+  try {
+    const savedView = window.localStorage.getItem(ADMIN_VIEW_STORAGE_KEY);
+
+    return adminViewIds.includes(savedView as AdminView) ? (savedView as AdminView) : "overview";
+  } catch {
+    return "overview";
+  }
+}
 
 const menuWeekDays = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
 
@@ -429,7 +441,7 @@ async function extractPdfMenu(file: File, monthKey: string) {
 }
 
 export function CateringDashboard() {
-  const [adminView, setAdminView] = useState<AdminView>("overview");
+  const [adminView, setAdminView] = useState<AdminView>(getInitialAdminView);
   const [companies, setCompanies] = useState<ClientCompany[]>([]);
   const [requests, setRequests] = useState<MealRequest[]>([]);
   const [serviceDate, setServiceDate] = useState(todayKey());
@@ -809,6 +821,14 @@ export function CateringDashboard() {
 
     return () => window.clearInterval(interval);
   }, [serviceDate]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(ADMIN_VIEW_STORAGE_KEY, adminView);
+    } catch {
+      // Keeping the panel usable is more important than persisting the tab.
+    }
+  }, [adminView]);
 
   useEffect(() => {
     if (adminView === "monthlyTracking") {

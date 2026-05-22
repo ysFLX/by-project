@@ -21,6 +21,18 @@ type PersonStatusAction = {
 };
 
 type CustomerView = "daily" | "menu" | "tracking" | "people" | "account";
+const customerViewIds: CustomerView[] = ["daily", "menu", "tracking", "people", "account"];
+
+function getInitialCustomerView(companyCode: string): CustomerView {
+  try {
+    const savedView = window.localStorage.getItem(`maharet-customer-view-${companyCode}`);
+
+    return customerViewIds.includes(savedView as CustomerView) ? (savedView as CustomerView) : "daily";
+  } catch {
+    return "daily";
+  }
+}
+
 type MenuEntry = {
   date: string;
   items: string[];
@@ -153,7 +165,7 @@ function buildMenuWeeks(menu: MenuEntry[], referenceDate: string) {
 }
 
 export function CompanyMealPortal({ companyCode }: Props) {
-  const [customerView, setCustomerView] = useState<CustomerView>("daily");
+  const [customerView, setCustomerView] = useState<CustomerView>(() => getInitialCustomerView(companyCode));
   const [company, setCompany] = useState<ClientCompany | null>(null);
   const [people, setPeople] = useState<CompanyPerson[]>([]);
   const [request, setRequest] = useState<MealRequest | null>(null);
@@ -247,6 +259,18 @@ export function CompanyMealPortal({ companyCode }: Props) {
         : customerView === "tracking"
           ? "Bu ay hangi gun kac kisilik siparis verdiginizi tablo olarak gorun."
           : "Sectiginiz kisiler catering firmasinin paneline kisi sayisi ve isim listesiyle duser.";
+
+  useEffect(() => {
+    setCustomerView(getInitialCustomerView(companyCode));
+  }, [companyCode]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(`maharet-customer-view-${companyCode}`, customerView);
+    } catch {
+      // Keeping the portal usable is more important than persisting the tab.
+    }
+  }, [companyCode, customerView]);
 
   async function loadPortalData() {
     setError("");

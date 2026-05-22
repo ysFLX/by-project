@@ -3395,3 +3395,456 @@ a {
     flex-direction: column;
   }
 }
+
+@media (max-width: 640px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  button,
+  input,
+  textarea {
+    font-size: 16px;
+  }
+
+  .catering-home-shell,
+  .catering-dashboard-shell,
+  .catering-auth-shell,
+  .catering-member-shell {
+    padding: 12px;
+  }
+
+  .catering-home-nav,
+  .catering-brand,
+  .catering-home-nav > div,
+  .catering-hero-actions,
+  .meal-form-actions,
+  .section-title-row,
+  .live-dashboard-head,
+  .headcount-panel-head,
+  .person-picker-head,
+  .company-people-list article,
+  .menu-document-list article,
+  .customer-menu-pdf-head,
+  .monthly-day-head,
+  .billing-report-command,
+  .billing-subhead,
+  .billing-report-command .admin-toolbar,
+  .customer-billing-actions,
+  .company-form-actions,
+  .person-status-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .catering-home-nav {
+    gap: 14px;
+    min-height: 0;
+    padding: 14px;
+  }
+
+  .catering-brand {
+    min-width: 0;
+  }
+
+  .catering-brand strong,
+  .catering-brand small,
+  .billing-pricing-company strong,
+  .billing-pricing-company small {
+    overflow-wrap: anywhere;
+  }
+
+  .catering-home-nav > div,
+  .catering-hero-actions,
+  .admin-toolbar,
+  .customer-billing-actions,
+  .person-status-actions,
+  .menu-document-actions {
+    width: 100%;
+  }
+
+  .catering-nav-button,
+  .catering-primary-button,
+  .catering-secondary-button,
+  .no-meal-button,
+  .create-user-button,
+  .admin-danger-button,
+  .sidebar-logout-button,
+  .customer-logout,
+  .menu-template-button {
+    width: 100%;
+  }
+
+  .catering-hero-section {
+    gap: 12px;
+    padding: 12px 0;
+  }
+
+  .catering-hero-copy {
+    min-height: auto;
+    padding: 22px;
+  }
+
+  .catering-hero-copy h1 {
+    font-size: 2.05rem;
+    line-height: 1.05;
+  }
+
+  .catering-detail-copy h2,
+  .section-title-row h2,
+  .admin-topbar h1,
+  .customer-hero h1,
+  .billing-report-intro h2 {
+    font-size: 1.75rem;
+    line-height: 1.08;
+  }
+
+  .catering-live-card {
+    min-height: auto;
+    padding: 14px;
+  }
+
+  .live-card-top {
+    padding: 16px;
+  }
+
+  .live-card-top strong {
+    font-size: 1.55rem;
+  }
+
+  .live-dashboard-stats,
+  .route-preview-list article,
+  .catering-pain-list article,
+  .catering-feature-stack article,
+  .live-card-grid article,
+  .admin-settings-panel article,
+  .company-mini-list button,
+  .company-directory-list button {
+    grid-template-columns: 1fr;
+  }
+
+  .route-preview-list em,
+  .route-preview-list strong,
+  .ops-table-row em,
+  .member-code-pill,
+  .month-pill {
+    justify-self: start;
+    white-space: normal;
+  }
+
+  .catering-ops-table,
+  .catering-detail-copy,
+  .today-menu-panel,
+  .headcount-panel,
+  .monthly-menu-section,
+  .customer-empty-card,
+  .admin-section-panel,
+  .catering-panel,
+  .billing-ledger-panel,
+  .billing-pricing-panel {
+    padding: 16px;
+  }
+
+  .daily-checklist-grid article,
+  .catering-flow-grid article {
+    min-height: 0;
+  }
+
+  .catering-auth-card,
+  .catering-member-card {
+    padding: 22px;
+  }
+
+  .portal-login-card {
+    width: 100%;
+  }
+
+  .portal-login-visual,
+  .portal-login-form {
+    padding: 22px;
+  }
+
+  .portal-login-visual h1 {
+    font-size: 2rem;
+    line-height: 1.05;
+  }
+
+  .admin-sidebar,
+  .customer-sidebar {
+    gap: 14px;
+    padding: 14px;
+  }
+
+  .admin-nav-list {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-main-panel,
+  .customer-main {
+    padding: 12px;
+  }
+
+  .admin-topbar {
+    margin-bottom: 12px;
+  }
+
+  .admin-toolbar,
+  .monthly-toolbar {
+    justify-content: stretch;
+  }
+
+  .admin-icon-button {
+    width: 100%;
+  }
+
+  .dashboard-date-filter,
+  .admin-search {
+    width: 100%;
+  }
+
+  .dashboard-date-filter input,
+  .admin-search input {
+    min-width: 0;
+  }
+
+  .admin-sidebar-summary strong,
+  .admin-control-grid strong,
+  .monthly-summary-grid strong,
+  .daily-status-grid strong {
+    font-size: 1.7rem;
+  }
+
+  .meal-request-row,
+  .admin-order-row,
+  .customer-tracking-row,
+  .person-billing-row,
+  .billing-company-row {
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .admin-order-row > *,
+  .customer-tracking-row > *,
+  .person-billing-row > *,
+  .billing-company-row > * {
+    display: grid;
+    gap: 4px;
+    justify-items: start;
+  }
+
+  .admin-order-row > *::before,
+  .customer-tracking-row > *::before,
+  .person-billing-row > *::before,
+  .billing-company-row > *::before {
+    color: #61705d;
+    content: "";
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .admin-order-row > :nth-child(1)::before {
+    content: "Firma";
+  }
+
+  .admin-order-row > :nth-child(2)::before {
+    content: "Yemek adedi";
+  }
+
+  .admin-order-row > :nth-child(3)::before {
+    content: "Durum";
+  }
+
+  .admin-order-row > :nth-child(4)::before {
+    content: "Saat";
+  }
+
+  .admin-order-row > :nth-child(5)::before {
+    content: "Islem";
+  }
+
+  .customer-tracking-row > :nth-child(1)::before {
+    content: "Tarih";
+  }
+
+  .customer-tracking-row > :nth-child(2)::before {
+    content: "Siparis adedi";
+  }
+
+  .customer-tracking-row > :nth-child(3)::before {
+    content: "Tutar";
+  }
+
+  .customer-tracking-row > :nth-child(4)::before {
+    content: "Aciklama";
+  }
+
+  .person-billing-row > :nth-child(1)::before {
+    content: "Kisi";
+  }
+
+  .person-billing-row > :nth-child(2)::before {
+    content: "Yedigi gun";
+  }
+
+  .person-billing-row > :nth-child(3)::before {
+    content: "Tutar";
+  }
+
+  .person-billing-row > :nth-child(4)::before {
+    content: "Tarihler";
+  }
+
+  .billing-company-row > :nth-child(1)::before {
+    content: "Firma";
+  }
+
+  .billing-company-row > :nth-child(2)::before {
+    content: "Gun";
+  }
+
+  .billing-company-row > :nth-child(3)::before {
+    content: "Porsiyon";
+  }
+
+  .billing-company-row > :nth-child(4)::before {
+    content: "Birim";
+  }
+
+  .billing-company-row > :nth-child(5)::before {
+    content: "Ara toplam";
+  }
+
+  .billing-company-row > :nth-child(6)::before {
+    content: "KDV";
+  }
+
+  .billing-company-row > :nth-child(7)::before {
+    content: "Toplam";
+  }
+
+  .order-status-pill {
+    justify-content: flex-start;
+    white-space: normal;
+  }
+
+  .meal-request-row span,
+  .person-picker-head span,
+  .company-people-list article > span {
+    align-self: start;
+    white-space: normal;
+  }
+
+  .monthly-menu-table,
+  .menu-edit-table {
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .monthly-menu-head,
+  .monthly-menu-cell.empty {
+    display: none;
+  }
+
+  .monthly-menu-cell,
+  .menu-edit-cell {
+    min-width: 0;
+  }
+
+  .today-menu-list,
+  .person-check-grid,
+  .company-person-form,
+  .menu-upload-form,
+  .monthly-summary-grid,
+  .billing-pricing-card,
+  .billing-summary-grid,
+  .customer-tracking-summary,
+  .company-contact-strip,
+  .admin-control-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .company-directory-list {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .company-detail-head,
+  .billing-pricing-company {
+    align-items: flex-start;
+  }
+
+  .admin-modal-backdrop,
+  .feedback-modal-backdrop {
+    padding: 12px;
+  }
+
+  .admin-create-modal,
+  .admin-create-modal.wide,
+  .person-status-modal,
+  .feedback-modal {
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    width: 100%;
+  }
+
+  .admin-create-modal,
+  .admin-create-modal.wide {
+    grid-template-columns: 1fr;
+  }
+
+  .create-modal-visual,
+  .modal-company-form {
+    padding: 20px;
+  }
+
+  .create-modal-visual h2,
+  .person-status-modal h2,
+  .feedback-modal h2 {
+    font-size: 1.45rem;
+    line-height: 1.1;
+  }
+
+  .modal-close-button {
+    right: 10px;
+    top: 10px;
+  }
+
+  .customer-menu-pdf iframe {
+    height: 58vh;
+  }
+}
+
+@media (max-width: 380px) {
+  .catering-home-shell,
+  .catering-dashboard-shell,
+  .admin-main-panel,
+  .customer-main {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .catering-brand > span {
+    height: 38px;
+    width: 38px;
+  }
+
+  .catering-hero-copy h1,
+  .admin-topbar h1,
+  .customer-hero h1 {
+    font-size: 1.82rem;
+  }
+
+  .catering-hero-copy,
+  .catering-live-card,
+  .admin-section-panel,
+  .catering-panel,
+  .today-menu-panel,
+  .headcount-panel,
+  .monthly-menu-section {
+    padding: 14px;
+  }
+}

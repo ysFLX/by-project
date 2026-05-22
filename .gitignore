@@ -9,6 +9,10 @@ build
 out
 public/build
 
+frontend/*.zip
+deploy/*.zip
+deploy/frontend-cpanel-*/
+
 .env
 .env.*
 !.env.example

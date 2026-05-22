@@ -1,7 +1,6 @@
 import { CateringDashboard } from "./pages/CateringDashboard";
 import { CompanyLogin } from "./pages/CompanyLogin";
 import { CompanyMealPortal } from "./pages/CompanyMealPortal";
-import { Home } from "./pages/Home";
 import { hasAdminSession } from "./services/session";
 
 function getCompanyCode(pathname: string) {
@@ -29,5 +28,6 @@ export function App() {
     return <CompanyMealPortal companyCode={getCompanyCode(pathname)} />;
   }
 
-  return <Home />;
+  window.location.replace("/giris");
+  return null;
 }

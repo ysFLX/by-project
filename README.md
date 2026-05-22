@@ -1,9 +1,17 @@
 # Maharet Yemek
 
-React frontend ve Laravel API iki temiz klasorde tutulur:
+Maharet Yemek, kurumsal catering operasyonu icin hazirlanmis React frontend ve Laravel API projesidir.
 
-- `frontend/`: React + Vite SPA.
-- `backend/`: Laravel API.
+## Proje Yapisi
+
+```text
+backend/                 Laravel API
+frontend/                React + Vite arayuz
+deploy/public-html-backend/
+                         cPanel public_html/backend giris dosyalari
+```
+
+Projeyi ziplerken kaynak teslimi icin `backend`, `frontend`, `deploy/public-html-backend`, `.github`, `.gitignore` ve README dosyalari yeterlidir. `node_modules`, `vendor`, `dist` ve eski deploy zipleri kaynak paketine dahil edilmez.
 
 ## Frontend
 
@@ -13,15 +21,19 @@ npm install
 npm run dev
 ```
 
-`frontend/.env`:
+Production build:
+
+```bash
+npm run build
+```
+
+Canli API adresi icin `frontend/.env`:
 
 ```env
-VITE_API_BASE_URL=http://localhost:8000/api
+VITE_API_BASE_URL=https://cateringhizmet.com.tr/backend/api
 ```
 
 ## Backend
-
-Backend resmi Laravel iskeleti uzerine kuruldu. Calistirmak icin PHP 8.3+ ve Composer gerekir.
 
 ```bash
 cd backend
@@ -32,26 +44,23 @@ php artisan migrate
 php artisan serve
 ```
 
-MySQL ayarlari `backend/.env.example` icinde hazir:
-
-```env
-DB_CONNECTION=mysql
-DB_DATABASE=maharet_yemek
-DB_USERNAME=maharet_user
-DB_PASSWORD=
-```
-
-cPanel kurulum notları için:
+Yerel API adresi:
 
 ```text
+http://localhost:8000/api
+```
+
+## cPanel
+
+Detayli kurulum icin:
+
+```text
+docs/CPANEL-DEPLOY.md
 backend/DEPLOY-CPANEL.md
 ```
 
-## Akis
+Canli kontrol adresi:
 
-1. Catering firmasi `/catering` panelinden sirket uyelik kodu olusturur.
-2. Sirket `/giris` uzerinden kodla girer.
-3. Gunluk yemek kisi sayisi girilir.
-4. Catering panelinde toplam porsiyon ve sirket bazli talepler gorunur.
-5. Yemek yenildikten sonra sirket toplama onayi verir.
-6. Catering firmasi talebi `Toplandi` durumuna alir.
+```text
+https://cateringhizmet.com.tr/backend/api/health
+```
