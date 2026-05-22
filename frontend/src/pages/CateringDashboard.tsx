@@ -37,7 +37,7 @@ import { FeedbackModal } from "../components/FeedbackModal";
 import { apiFetch } from "../services/api";
 import { setPageTitle } from "../services/page-title";
 import { clearSession } from "../services/session";
-import type { ClientCompany, MealRequest, MenuDay, OperationSettings } from "../types/api";
+import type { ClientCompany, MealRequest, MenuDay, OperationSettings, ReportPayment } from "../types/api";
 
 type AdminView = "overview" | "collection" | "companies" | "menu" | "monthlyTracking" | "reports";
 type AccountType = "individual" | "corporate";
@@ -56,6 +56,8 @@ type ReportCompanyTotal = {
   netTotal: number;
   vatTotal: number;
   grossTotal: number;
+  paid: boolean;
+  paidAt?: string | null;
 };
 
 const VAT_RATE = 0.2;
@@ -454,6 +456,7 @@ export function CateringDashboard() {
   const [trackingDate, setTrackingDate] = useState(todayKey());
   const [reportMonth, setReportMonth] = useState(currentMonthKey());
   const [reportRequests, setReportRequests] = useState<MealRequest[]>([]);
+  const [reportPayments, setReportPayments] = useState<ReportPayment[]>([]);
   const [menuMonth, setMenuMonth] = useState(currentMonthKey());
   const [menuDays, setMenuDays] = useState<Record<string, string>>({});
   const [operationSettings, setOperationSettings] = useState<OperationSettings>(defaultOperationSettings);
@@ -491,6 +494,7 @@ export function CateringDashboard() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSettingsSaving, setIsSettingsSaving] = useState(false);
   const [savingPricingCompanyId, setSavingPricingCompanyId] = useState("");
+  const [savingPaymentCompanyId, setSavingPaymentCompanyId] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const selectedCompanyIdRef = useRef("");
@@ -526,6 +530,10 @@ export function CateringDashboard() {
   const monthlyReportedDayCount = 0;
   const menuCalendarCells = useMemo(() => getMenuCalendarCells(menuMonth), [menuMonth]);
   const reportTotalHeadcount = reportRequests.reduce((sum, request) => sum + request.headcount, 0);
+  const reportPaymentsByCompany = useMemo(
+    () => new Map(reportPayments.map((payment) => [payment.companyId, payment])),
+    [reportPayments]
+  );
   const reportCompanyTotals = useMemo<ReportCompanyTotal[]>(() => {
     const totals = new Map<string, { companyId: string; companyName: string; headcount: number; dates: Set<string> }>();
 
@@ -546,6 +554,7 @@ export function CateringDashboard() {
       .map((total) => {
         const company = companies.find((item) => item.id === total.companyId);
         const amounts = calculateMealAmount(total.headcount, company?.mealUnitPrice ?? 170, company?.mealVatEnabled ?? false);
+        const payment = reportPaymentsByCompany.get(total.companyId);
 
         return {
           companyId: total.companyId,
@@ -554,11 +563,13 @@ export function CateringDashboard() {
           orderDays: total.dates.size,
           unitPrice: company?.mealUnitPrice ?? 170,
           vatEnabled: company?.mealVatEnabled ?? false,
+          paid: Boolean(payment?.paid),
+          paidAt: payment?.paidAt ?? null,
           ...amounts
         };
       })
       .sort((first, second) => second.grossTotal - first.grossTotal);
-  }, [reportRequests, companies]);
+  }, [reportRequests, companies, reportPaymentsByCompany]);
   const reportAmounts = reportCompanyTotals.reduce((amounts, total) => ({
     netTotal: amounts.netTotal + total.netTotal,
     vatTotal: amounts.vatTotal + total.vatTotal,
@@ -584,6 +595,10 @@ export function CateringDashboard() {
     [companies, reportTotalsByCompany]
   );
   const reportInvoiceCompanyCount = reportPricingCompanies.filter((company) => company.mealVatEnabled).length;
+  const reportPaidTotal = reportCompanyTotals
+    .filter((companyTotal) => companyTotal.paid)
+    .reduce((sum, companyTotal) => sum + companyTotal.grossTotal, 0);
+  const reportUnpaidTotal = Math.max(0, reportAmounts.grossTotal - reportPaidTotal);
 
   const requestRows = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLocaleLowerCase("tr-TR");
@@ -730,13 +745,17 @@ export function CateringDashboard() {
     setError("");
 
     try {
-      const payloads = await Promise.all(
-        getMonthDays(reportMonth).map((day) =>
-          apiFetch<{ requests: MealRequest[] }>(`/meal-requests?serviceDate=${encodeURIComponent(day)}`)
-        )
-      );
+      const [payloads, paymentsPayload] = await Promise.all([
+        Promise.all(
+          getMonthDays(reportMonth).map((day) =>
+            apiFetch<{ requests: MealRequest[] }>(`/meal-requests?serviceDate=${encodeURIComponent(day)}`)
+          )
+        ),
+        apiFetch<{ payments: ReportPayment[] }>(`/report-payments?month=${encodeURIComponent(reportMonth)}`)
+      ]);
 
       setReportRequests(payloads.flatMap((payload) => payload.requests));
+      setReportPayments(paymentsPayload.payments);
     } catch (reportError) {
       setError(reportError instanceof Error ? reportError.message : "Rapor verileri yuklenemedi.");
     } finally {
@@ -1037,6 +1056,33 @@ export function CateringDashboard() {
     } finally {
       setIsSaving(false);
       setSavingPricingCompanyId("");
+    }
+  }
+
+  async function toggleReportPayment(companyTotal: ReportCompanyTotal) {
+    setSavingPaymentCompanyId(companyTotal.companyId);
+    setMessage("");
+    setError("");
+
+    try {
+      const { payment } = await apiFetch<{ payment: ReportPayment }>("/report-payments", {
+        method: "PUT",
+        body: {
+          companyId: companyTotal.companyId,
+          month: reportMonth,
+          paid: !companyTotal.paid
+        }
+      });
+
+      setReportPayments((currentPayments) => {
+        const withoutCurrent = currentPayments.filter((currentPayment) => currentPayment.companyId !== payment.companyId);
+        return [...withoutCurrent, payment];
+      });
+      setMessage(payment.paid ? `${companyTotal.companyName} odemesi alindi olarak isaretlendi.` : `${companyTotal.companyName} odeme isareti geri alindi.`);
+    } catch (paymentError) {
+      setError(paymentError instanceof Error ? paymentError.message : "Odeme durumu guncellenemedi.");
+    } finally {
+      setSavingPaymentCompanyId("");
     }
   }
 
@@ -1900,10 +1946,15 @@ export function CateringDashboard() {
                 <strong>{formatCurrency(reportAmounts.vatTotal)}</strong>
                 <small>{reportInvoiceCompanyCount} firmada %{VAT_RATE * 100}</small>
               </article>
+              <article>
+                <span>Alinan odeme</span>
+                <strong>{formatCurrency(reportPaidTotal)}</strong>
+                <small>{reportCompanyTotals.filter((companyTotal) => companyTotal.paid).length} firma odedi</small>
+              </article>
               <article className="highlight">
-                <span>Tahsil edilecek</span>
-                <strong>{formatCurrency(reportAmounts.grossTotal)}</strong>
-                <small>KDV ayarlarına göre toplam</small>
+                <span>Kalan tahsilat</span>
+                <strong>{formatCurrency(reportUnpaidTotal)}</strong>
+                <small>Toplam: {formatCurrency(reportAmounts.grossTotal)}</small>
               </article>
             </div>
 
@@ -1926,6 +1977,7 @@ export function CateringDashboard() {
                     <span>Ara toplam</span>
                     <span>KDV</span>
                     <span>Toplam</span>
+                    <span>Odeme</span>
                   </div>
 
                   {isReportLoading ? (
@@ -1944,6 +1996,15 @@ export function CateringDashboard() {
                           {companyTotal.vatEnabled ? formatCurrency(companyTotal.vatTotal) : "KDV yok"}
                         </span>
                         <strong>{formatCurrency(companyTotal.grossTotal)}</strong>
+                        <button
+                          className={companyTotal.paid ? "billing-payment-button paid" : "billing-payment-button"}
+                          type="button"
+                          onClick={() => toggleReportPayment(companyTotal)}
+                          disabled={savingPaymentCompanyId === companyTotal.companyId}
+                        >
+                          {savingPaymentCompanyId === companyTotal.companyId ? <Loader2 size={15} /> : <CheckCircle2 size={15} />}
+                          {companyTotal.paid ? "Odeme alindi" : "Odeme alindi yap"}
+                        </button>
                       </div>
                     ))
                   )}

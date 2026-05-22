@@ -56,6 +56,18 @@ CREATE TABLE IF NOT EXISTS `app_settings` (
   PRIMARY KEY (`key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `company_payments` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `client_company_id` BIGINT UNSIGNED NOT NULL,
+  `month` VARCHAR(7) NOT NULL,
+  `paid_at` TIMESTAMP NULL,
+  `created_at` TIMESTAMP NULL,
+  `updated_at` TIMESTAMP NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `company_payments_company_month_unique` (`client_company_id`, `month`),
+  KEY `company_payments_month_index` (`month`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 INSERT IGNORE INTO `meal_request_counters` (`key`, `next_value`) VALUES ('meal_request', 1);
 INSERT IGNORE INTO `app_settings` (`key`, `value`, `created_at`, `updated_at`) VALUES
   ('meal_eaten_deadline', '16:30', NOW(), NOW()),

@@ -203,6 +203,45 @@ if (! function_exists('serializeMenuDay')) {
     }
 }
 
+if (! function_exists('cleanupMenuStorage')) {
+    function cleanupMenuStorage(string $activeMonth, bool $replaceActiveMonthDocument = false): void
+    {
+        ensureMenuDaysTable();
+        ensureMenuDocumentsTable();
+
+        DB::table('menu_days')
+            ->whereNotBetween('service_date', [$activeMonth.'-01', date('Y-m-t', strtotime($activeMonth.'-01'))])
+            ->delete();
+
+        DB::table('menu_documents')
+            ->where('month', '<>', $activeMonth)
+            ->delete();
+
+        if ($replaceActiveMonthDocument) {
+            DB::table('menu_documents')
+                ->where('month', $activeMonth)
+                ->delete();
+        }
+    }
+}
+
+if (! function_exists('ensureCompanyPaymentsTable')) {
+    function ensureCompanyPaymentsTable(): void
+    {
+        if (! Schema::hasTable('company_payments')) {
+            Schema::create('company_payments', function (\Illuminate\Database\Schema\Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('client_company_id');
+                $table->string('month', 7);
+                $table->timestamp('paid_at')->nullable();
+                $table->timestamps();
+                $table->unique(['client_company_id', 'month'], 'company_payments_company_month_unique');
+                $table->index('month');
+            });
+        }
+    }
+}
+
 if (! function_exists('ensureOperationalSettingsTable')) {
     function ensureOperationalSettingsTable(): void
     {
@@ -551,6 +590,91 @@ Route::put('/operation-settings', function () {
     }
 });
 
+Route::get('/report-payments', function () {
+    try {
+        if (! requestHasValidAdminToken(request())) {
+            return response()->json(['message' => 'Admin girisi gerekli.'], 401);
+        }
+
+        ensureCompanyPaymentsTable();
+        $month = (string) request('month', now()->format('Y-m'));
+
+        if (! preg_match('/^\d{4}-\d{2}$/', $month)) {
+            return response()->json(['message' => 'Ay bilgisi YYYY-MM formatinda olmali.'], 422);
+        }
+
+        $payments = DB::table('company_payments')
+            ->where('month', $month)
+            ->get()
+            ->map(fn ($payment) => [
+                'companyId' => (string) $payment->client_company_id,
+                'month' => $payment->month,
+                'paid' => $payment->paid_at !== null,
+                'paidAt' => $payment->paid_at,
+            ]);
+
+        return response()->json(['payments' => $payments]);
+    } catch (Throwable $exception) {
+        return response()->json([
+            'message' => 'Odeme kayitlari okunamadi: '.$exception->getMessage(),
+            'type' => $exception::class,
+        ], 500);
+    }
+});
+
+Route::put('/report-payments', function () {
+    try {
+        if (! requestHasValidAdminToken(request())) {
+            return response()->json(['message' => 'Admin girisi gerekli.'], 401);
+        }
+
+        ensureCompanyPaymentsTable();
+        $validated = request()->validate([
+            'companyId' => ['required', 'integer'],
+            'month' => ['required', 'date_format:Y-m'],
+            'paid' => ['required', 'boolean'],
+        ]);
+
+        $company = DB::table('client_companies')->where('id', $validated['companyId'])->first();
+
+        if (! $company) {
+            return response()->json(['message' => 'Firma bulunamadi.'], 404);
+        }
+
+        $paidAt = $validated['paid'] ? now() : null;
+        DB::table('company_payments')->updateOrInsert(
+            [
+                'client_company_id' => (int) $validated['companyId'],
+                'month' => $validated['month'],
+            ],
+            [
+                'paid_at' => $paidAt,
+                'updated_at' => now(),
+                'created_at' => now(),
+            ]
+        );
+
+        return response()->json([
+            'payment' => [
+                'companyId' => (string) $validated['companyId'],
+                'month' => $validated['month'],
+                'paid' => (bool) $validated['paid'],
+                'paidAt' => $paidAt,
+            ],
+        ]);
+    } catch (\Illuminate\Validation\ValidationException $exception) {
+        return response()->json([
+            'message' => collect($exception->errors())->flatten()->first() ?? 'Odeme bilgisi gecersiz.',
+            'errors' => $exception->errors(),
+        ], 422);
+    } catch (Throwable $exception) {
+        return response()->json([
+            'message' => 'Odeme kaydi guncellenemedi: '.$exception->getMessage(),
+            'type' => $exception::class,
+        ], 500);
+    }
+});
+
 Route::get('/menus', function () {
     try {
         ensureMenuDocumentsTable();
@@ -612,6 +736,8 @@ Route::post('/menu-days', function () {
         $now = now();
 
         DB::transaction(function () use ($validated, $month, $now) {
+            cleanupMenuStorage($month);
+
             foreach ($validated['days'] as $day) {
                 if (strpos($day['date'], $month.'-') !== 0) {
                     continue;
@@ -771,9 +897,10 @@ Route::post('/menus', function () {
             $attributes['file_path'] = '';
         }
 
-        $id = DB::table('menu_documents')->insertGetId($attributes);
+        $id = DB::transaction(function () use ($parsedDays, $validated, $attributes, $now) {
+            cleanupMenuStorage($validated['month'], true);
+            $id = DB::table('menu_documents')->insertGetId($attributes);
 
-        DB::transaction(function () use ($parsedDays, $validated, $now) {
             DB::table('menu_days')
                 ->whereBetween('service_date', [$validated['month'].'-01', date('Y-m-t', strtotime($validated['month'].'-01'))])
                 ->delete();
@@ -789,6 +916,8 @@ Route::post('/menus', function () {
                     ]
                 );
             }
+
+            return $id;
         });
 
         $menu = DB::table('menu_documents')->where('id', $id)->first();

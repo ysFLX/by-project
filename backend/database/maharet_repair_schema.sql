@@ -55,6 +55,18 @@ CREATE TABLE IF NOT EXISTS `app_settings` (
   PRIMARY KEY (`key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `company_payments` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `client_company_id` BIGINT UNSIGNED NOT NULL,
+  `month` VARCHAR(7) NOT NULL,
+  `paid_at` TIMESTAMP NULL,
+  `created_at` TIMESTAMP NULL,
+  `updated_at` TIMESTAMP NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `company_payments_company_month_unique` (`client_company_id`, `month`),
+  KEY `company_payments_month_index` (`month`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 DELIMITER //
 
 DROP PROCEDURE IF EXISTS maharet_add_column_if_missing//
@@ -113,6 +125,7 @@ DELIMITER ;
 
 CALL maharet_fix_auto_increment_id('client_companies');
 CALL maharet_fix_auto_increment_id('meal_requests');
+CALL maharet_fix_auto_increment_id('company_payments');
 
 CALL maharet_add_column_if_missing('client_companies', 'username', '`username` VARCHAR(255) NULL AFTER `code`');
 CALL maharet_add_column_if_missing('client_companies', 'password_hash', '`password_hash` VARCHAR(255) NULL AFTER `username`');

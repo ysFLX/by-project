@@ -3316,7 +3316,7 @@ a {
 .billing-company-row {
   display: grid;
   gap: 10px;
-  grid-template-columns: minmax(150px, 1.15fr) minmax(46px, 0.28fr) minmax(62px, 0.35fr) repeat(4, minmax(92px, 0.55fr));
+  grid-template-columns: minmax(150px, 1.15fr) minmax(46px, 0.28fr) minmax(62px, 0.35fr) repeat(4, minmax(92px, 0.55fr)) minmax(130px, 0.7fr);
 }
 
 .billing-company-head {
@@ -3348,6 +3348,33 @@ a {
 .billing-company-row .invoice-active {
   color: #ad5d13;
   font-weight: 900;
+}
+
+.billing-payment-button {
+  align-items: center;
+  background: #fff7ed;
+  border: 1px solid rgba(217, 161, 74, 0.24);
+  border-radius: 8px;
+  color: #8a4a13;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-weight: 900;
+  gap: 7px;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+.billing-payment-button.paid {
+  background: rgba(31, 111, 70, 0.1);
+  border-color: rgba(31, 111, 70, 0.22);
+  color: #1f6f46;
+}
+
+.billing-payment-button:disabled {
+  cursor: wait;
+  opacity: 0.68;
 }
 
 .billing-pricing-company {
@@ -3851,6 +3878,10 @@ a {
 
   .billing-company-row > :nth-child(7)::before {
     content: "Toplam";
+  }
+
+  .billing-company-row > :nth-child(8)::before {
+    content: "Odeme";
   }
 
   .order-status-pill {

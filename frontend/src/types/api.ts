@@ -69,3 +69,10 @@ export type OperationSettings = {
   eatenDeadline: string;
   collectedDeadline: string;
 };
+
+export type ReportPayment = {
+  companyId: string;
+  month: string;
+  paid: boolean;
+  paidAt?: string | null;
+};
