@@ -929,6 +929,11 @@ a {
   border-left-color: #1f6f46;
 }
 
+.meal-request-row.status-missing {
+  border-left-color: #8b9186;
+  opacity: 0.82;
+}
+
 .meal-request-row.status-collected {
   opacity: 0.72;
 }
@@ -1149,8 +1154,8 @@ a {
 .admin-topbar,
 .admin-metric-grid,
 .admin-content-grid {
-  margin: 0 auto;
-  max-width: 1280px;
+  margin: 0;
+  max-width: none;
 }
 
 .admin-topbar {
@@ -2465,8 +2470,8 @@ a {
   background: #fff;
   border: 1px solid rgba(23, 63, 42, 0.1);
   border-radius: 8px;
-  margin: 0 auto;
-  max-width: 1280px;
+  margin: 0;
+  max-width: none;
   padding: 24px;
 }
 
@@ -2554,6 +2559,129 @@ a {
 .daily-company-orders {
   display: grid;
   gap: 10px;
+}
+
+.collection-status-stack,
+.collection-group {
+  display: grid;
+  gap: 12px;
+}
+
+.collection-status-stack {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 20px 0;
+}
+
+.collection-status-stack article {
+  background: #f7faf6;
+  border: 1px solid rgba(31, 111, 70, 0.12);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+}
+
+.collection-status-stack span,
+.collection-status-stack small {
+  color: #52634d;
+  font-weight: 800;
+}
+
+.collection-status-stack strong {
+  color: #102015;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.collection-group {
+  min-width: 0;
+}
+
+.collection-columns {
+  display: grid;
+  gap: 26px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  margin-top: 24px;
+}
+
+.collection-group.pending {
+  border-left: 1px solid rgba(217, 161, 74, 0.34);
+  padding-left: 26px;
+}
+
+.collection-group-title {
+  align-items: end;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+}
+
+.collection-group-title h3,
+.collection-group-title p {
+  margin: 0;
+}
+
+.collection-group-title h3 {
+  color: #102015;
+  font-size: 1.1rem;
+}
+
+.collection-group-title p {
+  color: #52634d;
+  font-weight: 700;
+  margin-top: 5px;
+}
+
+.collection-group-title > span {
+  background: rgba(31, 111, 70, 0.08);
+  border-radius: 999px;
+  color: #1f6f46;
+  font-weight: 900;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+.collection-group .meal-request-table-head,
+.collection-group .admin-order-row {
+  grid-template-columns: minmax(150px, 1fr) minmax(84px, 0.5fr) minmax(120px, 0.7fr) minmax(56px, 0.35fr) minmax(118px, 0.6fr);
+}
+
+.collection-deadline-form {
+  align-items: end;
+  background: #fffaf2;
+  border: 1px solid rgba(217, 161, 74, 0.22);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(170px, 0.35fr) minmax(170px, 0.35fr) auto minmax(220px, 1fr);
+  margin: 0 0 24px;
+  padding: 14px;
+}
+
+.collection-deadline-form label {
+  display: grid;
+  gap: 6px;
+}
+
+.collection-deadline-form label > span,
+.collection-deadline-form small {
+  color: #6b5a3a;
+  font-weight: 800;
+}
+
+.collection-deadline-form input {
+  background: #fff;
+  border: 1px solid rgba(23, 63, 42, 0.12);
+  border-radius: 8px;
+  color: #102015;
+  font: inherit;
+  font-weight: 900;
+  min-height: 46px;
+  padding: 0 12px;
+}
+
+.collection-deadline-form small {
+  align-self: center;
 }
 
 .missing-company-list {
@@ -3728,6 +3856,28 @@ a {
   .order-status-pill {
     justify-content: flex-start;
     white-space: normal;
+  }
+
+  .collection-group-title {
+    align-items: start;
+    display: grid;
+  }
+
+  .collection-group-title > span {
+    white-space: normal;
+  }
+
+  .collection-status-stack,
+  .collection-columns,
+  .collection-deadline-form {
+    grid-template-columns: 1fr;
+  }
+
+  .collection-group.pending {
+    border-left: 0;
+    border-top: 1px solid rgba(217, 161, 74, 0.34);
+    padding-left: 0;
+    padding-top: 20px;
   }
 
   .meal-request-row span,

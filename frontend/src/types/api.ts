@@ -64,3 +64,8 @@ export type MenuDay = {
   calories?: number | null;
   updatedAt?: string | null;
 };
+
+export type OperationSettings = {
+  eatenDeadline: string;
+  collectedDeadline: string;
+};
