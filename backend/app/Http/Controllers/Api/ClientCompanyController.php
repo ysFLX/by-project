@@ -22,7 +22,7 @@ class ClientCompanyController extends Controller
 
             return response()->json(['companies' => $companies]);
         } catch (\Throwable $exception) {
-            return response()->json(['message' => 'Client companies hata: '.$exception->getMessage()], 500);
+            return response()->json(['message' => 'Client companies hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata')], 500);
         }
     }
 
@@ -33,7 +33,7 @@ class ClientCompanyController extends Controller
             'accountType' => ['nullable', 'string', 'in:individual,corporate'],
             'code' => ['nullable', 'string', 'max:120'],
             'username' => ['nullable', 'string', 'max:120'],
-            'password' => ['nullable', 'string', 'min:4', 'max:255'],
+            'password' => ['nullable', 'string', 'min:8', 'max:255'],
             'contactName' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
@@ -79,8 +79,8 @@ class ClientCompanyController extends Controller
             $company = ClientCompany::create($attributes);
         } catch (\Throwable $exception) {
             return response()->json([
-                'message' => 'Client company olusturma hata: '.$exception->getMessage(),
-                'type' => $exception::class,
+                'message' => 'Client company olusturma hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+                'type' => config('app.debug') ? $exception::class : null,
             ], 500);
         }
 
@@ -99,7 +99,7 @@ class ClientCompanyController extends Controller
             'notes' => ['nullable', 'string', 'max:2000'],
             'mealUnitPrice' => ['nullable', 'numeric', 'min:0', 'max:999999'],
             'mealVatEnabled' => ['nullable', 'boolean'],
-            'password' => ['nullable', 'string', 'min:4', 'max:255'],
+            'password' => ['nullable', 'string', 'min:8', 'max:255'],
             'active' => ['nullable', 'boolean'],
         ]);
 
@@ -129,7 +129,7 @@ class ClientCompanyController extends Controller
     {
         $validated = $request->validate([
             'currentPassword' => ['required', 'string', 'max:255'],
-            'password' => ['required', 'string', 'min:4', 'max:255'],
+            'password' => ['required', 'string', 'min:8', 'max:255'],
         ]);
 
         $loginSlug = Str::slug($companyCode);
@@ -181,7 +181,9 @@ class ClientCompanyController extends Controller
             $username = Str::slug((string) $request->input('username'));
             $password = (string) $request->input('password');
 
-            if ($username === 'admin' && hash_equals((string) env('ADMIN_PASSWORD', 'admin123'), $password)) {
+            $ownerPassword = (string) env('OWNER_PASSWORD', '');
+
+            if ($username === 'admin' && $ownerPassword !== '' && hash_equals($ownerPassword, $password)) {
                 return response()->json([
                     'user' => [
                         'username' => 'admin',
@@ -216,7 +218,7 @@ class ClientCompanyController extends Controller
                 ],
             ]);
         } catch (\Throwable $exception) {
-            return response()->json(['message' => 'Backend hata: '.$exception->getMessage()], 500);
+            return response()->json(['message' => 'Backend hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata')], 500);
         }
     }
 

@@ -1,4 +1,4 @@
-import { ArrowRight, Building2, LockKeyhole, ShieldCheck, Sparkles, UserRound } from "lucide-react";
+﻿import { ArrowRight, Building2, LockKeyhole, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 import { FeedbackModal } from "../components/FeedbackModal";
@@ -43,7 +43,7 @@ export function CompanyLogin() {
 
       window.location.href = `/uye/${encodeURIComponent(user.companyCode ?? "")}`;
     } catch (loginError) {
-      setError(loginError instanceof Error ? loginError.message : "Kullanici adi veya sifre hatali.");
+      setError(loginError instanceof Error ? loginError.message : "Kullanıcı adı veya şifre hatalı.");
     } finally {
       setIsLoading(false);
     }
@@ -53,48 +53,51 @@ export function CompanyLogin() {
     <main className="catering-auth-shell portal-login-shell">
       <section className="portal-login-card">
         <div className="portal-login-visual">
+          <span className="portal-login-logo">
+            <img src="/maharet-yemek.png" alt="" />
+          </span>
           <span className="catering-kicker">
             <Sparkles size={16} />
-            Tek giris ekrani
+            Maharet Yemek paneli
           </span>
-          <h1>Rolune gore dogru panele gir.</h1>
-          <p>Admin hesabi catering yonetim paneline, musteri hesabi kendi sirket paneline yonlendirilir.</p>
+          <h1>Maharet Yemek’e hoş geldiniz.</h1>
+          <p>Günlük yemek adetleri, aylık takip ve tahsilat raporları tek panelden yönetilir.</p>
 
           <div className="login-proof-grid">
             <article>
               <ShieldCheck size={22} />
-              <strong>Admin</strong>
-              <span>Uyelik olusturur ve gunluk adetleri gorur</span>
+              <strong>Yönetim</strong>
+              <span>Firmaları, bildirimleri ve raporları takip eder</span>
             </article>
             <article>
               <Building2 size={22} />
-              <strong>Musteri</strong>
-              <span>Gunluk kisi sayisi ve aylik menu</span>
+              <strong>Üye firma</strong>
+              <span>Günlük kişi sayısını ve aylık yemeklerini görür</span>
             </article>
           </div>
         </div>
 
         <form className="catering-auth-form portal-login-form" onSubmit={handleSubmit}>
-          <span className="catering-kicker">Giris</span>
+          <span className="catering-kicker">Güvenli giriş</span>
           <label>
-            <span>Kullanici adi</span>
+            <span>Kullanıcı adı</span>
             <div>
               <UserRound size={18} />
-              <input value={username} onChange={(event) => setUsername(event.target.value)} placeholder="admin" />
+              <input value={username} onChange={(event) => setUsername(event.target.value)} placeholder="Kullanıcı adınız" />
             </div>
           </label>
           <label>
-            <span>Sifre</span>
+            <span>Şifre</span>
             <div>
               <LockKeyhole size={18} />
               <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="******" />
             </div>
           </label>
           <button className="catering-primary-button" type="submit" disabled={isLoading}>
-            {isLoading ? "Giris yapiliyor" : "Giris yap"}
+            {isLoading ? "Giriş yapılıyor" : "Giriş yap"}
             <ArrowRight size={18} />
           </button>
-          <small>Catering: maharet-yemek / belirlenen sifre. Admin hesabi proje sahibine ozeldir.</small>
+          <small>Maharet Yemek yönetimi ve üye firmalar aynı ekrandan giriş yapar.</small>
         </form>
       </section>
       {error ? <FeedbackModal tone="error" message={error} onClose={() => setError("")} /> : null}

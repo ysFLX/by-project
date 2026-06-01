@@ -1,6 +1,6 @@
-import { CalendarDays, CheckCircle2, ChefHat, ClipboardList, KeyRound, LogOut, Plus, Send, Soup, Table2, Trash2, UserCheck, UsersRound, Utensils } from "lucide-react";
+﻿import { Bell, CalendarDays, CheckCircle2, ChefHat, ClipboardList, KeyRound, LogOut, Plus, Send, Soup, Table2, Trash2, UserCheck, UsersRound, Utensils } from "lucide-react";
 import type { FormEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   getMonthlyDemoMenu,
 } from "../data/demo-store";
@@ -8,7 +8,7 @@ import { FeedbackModal } from "../components/FeedbackModal";
 import { apiFetch } from "../services/api";
 import { setPageTitle } from "../services/page-title";
 import { clearSession, getStoredSession } from "../services/session";
-import type { ClientCompany, CompanyPerson, MealRequest, MenuDay, OperationSettings } from "../types/api";
+import type { AppNotification, ClientCompany, CompanyPerson, MealRequest, MenuDay, OperationSettings } from "../types/api";
 
 type Props = {
   companyCode: string;
@@ -85,6 +85,15 @@ function formatMonth(value: string) {
 }
 
 const weekDays = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
+function formatNotificationTime(value: string) {
+  return new Intl.DateTimeFormat("tr-TR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(value));
+}
+
 const VAT_RATE = 0.2;
 const defaultOperationSettings: OperationSettings = {
   eatenDeadline: "16:30",
@@ -180,6 +189,7 @@ export function CompanyMealPortal({ companyCode }: Props) {
   const [operationSettings, setOperationSettings] = useState<OperationSettings>(defaultOperationSettings);
   const [isMenuLoading, setIsMenuLoading] = useState(false);
   const [monthlyRequests, setMonthlyRequests] = useState<MealRequest[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [isMonthlyLoading, setIsMonthlyLoading] = useState(false);
   const [headcount, setHeadcount] = useState("24");
   const [note, setNote] = useState("");
@@ -190,8 +200,10 @@ export function CompanyMealPortal({ companyCode }: Props) {
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordAgain, setNewPasswordAgain] = useState("");
   const [isPasswordSaving, setIsPasswordSaving] = useState(false);
+  const [isNotificationTrayOpen, setIsNotificationTrayOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const notificationTrayRef = useRef<HTMLDivElement | null>(null);
 
   const monthlyMenu = useMemo<MenuEntry[]>(
     () => (menuDays.length > 0 ? menuDays : getMonthlyDemoMenu(serviceDate)),
@@ -235,6 +247,9 @@ export function CompanyMealPortal({ companyCode }: Props) {
   }, [monthlyRequests, mealUnitPrice, mealVatEnabled]);
   const activePeople = people.filter((person) => person.active);
   const selectedActivePeople = activePeople.filter((person) => selectedPersonIds.includes(person.id));
+  const activeNotifications = notifications.filter((notification) => !notification.readAt);
+  const activeNotification = activeNotifications[0] ?? null;
+  const unreadNotificationCount = activeNotifications.length;
   const requestedHeadcount = activePeople.length > 0 ? selectedActivePeople.length : Number(headcount);
   const canEditHeadcount = canEditMealRequest(serviceDate, request);
   const nowIstanbulTime = new Date().toLocaleTimeString("tr-TR", {
@@ -249,36 +264,36 @@ export function CompanyMealPortal({ companyCode }: Props) {
     && nowIstanbulTime <= operationSettings.eatenDeadline;
   const headcountLockMessage =
     request && request.status !== "submitted"
-      ? "Yemek yenildi onayindan sonra kisi sayisi degistirilemez."
+      ? "Yemek yenildi onayindan sonra kişi sayısı değiştirilemez."
       : request && !canEditHeadcount
-        ? "Saat 09:00'dan sonra bugunun yemek adedi guncellenemez."
+        ? "Saat 09:00'dan sonra bugünün yemek adedi güncellenemez."
         : request
-          ? "Saat 09:00'a kadar kisi ekleyip cikararak bildirimi guncelleyebilirsiniz."
-          : "Ilk bildiriminizi catering paneline gonderebilirsiniz.";
+          ? "Saat 09:00'a kadar kişi ekleyip çıkararak bildirimi güncelleyebilirsiniz."
+          : "İlk bildiriminizi catering paneline gönderebilirsiniz.";
   const eatenDeadlineMessage =
     serviceDate !== todayKey()
-      ? "Yemek yenildi sadece bugunun kaydi icin isaretlenebilir."
+      ? "Yemek yenildi sadece bugünün kaydı için işaretlenebilir."
       : `Yemek yenildi en gec ${operationSettings.eatenDeadline} saatine kadar isaretlenebilir.`;
   const pageTitle =
     customerView === "account"
-      ? "Hesap sifrenizi degistirin."
+      ? "Hesap şifrenizi değiştirin."
       : customerView === "people"
-      ? "Sirket kisi listesini yonet."
+      ? "Şirket kişi listesini yönet."
       : customerView === "menu"
-        ? "Aylik yemek listesini gor."
+        ? "Aylık yemek listesini gör."
         : customerView === "tracking"
-          ? "Aylik yemek takibini incele."
-          : "Bugun kac kisilik yemek yiyeceginizi bildirin.";
+          ? "Aylık yemek takibini incele."
+          : "Bugün kaç kişilik yemek yiyeceğinizi bildirin.";
   const pageDescription =
     customerView === "account"
-      ? "Yeni sifre kaydedilmeden once mevcut sifreniz dogrulanir."
+      ? "Yeni şifre kaydedilmeden önce mevcut şifreniz doğrulanır."
       : customerView === "people"
-      ? "Yemek yiyebilecek kisileri ekleyin, pasife alin veya tekrar aktife alin."
+      ? "Yemek yiyebilecek kişileri ekleyin, pasife alin veya tekrar aktife alin."
       : customerView === "menu"
-        ? "Bu ay hangi gun hangi yemek oldugunu tek ekrandan takip edin."
+        ? "Bu ay hangi gün hangi yemek oldugunu tek ekrandan takip edin."
         : customerView === "tracking"
-          ? "Bu ay hangi gun kac kisilik siparis verdiginizi tablo olarak gorun."
-          : "Sectiginiz kisiler catering firmasinin paneline kisi sayisi ve isim listesiyle duser.";
+          ? "Bu ay hangi gün kaç kişilik sipariş verdiğinizi tablo olarak görün."
+          : "Sectiginiz kişiler catering firmasinin paneline kişi sayisi ve isim listesiyle duser.";
 
   useEffect(() => {
     const session = getStoredSession();
@@ -306,7 +321,7 @@ export function CompanyMealPortal({ companyCode }: Props) {
       );
 
       if (!currentCompany) {
-        throw new Error("Sirket bilgisi bulunamadi.");
+        throw new Error("Şirket bilgisi bulunamadi.");
       }
 
       setCompany(currentCompany);
@@ -323,8 +338,12 @@ export function CompanyMealPortal({ companyCode }: Props) {
       const { requests } = await apiFetch<{ requests: MealRequest[] }>(
         `/meal-requests?companyCode=${encodeURIComponent(currentCompany.code)}&serviceDate=${encodeURIComponent(serviceDate)}`
       );
+      const { notifications: currentNotifications } = await apiFetch<{ notifications: AppNotification[] }>(
+        `/notifications?companyCode=${encodeURIComponent(currentCompany.code)}`
+      );
       const currentRequest = requests[0] ?? null;
       setRequest(currentRequest);
+      setNotifications(currentNotifications);
 
       if (currentRequest) {
         setHeadcount(String(currentRequest.headcount));
@@ -338,7 +357,23 @@ export function CompanyMealPortal({ companyCode }: Props) {
     } catch (loadError) {
       setCompany(null);
       setRequest(null);
-      setError(loadError instanceof Error ? loadError.message : "Sirket bilgisi yuklenemedi.");
+      setError(loadError instanceof Error ? loadError.message : "Şirket bilgisi yüklenemedi.");
+    }
+  }
+
+  async function loadNotifications(currentCompany = company) {
+    if (!currentCompany) {
+      return;
+    }
+
+    try {
+      const { notifications: currentNotifications } = await apiFetch<{ notifications: AppNotification[] }>(
+        `/notifications?companyCode=${encodeURIComponent(currentCompany.code)}`
+      );
+
+      setNotifications(currentNotifications);
+    } catch {
+      // Notification polling should not interrupt the customer's current work.
     }
   }
 
@@ -362,7 +397,7 @@ export function CompanyMealPortal({ companyCode }: Props) {
 
       setMonthlyRequests(payloads.flatMap((payload) => payload.requests).sort((first, second) => first.serviceDate.localeCompare(second.serviceDate)));
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Aylik yemek takibi yuklenemedi.");
+      setError(loadError instanceof Error ? loadError.message : "Aylık yemek takibi yüklenemedi.");
     } finally {
       setIsMonthlyLoading(false);
     }
@@ -401,6 +436,29 @@ export function CompanyMealPortal({ companyCode }: Props) {
     loadMonthlyRequests();
   }, [trackingMonth]);
 
+  useEffect(() => {
+    if (!company) {
+      return;
+    }
+
+    loadNotifications(company);
+    const interval = window.setInterval(() => loadNotifications(company), 3000);
+
+    return () => window.clearInterval(interval);
+  }, [company?.code]);
+
+  useEffect(() => {
+    function closeTrayOnOutsideClick(event: MouseEvent) {
+      if (!notificationTrayRef.current?.contains(event.target as Node)) {
+        setIsNotificationTrayOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", closeTrayOnOutsideClick);
+
+    return () => document.removeEventListener("mousedown", closeTrayOnOutsideClick);
+  }, []);
+
   async function logout() {
     try {
       await apiFetch<{ message: string }>("/auth/logout", {
@@ -425,7 +483,7 @@ export function CompanyMealPortal({ companyCode }: Props) {
     }
 
     if (activePeople.length > 0 && selectedActivePeople.length === 0) {
-      setError("Yemek yiyecek en az bir kisi sec.");
+      setError("Yemek yiyecek en az bir kişi seç.");
       return;
     }
 
@@ -447,6 +505,7 @@ export function CompanyMealPortal({ companyCode }: Props) {
 
         return [...withoutSavedDay, savedRequest].sort((first, second) => first.serviceDate.localeCompare(second.serviceDate));
       });
+      setNotifications((current) => current.filter((notification) => notification.serviceDate !== savedRequest.serviceDate || !["meal_missing", "meal_eaten_missing"].includes(notification.type)));
       setMessage("Bugünkü yemek adediniz catering paneline düştü.");
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Kişi sayısı kaydedilemedi.");
@@ -483,6 +542,7 @@ export function CompanyMealPortal({ companyCode }: Props) {
 
         return [...withoutSavedDay, savedRequest].sort((first, second) => first.serviceDate.localeCompare(second.serviceDate));
       });
+      setNotifications((current) => current.filter((notification) => notification.serviceDate !== savedRequest.serviceDate || !["meal_missing", "meal_eaten_missing"].includes(notification.type)));
       setMessage("Bugün yemek yenmeyecek bildirimi catering paneline düştü.");
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Yemek yok bildirimi kaydedilemedi.");
@@ -499,7 +559,7 @@ export function CompanyMealPortal({ companyCode }: Props) {
     }
 
     if (newPassword !== newPasswordAgain) {
-      setError("Yeni sifreler ayni olmali.");
+      setError("Yeni şifreler aynı olmalı.");
       return;
     }
 
@@ -519,7 +579,7 @@ export function CompanyMealPortal({ companyCode }: Props) {
       setNewPasswordAgain("");
       setMessage(payload.message);
     } catch (passwordError) {
-      setError(passwordError instanceof Error ? passwordError.message : "Sifre guncellenemedi.");
+      setError(passwordError instanceof Error ? passwordError.message : "Şifre güncellenemedi.");
     } finally {
       setIsPasswordSaving(false);
     }
@@ -544,9 +604,9 @@ export function CompanyMealPortal({ companyCode }: Props) {
 
       setPeople((current) => [...current, person].sort((first, second) => first.name.localeCompare(second.name, "tr-TR")));
       setPersonName("");
-      setMessage(`${person.name} kisi listesine eklendi.`);
+      setMessage(`${person.name} kişi listesine eklendi.`);
     } catch (personError) {
-      setError(personError instanceof Error ? personError.message : "Kisi eklenemedi.");
+      setError(personError instanceof Error ? personError.message : "Kişi eklenemedi.");
     }
   }
 
@@ -573,14 +633,14 @@ export function CompanyMealPortal({ companyCode }: Props) {
         person: updatedPerson,
         active,
         mode: "success",
-        message: active ? `${updatedPerson.name} tekrar aktif edildi.` : `${updatedPerson.name} pasife alindi.`
+        message: active ? `${updatedPerson.name} tekrar aktif edildi.` : `${updatedPerson.name} pasife alındı.`
       });
     } catch (personError) {
       setPersonStatusAction({
         person,
         active,
         mode: "error",
-        message: personError instanceof Error ? personError.message : "Kisi durumu guncellenemedi."
+        message: personError instanceof Error ? personError.message : "Kişi durumu güncellenemedi."
       });
     }
   }
@@ -598,6 +658,27 @@ export function CompanyMealPortal({ companyCode }: Props) {
     setSelectedPersonIds((current) => (current.includes(personId) ? current.filter((id) => id !== personId) : [...current, personId]));
   }
 
+  async function acknowledgeNotification(notification: AppNotification) {
+    if (!company) {
+      return;
+    }
+
+    try {
+      const { notification: updatedNotification } = await apiFetch<{ notification: AppNotification }>(`/notifications/${notification.id}`, {
+        method: "PATCH",
+        body: {
+          companyCode: company.code,
+          read: true
+        }
+      });
+
+      setNotifications((current) => current.map((item) => (item.id === updatedNotification.id ? updatedNotification : item)));
+      setIsNotificationTrayOpen(true);
+    } catch (notificationError) {
+      setError(notificationError instanceof Error ? notificationError.message : "Bildirim kapatılamadı.");
+    }
+  }
+
   async function markEaten() {
     if (!request) {
       return;
@@ -613,9 +694,10 @@ export function CompanyMealPortal({ companyCode }: Props) {
       });
 
       setRequest(updatedRequest);
-      setMessage("Yemek yenildi bilgisi catering paneline gonderildi.");
+      setNotifications((current) => current.filter((notification) => notification.serviceDate !== updatedRequest.serviceDate || notification.type !== "meal_eaten_missing"));
+      setMessage("Yemek yenildi bilgisi catering paneline gönderildi.");
     } catch (statusError) {
-      setError(statusError instanceof Error ? statusError.message : "Durum guncellenemedi.");
+      setError(statusError instanceof Error ? statusError.message : "Durum güncellenemedi.");
     }
   }
 
@@ -638,7 +720,9 @@ export function CompanyMealPortal({ companyCode }: Props) {
     <main className="customer-dashboard-shell">
       <aside className="customer-sidebar">
         <a className="catering-brand admin-brand" href="/giris">
-          <span>{company.name.slice(0, 2).toLocaleUpperCase("tr-TR")}</span>
+          <span className="brand-logo-mark">
+            <img src="/maharet-yemek.png" alt="" />
+          </span>
           <div>
             <strong>{company.name}</strong>
             <small>Müşteri paneli</small>
@@ -656,11 +740,11 @@ export function CompanyMealPortal({ companyCode }: Props) {
           </button>
           <button className={customerView === "tracking" ? "active" : ""} type="button" onClick={() => setCustomerView("tracking")}>
             <Table2 size={18} />
-            Aylik yemek takibi
+            Aylık yemek takibi
           </button>
           <button className={customerView === "people" ? "active" : ""} type="button" onClick={() => setCustomerView("people")}>
             <UserCheck size={18} />
-            Kisi listesi
+            Kişi listesi
           </button>
           <button className={customerView === "account" ? "active" : ""} type="button" onClick={() => setCustomerView("account")}>
             <KeyRound size={18} />
@@ -675,6 +759,29 @@ export function CompanyMealPortal({ companyCode }: Props) {
       </aside>
 
       <section className="customer-main">
+        {activeNotification ? (
+          <div className="customer-notification-modal-backdrop" role="presentation">
+            <section className="customer-notification-modal" role="dialog" aria-modal="true" aria-labelledby="customer-notification-title">
+              <span className="catering-kicker">
+                <Bell size={16} />
+                Catering bildirimi
+              </span>
+              <h2 id="customer-notification-title">{activeNotification.title}</h2>
+              <p>{activeNotification.message}</p>
+              <div className="person-status-actions">
+                {activeNotification.type === "meal_eaten_missing" ? (
+                  <button className="catering-secondary-button" type="button" onClick={() => setCustomerView("daily")}>
+                    Günlük ekrana git
+                  </button>
+                ) : null}
+                <button className="catering-primary-button" type="button" onClick={() => acknowledgeNotification(activeNotification)}>
+                  Tamam
+                </button>
+              </div>
+            </section>
+          </div>
+        ) : null}
+
         <header className="customer-hero">
           <div>
             <span className="catering-kicker">
@@ -684,9 +791,46 @@ export function CompanyMealPortal({ companyCode }: Props) {
             <h1>{pageTitle}</h1>
             <p>{pageDescription}</p>
           </div>
+          <div className="customer-notification-tray" ref={notificationTrayRef}>
+            <button className="customer-notification-button" type="button" onClick={() => setIsNotificationTrayOpen((current) => !current)} aria-label="Bildirimleri ac">
+              <Bell size={20} />
+              {unreadNotificationCount > 0 ? <span>{unreadNotificationCount}</span> : null}
+            </button>
+            {isNotificationTrayOpen ? (
+              <div className="customer-notification-menu">
+                <div className="customer-notification-menu-head">
+                  <strong>Bildirimler</strong>
+                  <small>Son {operationSettings.notificationRetentionHours ?? 24} saat</small>
+                </div>
+                {notifications.length === 0 ? (
+                  <p className="empty-state compact">Yeni bildirim yok.</p>
+                ) : (
+                  <div className="customer-notification-items">
+                    {notifications.map((notification) => (
+                      <article className={notification.readAt ? "read" : ""} key={notification.id}>
+                        <div>
+                          <strong>{notification.title}</strong>
+                          <small>{formatNotificationTime(notification.createdAt)}</small>
+                        </div>
+                        <p>{notification.message}</p>
+                        {!notification.readAt ? (
+                          <button type="button" onClick={() => acknowledgeNotification(notification)}>
+                            Okundu yap
+                          </button>
+                        ) : (
+                          <span>Okundu</span>
+                        )}
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </div>
         </header>
 
         {customerView === "daily" ? (
+        <>
         <section className="customer-grid" id="gunluk">
           <article className="today-menu-panel">
             <span className="catering-kicker">
@@ -732,8 +876,8 @@ export function CompanyMealPortal({ companyCode }: Props) {
             {activePeople.length > 0 ? (
               <div className="person-picker">
                 <div className="person-picker-head">
-                  <strong>Yemek yiyecek kisiler</strong>
-                  <span>{selectedActivePeople.length} secili</span>
+                  <strong>Yemek yiyecek kişiler</strong>
+                  <span>{selectedActivePeople.length} seçili</span>
                 </div>
                 <div className="person-check-grid">
                   {activePeople.map((person) => (
@@ -763,7 +907,7 @@ export function CompanyMealPortal({ companyCode }: Props) {
               </label>
               <button className="catering-primary-button" type="submit" disabled={!canEditHeadcount}>
                 <Send size={18} />
-                {request ? "Bildirimi guncelle" : "Catering paneline gönder"}
+                {request ? "Bildirimi güncelle" : "Catering paneline gönder"}
               </button>
               <button className="no-meal-button" type="button" onClick={submitNoMeal} disabled={!canEditHeadcount}>
                 <Soup size={18} />
@@ -781,6 +925,7 @@ export function CompanyMealPortal({ companyCode }: Props) {
             </form>
           </article>
         </section>
+        </>
         ) : null}
 
         {customerView === "menu" ? (
@@ -793,7 +938,7 @@ export function CompanyMealPortal({ companyCode }: Props) {
             <span className="month-pill">{formatMonth(serviceDate)}</span>
           </div>
 
-          {isMenuLoading ? <p className="empty-state compact">Yemek tablosu yukleniyor.</p> : null}
+          {isMenuLoading ? <p className="empty-state compact">Yemek tablosu yükleniyor.</p> : null}
 
           <div className="monthly-menu-table">
             {weekDays.map((weekDay) => (
@@ -824,8 +969,8 @@ export function CompanyMealPortal({ companyCode }: Props) {
         <section className="monthly-menu-section customer-monthly-tracking" id="aylik-takip">
           <div className="panel-title-row">
             <div>
-              <h2>Aylik yemek takibi</h2>
-              <p>Bu ay hangi gun kac kisilik siparis verdiginizi tablo olarak gorun.</p>
+              <h2>Aylık yemek takibi</h2>
+              <p>Bu ay hangi gün kaç kişilik sipariş verdiğinizi tablo olarak görün.</p>
             </div>
             <div className="customer-billing-actions">
               <label className="dashboard-date-filter">
@@ -854,12 +999,12 @@ export function CompanyMealPortal({ companyCode }: Props) {
             <article>
               <span>KDV</span>
               <strong>{formatCurrency(monthlyAmounts.vatTotal)}</strong>
-              <small>{mealVatEnabled ? `Catering tarafindan %${VAT_RATE * 100}` : "KDV eklenmedi"}</small>
+              <small>{mealVatEnabled ? `Catering tarafından %${VAT_RATE * 100}` : "KDV eklenmedi"}</small>
             </article>
             <article className="highlight">
               <span>Ay sonu tutar</span>
               <strong>{formatCurrency(monthlyAmounts.grossTotal)}</strong>
-              <small>{mealVatEnabled ? "KDV dahil toplam" : "KDV haric toplam"}</small>
+              <small>{mealVatEnabled ? "KDV dahil toplam" : "KDV hariç toplam"}</small>
             </article>
           </div>
 
@@ -872,9 +1017,9 @@ export function CompanyMealPortal({ companyCode }: Props) {
             </div>
 
             {isMonthlyLoading ? (
-              <p className="empty-state compact">Aylik yemek takibi yukleniyor.</p>
+              <p className="empty-state compact">Aylık yemek takibi yükleniyor.</p>
             ) : monthlyRequests.length === 0 ? (
-              <p className="empty-state compact">Secili ay icin henuz yemek siparisi verilmedi.</p>
+              <p className="empty-state compact">Seçili ay için henüz yemek siparişi verilmedi.</p>
             ) : (
               monthlyRequests.map((monthlyRequest) => (
                 <div className="customer-tracking-row" key={monthlyRequest.requestNo}>
@@ -884,7 +1029,7 @@ export function CompanyMealPortal({ companyCode }: Props) {
                   <em>
                     {(monthlyRequest.people ?? []).length > 0
                       ? (monthlyRequest.people ?? []).map((person) => person.name).join(", ")
-                      : `${monthlyRequest.serviceDate} tarihinde ${monthlyRequest.headcount} kisilik siparis verilmistir.`}
+                      : `${monthlyRequest.serviceDate} tarihinde ${monthlyRequest.headcount} kişilik sipariş verilmiştir.`}
                   </em>
                 </div>
               ))
@@ -894,29 +1039,29 @@ export function CompanyMealPortal({ companyCode }: Props) {
         ) : null}
 
         {customerView === "people" ? (
-        <section className="monthly-menu-section company-people-section" id="kisiler">
+        <section className="monthly-menu-section company-people-section" id="kişiler">
           <div className="panel-title-row">
             <div>
-              <h2>Kisi listesi</h2>
-              <p>Sirket icinde yemek yiyebilecek kisileri buradan yonetin.</p>
+              <h2>Kişi listesi</h2>
+              <p>Şirket içinde yemek yiyebilecek kişileri buradan yönetin.</p>
             </div>
-            <span className="month-pill">{activePeople.length} aktif kisi</span>
+            <span className="month-pill">{activePeople.length} aktif kişi</span>
           </div>
 
           <form className="company-person-form" onSubmit={createPerson}>
             <label>
               <span>Ad soyad</span>
-              <input value={personName} onChange={(event) => setPersonName(event.target.value)} placeholder="Orn: Ayse Yilmaz" />
+              <input value={personName} onChange={(event) => setPersonName(event.target.value)} placeholder="Örn: Ayşe Yılmaz" />
             </label>
             <button className="catering-primary-button" type="submit">
               <Plus size={18} />
-              Kisi ekle
+              Kişi ekle
             </button>
           </form>
 
           <div className="company-people-list">
             {people.length === 0 ? (
-              <p className="empty-state compact">Henuz kisi eklenmedi.</p>
+              <p className="empty-state compact">Henüz kişi eklenmedi.</p>
             ) : (
               people.map((person) => (
                 <article className={person.active ? "" : "inactive"} key={person.id}>
@@ -978,28 +1123,28 @@ export function CompanyMealPortal({ companyCode }: Props) {
         <section className="monthly-menu-section customer-account-section" id="hesap">
           <div className="panel-title-row">
             <div>
-              <h2>Sifre degistir</h2>
-              <p>Bu hesaba girerken kullanacaginiz sifreyi yenileyin.</p>
+              <h2>Şifre değiştir</h2>
+              <p>Bu hesaba girerken kullanacağınız şifreyi yenileyin.</p>
             </div>
             <span className="month-pill">{company.username ?? company.code}</span>
           </div>
 
           <form className="customer-password-form" onSubmit={changePassword}>
             <label>
-              <span>Mevcut sifre</span>
+              <span>Mevcut şifre</span>
               <input type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required />
             </label>
             <label>
-              <span>Yeni sifre</span>
-              <input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={4} required />
+              <span>Yeni şifre</span>
+              <input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={8} required />
             </label>
             <label>
-              <span>Yeni sifre tekrar</span>
-              <input type="password" value={newPasswordAgain} onChange={(event) => setNewPasswordAgain(event.target.value)} minLength={4} required />
+              <span>Yeni şifre tekrar</span>
+              <input type="password" value={newPasswordAgain} onChange={(event) => setNewPasswordAgain(event.target.value)} minLength={8} required />
             </label>
             <button className="catering-primary-button" type="submit" disabled={isPasswordSaving}>
               <KeyRound size={18} />
-              Sifreyi kaydet
+              Şifreyi kaydet
             </button>
           </form>
         </section>
@@ -1015,23 +1160,23 @@ export function CompanyMealPortal({ companyCode }: Props) {
             <h2 id="person-status-title">
               {personStatusAction.mode === "confirm"
                 ? personStatusAction.active
-                  ? "Kisi aktife alinsin mi?"
-                  : "Kisi pasife alinsin mi?"
+                  ? "Kişi aktife alınsın mı?"
+                  : "Kişi pasife alınsın mı?"
                 : personStatusAction.mode === "success"
-                  ? "Islem tamamlandi"
-                  : "Islem tamamlanamadi"}
+                  ? "İşlem tamamlandı"
+                  : "İşlem tamamlanamadı"}
             </h2>
             <p>
               {personStatusAction.message ??
                 (personStatusAction.active
-                  ? `${personStatusAction.person.name} tekrar yemek listesinde secilebilir olacak.`
-                  : `${personStatusAction.person.name} pasife alinir, gecmis kayitlari korunur.`)}
+                  ? `${personStatusAction.person.name} tekrar yemek listesinde seçilebilir olacak.`
+                  : `${personStatusAction.person.name} pasife alınır, geçmiş kayıtları korunur.`)}
             </p>
             <div className="person-status-actions">
               {personStatusAction.mode === "confirm" ? (
                 <>
                   <button className="catering-secondary-button" type="button" onClick={() => setPersonStatusAction(null)}>
-                    Vazgec
+                    Vazgeç
                   </button>
                   <button
                     className={personStatusAction.active ? "catering-primary-button" : "admin-danger-button"}

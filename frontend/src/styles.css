@@ -1,4 +1,5 @@
 :root {
+  --catering-font: "Aptos", "Segoe UI Variable", "Segoe UI", Inter, system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
   --catering-ink: #172019;
   --catering-muted: #61705d;
   --catering-leaf: #173f2a;
@@ -18,7 +19,9 @@ html {
 body {
   margin: 0;
   min-width: 320px;
-  font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+  font-family: var(--catering-font);
+  -webkit-font-smoothing: antialiased;
+  font-synthesis-weight: none;
   text-rendering: geometricPrecision;
 }
 
@@ -186,6 +189,299 @@ a {
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(23, 63, 42, 0.14);
   color: #173f2a;
+}
+
+/* Professional interface refresh */
+:root {
+  --catering-ink: #101820;
+  --catering-muted: #64716a;
+  --catering-leaf: #0f3d2d;
+  --catering-leaf-2: #1f6f46;
+  --catering-amber: #f0b45a;
+  --catering-surface: #ffffff;
+  --catering-page: #f5f7f9;
+  --catering-soft: #f8faf9;
+  --catering-line: rgba(16, 24, 32, 0.1);
+}
+
+body {
+  background: var(--catering-page);
+  color: var(--catering-ink);
+  font-family: var(--catering-font);
+  letter-spacing: 0;
+}
+
+.catering-home-shell,
+.catering-auth-shell,
+.catering-member-shell,
+.catering-dashboard-shell,
+.customer-dashboard-shell,
+.admin-dashboard-shell {
+  background:
+    linear-gradient(180deg, #f7f9fb 0%, #eef3f0 100%);
+  color: var(--catering-ink);
+}
+
+.admin-dashboard-shell {
+  grid-template-columns: 282px minmax(0, 1fr);
+}
+
+.admin-sidebar,
+.customer-sidebar {
+  background: #0d2c22;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 8px 0 28px rgba(15, 61, 45, 0.1);
+}
+
+.admin-main-panel,
+.customer-main {
+  padding: 28px;
+}
+
+.admin-brand,
+.catering-brand {
+  gap: 14px;
+}
+
+.catering-brand > span,
+.company-avatar {
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.catering-brand > span.brand-logo-mark {
+  background: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: none;
+  overflow: hidden;
+  padding: 0;
+}
+
+.brand-logo-mark img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.admin-nav-list button,
+.admin-nav-list a {
+  border-radius: 8px;
+  min-height: 48px;
+}
+
+.admin-nav-list button.active,
+.admin-nav-list a.active {
+  background: rgba(255, 255, 255, 0.13);
+  box-shadow: inset 3px 0 0 var(--catering-amber);
+}
+
+.admin-topbar,
+.customer-hero {
+  background: transparent;
+  border: 0;
+  margin-bottom: 22px;
+}
+
+.admin-topbar h1,
+.customer-hero h1,
+.billing-report-intro h2 {
+  color: #0f1b14;
+  font-weight: 850;
+  letter-spacing: 0;
+}
+
+.catering-kicker {
+  color: #587064;
+  font-size: 0.74rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+
+.admin-section-panel,
+.catering-panel,
+.today-menu-panel,
+.headcount-panel,
+.monthly-menu-section,
+.company-directory,
+.company-detail-panel,
+.billing-ledger-panel,
+.billing-pricing-panel,
+.portal-login-card,
+.customer-empty-card {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(16, 24, 32, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(16, 24, 32, 0.06);
+}
+
+.admin-metric-grid article,
+.billing-summary-grid article,
+.monthly-summary-grid article,
+.collection-status-stack article,
+.customer-tracking-summary article {
+  background: var(--catering-surface);
+  border: 1px solid rgba(16, 24, 32, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(16, 24, 32, 0.04);
+}
+
+.admin-metric-grid article.highlight,
+.billing-total-card,
+.billing-report-command {
+  background: #0f3d2d;
+  border: 1px solid rgba(15, 61, 45, 0.24);
+  box-shadow: none;
+}
+
+.catering-primary-button,
+.create-user-button,
+.billing-save-button {
+  background: #0f3d2d;
+  border: 1px solid #0f3d2d;
+  border-radius: 8px;
+  box-shadow: none;
+  color: #fff;
+}
+
+.create-user-button.compact {
+  background: var(--catering-amber);
+  border-color: var(--catering-amber);
+  color: #142017;
+}
+
+.catering-secondary-button,
+.admin-icon-button,
+.dashboard-date-filter,
+.billing-payment-button,
+.no-meal-button {
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.catering-nav-button:hover,
+.catering-primary-button:hover,
+.catering-secondary-button:hover,
+.no-meal-button:hover {
+  transform: none;
+}
+
+input,
+textarea,
+.dashboard-date-filter {
+  border-color: rgba(16, 24, 32, 0.12);
+}
+
+input:focus,
+textarea:focus,
+.dashboard-date-filter:focus-within {
+  border-color: rgba(31, 111, 70, 0.55);
+  box-shadow: 0 0 0 3px rgba(31, 111, 70, 0.1);
+  outline: 0;
+}
+
+.meal-request-table-head,
+.billing-company-head,
+.customer-tracking-head,
+.person-billing-head,
+.monthly-menu-head {
+  background: #f1f5f3;
+  color: #3d5143;
+  letter-spacing: 0.06em;
+}
+
+.billing-company-head {
+  background: #0f3d2d;
+  color: #fff;
+}
+
+.meal-request-row,
+.admin-order-row,
+.billing-company-row,
+.customer-tracking-row,
+.person-billing-row,
+.company-directory-list button,
+.company-mini-list button,
+.billing-pricing-card {
+  background: #fff;
+  border-color: rgba(16, 24, 32, 0.08);
+  border-radius: 8px;
+}
+
+.meal-request-row:hover,
+.billing-company-row:hover,
+.company-directory-list button:hover,
+.company-mini-list button:hover {
+  background: #f8fbf9;
+}
+
+.order-status-pill,
+.month-pill,
+.billing-subhead > strong,
+.billing-section-title > strong,
+.collection-group-title > span {
+  border-radius: 999px;
+}
+
+.billing-workspace,
+.collection-columns {
+  align-items: start;
+}
+
+.billing-company-table,
+.customer-tracking-table,
+.person-billing-table {
+  overflow-x: auto;
+}
+
+.billing-company-head,
+.billing-company-row {
+  min-width: 980px;
+}
+
+.billing-pricing-card {
+  grid-template-columns: minmax(220px, 1fr) minmax(120px, 0.34fr) minmax(140px, 0.38fr) minmax(130px, 0.36fr) minmax(100px, 0.28fr);
+}
+
+.feedback-modal,
+.person-status-modal,
+.admin-create-modal {
+  border-radius: 8px;
+}
+
+@media (max-width: 1400px) {
+  .admin-dashboard-shell {
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+
+  .billing-pricing-card {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .billing-save-button {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-main-panel,
+  .customer-main {
+    padding: 16px;
+  }
+
+  .admin-topbar,
+  .billing-report-command {
+    gap: 14px;
+  }
+
+  .billing-pricing-card {
+    grid-template-columns: 1fr;
+  }
+
+  .billing-company-head,
+  .billing-company-row {
+    min-width: 0;
+  }
 }
 
 .no-meal-button {
@@ -2561,6 +2857,132 @@ a {
   gap: 10px;
 }
 
+.monthly-company-orders {
+  gap: 12px;
+}
+
+.monthly-company-head,
+.monthly-company-row {
+  display: grid;
+  grid-template-columns: minmax(320px, 1.55fr) minmax(90px, 0.38fr) minmax(120px, 0.45fr) minmax(210px, 0.82fr);
+}
+
+.monthly-company-head {
+  background: #f1f5f3;
+  border-radius: 8px;
+  color: #3d5143;
+  font-size: 0.76rem;
+  font-weight: 900;
+  gap: 14px;
+  letter-spacing: 0.08em;
+  padding: 10px 16px;
+  text-transform: uppercase;
+}
+
+.monthly-company-row {
+  align-items: center;
+  background: #fff;
+  border: 1px solid rgba(16, 24, 32, 0.1);
+  border-left: 4px solid #1f6f46;
+  border-radius: 8px;
+  gap: 14px;
+  padding: 16px;
+}
+
+.monthly-company-row .order-company-cell {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.monthly-company-row .order-company-cell strong {
+  color: #c77729;
+  font-size: 1.05rem;
+  line-height: 1.18;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.monthly-company-row .order-company-cell small {
+  color: #3d5143;
+  line-height: 1.25;
+}
+
+.monthly-company-row:hover {
+  background: #f8fbf9;
+}
+
+.monthly-stat-cell,
+.monthly-last-update {
+  display: grid;
+  gap: 4px;
+}
+
+.monthly-stat-cell {
+  justify-items: start;
+}
+
+.monthly-stat-cell strong {
+  color: #102015;
+  font-size: 1.7rem;
+  line-height: 1;
+}
+
+.monthly-stat-cell span,
+.monthly-last-update small {
+  color: #61705d;
+  font-weight: 800;
+}
+
+.monthly-stat-cell.highlight strong {
+  color: #0f3d2d;
+}
+
+.monthly-last-update {
+  background: #f7faf8;
+  border: 1px solid rgba(31, 111, 70, 0.12);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.monthly-last-update strong {
+  color: #102015;
+  font-size: 0.94rem;
+}
+
+.monthly-day-strip {
+  border-top: 1px solid rgba(16, 24, 32, 0.08);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  grid-column: 1 / -1;
+  padding-top: 12px;
+}
+
+.monthly-day-strip span {
+  align-items: center;
+  background: #f8faf9;
+  border: 1px solid rgba(31, 111, 70, 0.14);
+  border-radius: 8px;
+  display: inline-flex;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.monthly-day-strip strong {
+  color: #0f3d2d;
+  font-size: 0.92rem;
+  line-height: 1;
+}
+
+.monthly-day-strip em {
+  color: #61705d;
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 900;
+}
+
 .collection-status-stack,
 .collection-group {
   display: grid;
@@ -3210,7 +3632,58 @@ a {
 .billing-summary-grid {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.billing-dashboard-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(280px, 0.78fr) minmax(0, 1.22fr);
+}
+
+.billing-total-card {
+  background: #123d27;
+  border-radius: 8px;
+  color: #fff;
+  display: grid;
+  gap: 10px;
+  min-height: 222px;
+  padding: 22px;
+}
+
+.billing-total-card span,
+.billing-total-card small,
+.billing-total-card p {
+  color: rgba(255, 255, 255, 0.76);
+  font-weight: 800;
+  margin: 0;
+}
+
+.billing-total-card strong {
+  color: #fff;
+  font-size: clamp(1.9rem, 3vw, 2.8rem);
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.billing-total-breakdown {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.billing-total-breakdown span {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  padding: 9px 10px;
+}
+
+.billing-total-breakdown strong {
+  font-size: 1rem;
 }
 
 .billing-summary-grid article {
@@ -3248,7 +3721,7 @@ a {
 }
 
 .billing-pricing-panel {
-  order: -1;
+  align-self: start;
 }
 
 .billing-pricing-list {
@@ -3257,13 +3730,13 @@ a {
 }
 
 .billing-pricing-card {
-  align-items: center;
+  align-items: stretch;
   background: #f7faf8;
   border: 1px solid rgba(23, 63, 42, 0.12);
   border-radius: 8px;
   display: grid;
-  gap: 14px;
-  grid-template-columns: minmax(240px, 1fr) 132px 152px 156px 104px;
+  gap: 12px;
+  grid-template-columns: minmax(220px, 1fr) minmax(120px, 0.35fr) minmax(140px, 0.4fr) minmax(130px, 0.35fr) minmax(100px, 0.28fr);
   min-width: 0;
   padding: 14px;
 }
@@ -3310,6 +3783,54 @@ a {
   border: 1px solid rgba(23, 63, 42, 0.1);
   border-radius: 8px;
   overflow: hidden;
+  min-width: 0;
+}
+
+.billing-ledger-sections {
+  display: grid;
+  gap: 18px;
+}
+
+.billing-ledger-section {
+  display: grid;
+  gap: 12px;
+}
+
+.billing-ledger-section.paid {
+  border-top: 1px solid rgba(31, 111, 70, 0.14);
+  padding-top: 18px;
+}
+
+.billing-section-title {
+  align-items: end;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.billing-section-title h4,
+.billing-section-title p {
+  margin: 0;
+}
+
+.billing-section-title h4 {
+  color: #10251b;
+  font-size: 1.08rem;
+  letter-spacing: 0;
+}
+
+.billing-section-title p {
+  color: #61705d;
+  font-weight: 800;
+  margin-top: 4px;
+}
+
+.billing-section-title > strong {
+  background: #edf5ef;
+  border-radius: 999px;
+  color: #1f6f46;
+  flex: 0 0 auto;
+  padding: 8px 12px;
 }
 
 .billing-company-head,
@@ -3333,6 +3854,10 @@ a {
   align-items: center;
   border-top: 1px solid rgba(23, 63, 42, 0.1);
   padding: 14px;
+}
+
+.billing-company-row.paid {
+  background: #f8fbf8;
 }
 
 .billing-company-row span,
@@ -3364,6 +3889,7 @@ a {
   justify-content: center;
   min-height: 42px;
   padding: 0 12px;
+  white-space: normal;
 }
 
 .billing-payment-button.paid {
@@ -3496,6 +4022,7 @@ a {
   .company-management-layout,
   .company-contact-strip,
   .admin-control-grid,
+  .billing-dashboard-grid,
   .billing-summary-grid,
   .billing-workspace,
   .customer-tracking-summary {
@@ -3512,7 +4039,8 @@ a {
   }
 
   .billing-report-command,
-  .billing-subhead {
+  .billing-subhead,
+  .billing-section-title {
     align-items: stretch;
     flex-direction: column;
   }
@@ -3524,6 +4052,18 @@ a {
   .billing-price-total,
   .billing-save-button {
     min-width: 0;
+  }
+}
+
+@media (max-width: 1400px) {
+  .billing-dashboard-grid,
+  .billing-summary-grid,
+  .billing-pricing-card {
+    grid-template-columns: 1fr;
+  }
+
+  .billing-pricing-card {
+    align-items: stretch;
   }
 }
 
@@ -3554,6 +4094,32 @@ a {
 @media (max-width: 640px) {
   body {
     overflow-x: hidden;
+  }
+
+  .admin-dashboard-shell,
+  .customer-dashboard-shell {
+    display: block;
+  }
+
+  .admin-sidebar,
+  .customer-sidebar {
+    height: auto;
+    min-height: 0;
+    position: static;
+  }
+
+  .admin-main-panel,
+  .customer-main {
+    min-width: 0;
+    padding: 14px;
+    width: 100%;
+  }
+
+  .admin-section-panel,
+  .monthly-tracking-panel,
+  .billing-report-panel {
+    max-width: 100%;
+    overflow: hidden;
   }
 
   button,
@@ -3596,6 +4162,66 @@ a {
     gap: 14px;
     min-height: 0;
     padding: 14px;
+  }
+
+  .collection-columns,
+  .collection-status-stack,
+  .collection-deadline-form,
+  .billing-dashboard-grid,
+  .billing-summary-grid,
+  .billing-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .collection-group.pending {
+    border-left: 0;
+    border-top: 1px solid rgba(217, 161, 74, 0.34);
+    padding-left: 0;
+    padding-top: 20px;
+  }
+
+  .meal-request-table-head,
+  .billing-company-head,
+  .customer-tracking-head,
+  .person-billing-head {
+    display: none;
+  }
+
+  .admin-order-row,
+  .meal-request-row,
+  .billing-company-row,
+  .customer-tracking-row,
+  .person-billing-row,
+  .collection-group .admin-order-row,
+  .collection-group .meal-request-table-head {
+    grid-template-columns: 1fr;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .admin-order-row > *,
+  .billing-company-row > *,
+  .customer-tracking-row > *,
+  .person-billing-row > * {
+    min-width: 0;
+  }
+
+  .order-status-pill,
+  .billing-payment-button {
+    justify-content: flex-start;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .billing-company-table,
+  .customer-tracking-table,
+  .person-billing-table {
+    overflow: visible;
+  }
+
+  .billing-company-head,
+  .billing-company-row {
+    min-width: 0;
   }
 
   .catering-brand {
@@ -4027,5 +4653,1316 @@ a {
   .headcount-panel,
   .monthly-menu-section {
     padding: 14px;
+  }
+}
+
+/* Disabled rejected final layout polish
+:root {
+  --surface: #ffffff;
+  --surface-muted: #f8faf8;
+  --surface-tint: #f4f8f5;
+  --ink-strong: #0e1913;
+  --ink-muted: #61705d;
+  --brand-deep: #0d3525;
+  --brand: #155437;
+  --brand-soft: #e8f1eb;
+  --accent: #f3b858;
+  --danger: #a85033;
+  --line-soft: rgba(14, 25, 19, 0.09);
+  --shadow-soft: 0 18px 45px rgba(16, 24, 32, 0.08);
+}
+
+html,
+body,
+#root {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+* {
+  min-width: 0;
+}
+
+img,
+svg,
+canvas,
+iframe {
+  max-width: 100%;
+}
+
+.catering-home-shell,
+.catering-auth-shell,
+.catering-member-shell,
+.catering-dashboard-shell,
+.admin-dashboard-shell,
+.customer-dashboard-shell {
+  background:
+    linear-gradient(180deg, #f7f9f8 0%, #eef3f0 100%);
+}
+
+.catering-home-nav,
+.catering-panel,
+.today-menu-panel,
+.headcount-panel,
+.monthly-menu-section,
+.admin-section-panel,
+.billing-report-panel,
+.billing-ledger-panel,
+.billing-pricing-panel,
+.customer-empty-card,
+.portal-login-card,
+.catering-live-card,
+.catering-ops-table,
+.catering-detail-copy,
+.collection-group,
+.admin-create-modal,
+.person-status-modal,
+.feedback-modal {
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  box-shadow: var(--shadow-soft);
+}
+
+.admin-dashboard-shell,
+.customer-dashboard-shell {
+  display: grid;
+  grid-template-columns: 278px minmax(0, 1fr);
+  min-height: 100vh;
+  padding: 0;
+}
+
+.admin-sidebar,
+.customer-sidebar {
+  background: linear-gradient(180deg, #082719 0%, #0d3525 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  color: #f7fbf7;
+  height: 100vh;
+  padding: 22px 18px;
+  position: sticky;
+  top: 0;
+}
+
+.admin-main-panel,
+.customer-main {
+  padding: clamp(22px, 3vw, 44px);
+  width: 100%;
+}
+
+.admin-topbar,
+.customer-hero,
+.billing-report-command,
+.panel-title-row {
+  align-items: flex-end;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+}
+
+.admin-topbar h1,
+.customer-hero h1,
+.billing-report-intro h2,
+.catering-hero-copy h1 {
+  color: var(--ink-strong);
+  letter-spacing: 0;
+  text-wrap: balance;
+}
+
+.admin-topbar p,
+.customer-hero p,
+.billing-report-intro p,
+.panel-title-row p {
+  max-width: 760px;
+}
+
+.brand-logo-mark {
+  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+  flex: 0 0 auto;
+}
+
+.brand-logo-mark img {
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.08);
+  width: 100%;
+}
+
+.admin-nav-list {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-nav-list button,
+.sidebar-logout-button,
+.customer-logout {
+  border-radius: 8px;
+}
+
+.admin-nav-list button {
+  min-height: 46px;
+}
+
+.admin-nav-list button.active {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.catering-metric-grid,
+.admin-metric-grid,
+.billing-summary-grid,
+.monthly-summary-grid,
+.daily-status-grid,
+.admin-control-grid,
+.customer-tracking-summary {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.catering-metric-grid article,
+.billing-summary-grid article,
+.monthly-summary-grid article,
+.daily-status-grid article,
+.admin-control-grid article,
+.customer-tracking-summary article,
+.collection-status-stack article {
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(16, 24, 32, 0.05);
+}
+
+.catering-metric-grid article.highlight,
+.billing-summary-grid article.highlight {
+  background: linear-gradient(135deg, var(--brand-deep), var(--brand));
+  color: #ffffff;
+}
+
+.catering-primary-button,
+.create-user-button,
+.billing-save-button,
+.catering-nav-button {
+  background: linear-gradient(135deg, var(--brand), var(--brand-deep));
+  border-radius: 8px;
+  box-shadow: 0 12px 28px rgba(13, 53, 37, 0.22);
+}
+
+.catering-secondary-button,
+.admin-icon-button,
+.dashboard-date-filter,
+.admin-search,
+.month-pill,
+.billing-payment-button,
+.empty-state.compact {
+  border-radius: 8px;
+}
+
+.admin-toolbar,
+.monthly-toolbar,
+.customer-billing-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.dashboard-date-filter,
+.admin-search {
+  background: #ffffff;
+  border: 1px solid var(--line-soft);
+  box-shadow: 0 8px 24px rgba(16, 24, 32, 0.05);
+}
+
+.admin-content-grid,
+.company-management-layout,
+.billing-workspace {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.company-management-layout {
+  grid-template-columns: minmax(260px, 0.32fr) minmax(0, 1fr);
+}
+
+.billing-workspace {
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+}
+
+.billing-dashboard-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.1fr);
+}
+
+.billing-total-card {
+  border-radius: 8px;
+  min-height: 100%;
+}
+
+.billing-total-breakdown {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.billing-total-breakdown span {
+  border-radius: 8px;
+}
+
+.billing-ledger-sections {
+  display: grid;
+  gap: 18px;
+}
+
+.billing-ledger-section,
+.collection-group {
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.collection-columns {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.collection-group.pending {
+  border-left: 4px solid rgba(168, 80, 51, 0.38);
+  padding-left: 18px;
+}
+
+.collection-status-stack {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.collection-deadline-form {
+  align-items: end;
+  background: #fffaf0;
+  border: 1px solid rgba(243, 184, 88, 0.34);
+  border-radius: 8px;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(180px, 240px)) minmax(180px, auto);
+  margin: 18px 0;
+  padding: 18px;
+}
+
+.meal-request-table,
+.daily-company-orders,
+.billing-company-table,
+.customer-tracking-table,
+.person-billing-table {
+  overflow: visible;
+  width: 100%;
+}
+
+.meal-request-table-head,
+.admin-order-row,
+.billing-company-head,
+.billing-company-row,
+.customer-tracking-head,
+.customer-tracking-row,
+.person-billing-head,
+.person-billing-row {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  width: 100%;
+}
+
+.meal-request-table-head,
+.admin-order-row {
+  grid-template-columns: minmax(180px, 1.3fr) minmax(100px, 0.55fr) minmax(150px, 0.75fr) minmax(80px, 0.42fr) minmax(150px, 0.58fr);
+}
+
+.billing-company-head,
+.billing-company-row {
+  grid-template-columns: minmax(170px, 1.2fr) minmax(62px, 0.35fr) minmax(80px, 0.42fr) minmax(88px, 0.45fr) minmax(108px, 0.56fr) minmax(86px, 0.45fr) minmax(108px, 0.56fr) minmax(132px, 0.7fr);
+}
+
+.customer-tracking-head,
+.customer-tracking-row {
+  grid-template-columns: minmax(140px, 1fr) minmax(110px, 0.55fr) minmax(110px, 0.55fr) minmax(160px, 1fr);
+}
+
+.person-billing-head,
+.person-billing-row {
+  grid-template-columns: minmax(160px, 1fr) minmax(110px, 0.5fr) minmax(110px, 0.5fr) minmax(160px, 1fr);
+}
+
+.admin-order-row,
+.billing-company-row,
+.customer-tracking-row,
+.person-billing-row,
+.company-directory-list button,
+.company-mini-list button,
+.company-people-list article,
+.billing-pricing-card {
+  background: #ffffff;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  box-shadow: 0 8px 22px rgba(16, 24, 32, 0.04);
+}
+
+.order-status-pill,
+.billing-payment-button,
+.invoice-active,
+.month-pill {
+  white-space: normal;
+}
+
+.billing-pricing-list {
+  display: grid;
+  gap: 12px;
+}
+
+.billing-pricing-card {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(170px, 1fr) minmax(120px, 0.52fr) minmax(150px, 0.58fr) minmax(130px, 0.52fr) minmax(120px, 0.45fr);
+  padding: 14px;
+}
+
+.company-directory-list,
+.billing-pricing-list {
+  padding-right: 2px;
+}
+
+.monthly-menu-table,
+.menu-edit-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.monthly-menu-cell,
+.menu-edit-cell {
+  border-radius: 0;
+}
+
+.portal-login-shell {
+  align-items: center;
+  display: grid;
+  justify-items: center;
+  min-height: 100vh;
+  padding: clamp(14px, 4vw, 44px);
+}
+
+.portal-login-card {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.95fr) minmax(320px, 1.05fr);
+  max-width: 1040px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.portal-login-visual {
+  background: linear-gradient(135deg, var(--brand-deep), var(--brand));
+}
+
+.catering-home-shell {
+  padding: clamp(14px, 2vw, 28px);
+}
+
+.catering-hero-section,
+.catering-ops-section,
+.catering-detail-section {
+  display: grid;
+  gap: 22px;
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+  margin-top: 22px;
+}
+
+.catering-metric-strip,
+.daily-checklist-grid,
+.catering-flow-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-top: 22px;
+}
+
+.catering-feature-stack,
+.catering-pain-list {
+  display: grid;
+  gap: 14px;
+}
+
+@media (max-width: 1180px) {
+  .billing-workspace,
+  .billing-dashboard-grid,
+  .company-management-layout,
+  .catering-hero-section,
+  .catering-ops-section,
+  .catering-detail-section {
+    grid-template-columns: 1fr;
+  }
+
+  .billing-pricing-card {
+    grid-template-columns: minmax(0, 1fr) minmax(120px, 0.52fr) minmax(150px, 0.58fr);
+  }
+
+  .billing-price-total,
+  .billing-save-button {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 860px) {
+  .admin-dashboard-shell,
+  .customer-dashboard-shell {
+    display: block;
+  }
+
+  .admin-sidebar,
+  .customer-sidebar {
+    height: auto;
+    position: static;
+  }
+
+  .admin-main-panel,
+  .customer-main {
+    padding: 16px;
+  }
+
+  .admin-topbar,
+  .customer-hero,
+  .billing-report-command,
+  .panel-title-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-toolbar,
+  .monthly-toolbar,
+  .customer-billing-actions {
+    justify-content: stretch;
+  }
+
+  .admin-toolbar > *,
+  .monthly-toolbar > *,
+  .customer-billing-actions > *,
+  .dashboard-date-filter,
+  .admin-search {
+    width: 100%;
+  }
+
+  .collection-deadline-form,
+  .billing-pricing-card,
+  .billing-total-breakdown {
+    grid-template-columns: 1fr;
+  }
+
+  .meal-request-table-head,
+  .billing-company-head,
+  .customer-tracking-head,
+  .person-billing-head {
+    display: none;
+  }
+
+  .admin-order-row,
+  .monthly-company-row,
+  .billing-company-row,
+  .customer-tracking-row,
+  .person-billing-row {
+    grid-template-columns: 1fr;
+    padding: 14px;
+  }
+
+  .admin-order-row > *,
+  .monthly-company-row > *,
+  .billing-company-row > *,
+  .customer-tracking-row > *,
+  .person-billing-row > * {
+    display: grid;
+    gap: 4px;
+    justify-items: start;
+  }
+
+  .admin-order-row > *::before,
+  .monthly-company-row > *::before,
+  .billing-company-row > *::before,
+  .customer-tracking-row > *::before,
+  .person-billing-row > *::before {
+    color: var(--ink-muted);
+    content: "";
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .admin-order-row > :nth-child(1)::before,
+  .billing-company-row > :nth-child(1)::before {
+    content: "Firma";
+  }
+
+  .admin-order-row > :nth-child(2)::before,
+  .billing-company-row > :nth-child(3)::before {
+    content: "Yemek adedi";
+  }
+
+  .admin-order-row > :nth-child(3)::before {
+    content: "Durum";
+  }
+
+  .admin-order-row > :nth-child(4)::before {
+    content: "Saat";
+  }
+
+  .admin-order-row > :nth-child(5)::before {
+    content: "Islem";
+  }
+
+  .monthly-company-head {
+    display: none;
+  }
+
+  .monthly-company-row {
+    grid-template-columns: 1fr;
+  }
+
+  .monthly-company-row > :nth-child(1)::before {
+    content: "Firma";
+  }
+
+  .monthly-company-row > :nth-child(2)::before {
+    content: "Gun";
+  }
+
+  .monthly-company-row > :nth-child(3)::before {
+    content: "Yemek adedi";
+  }
+
+  .monthly-company-row > :nth-child(4)::before {
+    content: "Son bildirim";
+  }
+
+  .billing-company-row > :nth-child(2)::before {
+    content: "Gun";
+  }
+
+  .billing-company-row > :nth-child(4)::before {
+    content: "Birim";
+  }
+
+  .billing-company-row > :nth-child(5)::before {
+    content: "Ara toplam";
+  }
+
+  .billing-company-row > :nth-child(6)::before {
+    content: "KDV";
+  }
+
+  .billing-company-row > :nth-child(7)::before {
+    content: "Toplam";
+  }
+
+  .billing-company-row > :nth-child(8)::before {
+    content: "Odeme";
+  }
+
+  .customer-tracking-row > :nth-child(1)::before {
+    content: "Tarih";
+  }
+
+  .customer-tracking-row > :nth-child(2)::before {
+    content: "Porsiyon";
+  }
+
+  .customer-tracking-row > :nth-child(3)::before {
+    content: "Tutar";
+  }
+
+  .customer-tracking-row > :nth-child(4)::before {
+    content: "Aciklama";
+  }
+
+  .person-billing-row > :nth-child(1)::before {
+    content: "Kisi";
+  }
+
+  .person-billing-row > :nth-child(2)::before {
+    content: "Gun";
+  }
+
+  .person-billing-row > :nth-child(3)::before {
+    content: "Tutar";
+  }
+
+  .person-billing-row > :nth-child(4)::before {
+    content: "Tarihler";
+  }
+
+  .order-status-pill,
+  .billing-payment-button,
+  .catering-secondary-button,
+  .catering-primary-button,
+  .create-user-button,
+  .admin-danger-button,
+  .billing-save-button {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .admin-main-panel,
+  .customer-main,
+  .catering-home-shell,
+  .portal-login-shell {
+    padding: 12px;
+  }
+
+  .admin-sidebar,
+  .customer-sidebar {
+    padding: 14px;
+  }
+
+  .admin-topbar h1,
+  .customer-hero h1,
+  .billing-report-intro h2,
+  .catering-hero-copy h1 {
+    font-size: 1.85rem;
+    line-height: 1.08;
+  }
+
+  .admin-section-panel,
+  .billing-report-panel,
+  .billing-ledger-panel,
+  .billing-pricing-panel,
+  .today-menu-panel,
+  .headcount-panel,
+  .monthly-menu-section,
+  .catering-panel,
+  .catering-live-card,
+  .catering-ops-table,
+  .catering-detail-copy {
+    padding: 14px;
+  }
+
+  .portal-login-card,
+  .catering-home-nav {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-login-card {
+    display: block;
+  }
+
+  .portal-login-visual,
+  .portal-login-form {
+    padding: 22px;
+  }
+
+  .catering-home-nav,
+  .catering-home-nav > div,
+  .catering-hero-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+*/
+
+/* Company detail spacing fix */
+.company-management-layout {
+  gap: 24px;
+  grid-template-columns: minmax(320px, 0.42fr) minmax(0, 1fr);
+}
+
+.company-detail-panel {
+  overflow: hidden;
+  padding: 24px;
+}
+
+.company-detail-panel .detail-form-grid {
+  column-gap: 28px;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  row-gap: 18px;
+  width: 100%;
+}
+
+.company-detail-panel .company-edit-form label {
+  min-width: 0;
+  width: 100%;
+}
+
+.company-detail-panel .company-edit-form input,
+.company-detail-panel .company-edit-form textarea {
+  border-radius: 10px;
+  display: block;
+  max-width: 100%;
+  width: 100%;
+}
+
+.company-contact-strip {
+  gap: 16px;
+}
+
+.company-contact-strip span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1280px) {
+  .company-management-layout {
+    grid-template-columns: minmax(280px, 0.5fr) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1100px) {
+  .company-management-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .company-detail-panel .detail-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.notification-command-panel,
+.customer-notification-banner {
+  align-items: center;
+  background: #fff7ed;
+  border: 1px solid rgba(199, 119, 41, 0.24);
+  border-radius: 8px;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  margin: 18px 0;
+  padding: 18px;
+}
+
+.notification-command-panel h3,
+.notification-command-panel p,
+.customer-notification-banner p {
+  margin: 0;
+}
+
+.notification-command-panel h3 {
+  color: #172019;
+  font-size: 1.1rem;
+  margin: 6px 0;
+}
+
+.notification-command-panel p,
+.notification-command-panel small,
+.customer-notification-banner p {
+  color: #61705d;
+}
+
+.customer-notification-banner {
+  align-items: flex-start;
+  border-color: rgba(168, 80, 51, 0.24);
+}
+
+.customer-notification-banner strong {
+  color: #7c2d12;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.monthly-tracking-panel > .notification-command-panel {
+  display: none;
+}
+
+.notification-center-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(360px, 1.2fr);
+}
+
+.notification-command-card,
+.notification-custom-form,
+.notification-history-list article {
+  background: #ffffff;
+  border: 1px solid rgba(23, 63, 42, 0.12);
+  border-radius: 8px;
+  box-shadow: 0 10px 26px rgba(16, 24, 32, 0.05);
+}
+
+.notification-command-card {
+  align-items: stretch;
+  flex-direction: column;
+  justify-content: flex-start;
+  margin: 0;
+}
+
+.notification-custom-form {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.notification-custom-form h3,
+.notification-history-list h3 {
+  margin: 6px 0;
+}
+
+.notification-custom-form p,
+.notification-history-list p {
+  color: #61705d;
+  margin: 0;
+}
+
+.notification-custom-form label {
+  display: grid;
+  gap: 8px;
+}
+
+.notification-custom-form label > span,
+.notification-picker-head strong {
+  color: #324237;
+  font-weight: 900;
+}
+
+.notification-custom-form input,
+.notification-custom-form textarea {
+  border: 1px solid rgba(23, 63, 42, 0.16);
+  border-radius: 10px;
+  min-height: 48px;
+  padding: 0 14px;
+  width: 100%;
+}
+
+.notification-custom-form textarea {
+  min-height: 118px;
+  padding: 14px;
+  resize: vertical;
+}
+
+.notification-company-picker {
+  border: 1px solid rgba(23, 63, 42, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.notification-picker-head {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.notification-company-list {
+  display: grid;
+  gap: 8px;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.notification-company-list label {
+  align-items: center;
+  background: #f7faf8;
+  border: 1px solid rgba(23, 63, 42, 0.08);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  padding: 10px;
+}
+
+.notification-company-list input {
+  min-height: 18px;
+  width: 18px;
+}
+
+.notification-history-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.notification-history-list article {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+
+.notification-history-list article > div {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.notification-clean-actions,
+.notification-row-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.notification-row-actions {
+  justify-content: space-between;
+}
+
+.admin-danger-button.compact {
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.notification-history-list span,
+.notification-history-list small {
+  color: #61705d;
+  font-weight: 800;
+}
+
+.customer-notification-modal-backdrop {
+  align-items: center;
+  backdrop-filter: blur(7px);
+  background: rgba(10, 24, 16, 0.34);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 18px;
+  position: fixed;
+  z-index: 1000;
+}
+
+.customer-notification-modal {
+  background: #ffffff;
+  border: 1px solid rgba(23, 63, 42, 0.12);
+  border-radius: 10px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.24);
+  max-width: 520px;
+  padding: 26px;
+  width: 100%;
+}
+
+.customer-notification-modal h2 {
+  color: #172019;
+  font-size: 1.55rem;
+  line-height: 1.12;
+  margin: 10px 0;
+}
+
+.customer-notification-modal p {
+  color: #61705d;
+  margin: 0 0 18px;
+}
+
+.customer-notification-tray {
+  align-self: flex-start;
+  position: relative;
+  z-index: 20;
+}
+
+.customer-notification-button {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid rgba(23, 63, 42, 0.12);
+  border-radius: 999px;
+  box-shadow: 0 12px 28px rgba(16, 24, 32, 0.08);
+  color: #173f2a;
+  cursor: pointer;
+  display: inline-flex;
+  height: 48px;
+  justify-content: center;
+  position: relative;
+  width: 48px;
+}
+
+.customer-notification-button > span {
+  align-items: center;
+  background: #c77729;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  color: #ffffff;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 900;
+  height: 22px;
+  justify-content: center;
+  min-width: 22px;
+  padding: 0 5px;
+  position: absolute;
+  right: -4px;
+  top: -4px;
+}
+
+.customer-notification-menu {
+  background: #ffffff;
+  border: 1px solid rgba(23, 63, 42, 0.12);
+  border-radius: 10px;
+  box-shadow: 0 24px 70px rgba(16, 24, 32, 0.18);
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  position: absolute;
+  right: 0;
+  top: 58px;
+  width: min(380px, calc(100vw - 32px));
+}
+
+.customer-notification-menu-head {
+  align-items: center;
+  border-bottom: 1px solid rgba(23, 63, 42, 0.1);
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 10px;
+}
+
+.customer-notification-menu-head strong {
+  color: #172019;
+}
+
+.customer-notification-menu-head small {
+  color: #61705d;
+  font-weight: 800;
+}
+
+.customer-notification-items {
+  display: grid;
+  gap: 10px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.customer-notification-items article {
+  background: #fff7ed;
+  border: 1px solid rgba(199, 119, 41, 0.18);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.customer-notification-items article.read {
+  background: #f7faf8;
+  border-color: rgba(23, 63, 42, 0.1);
+  opacity: 0.78;
+}
+
+.customer-notification-items article > div {
+  align-items: flex-start;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.customer-notification-items strong,
+.customer-notification-items p {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.customer-notification-items strong {
+  color: #172019;
+}
+
+.customer-notification-items p {
+  color: #61705d;
+  margin: 0;
+}
+
+.customer-notification-items small,
+.customer-notification-items span {
+  color: #61705d;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.customer-notification-items button {
+  background: #ffffff;
+  border: 1px solid rgba(23, 63, 42, 0.14);
+  border-radius: 8px;
+  color: #173f2a;
+  cursor: pointer;
+  font-weight: 900;
+  justify-self: start;
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.admin-notification-tray {
+  align-self: center;
+}
+
+.notification-retention-form {
+  border-top: 1px solid rgba(23, 63, 42, 0.12);
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 14px;
+}
+
+.notification-retention-form label {
+  display: grid;
+  gap: 8px;
+}
+
+.notification-retention-form label > span {
+  color: #324237;
+  font-weight: 900;
+}
+
+.notification-retention-form input {
+  border: 1px solid rgba(23, 63, 42, 0.16);
+  border-radius: 10px;
+  min-height: 46px;
+  padding: 0 14px;
+  width: 100%;
+}
+
+.notification-retention-form small {
+  color: #61705d;
+}
+
+@media (max-width: 700px) {
+  .notification-command-panel,
+  .customer-notification-banner {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .notification-center-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .notification-picker-head,
+  .notification-history-list article > div,
+  .notification-clean-actions,
+  .notification-row-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .customer-notification-tray {
+    align-self: stretch;
+  }
+
+  .customer-notification-button {
+    width: 100%;
+  }
+
+  .customer-notification-menu {
+    position: static;
+    width: 100%;
+  }
+}
+
+.billing-report-command .billing-report-intro h2 {
+  color: #ffffff;
+}
+
+.portal-login-shell {
+  background:
+    linear-gradient(135deg, rgba(7, 24, 17, 0.84), rgba(15, 61, 45, 0.76)),
+    url("/maharet-yemek.png");
+  background-position: center;
+  background-size: cover;
+}
+
+.portal-login-card {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  box-shadow: 0 30px 80px rgba(5, 20, 13, 0.28);
+  grid-template-columns: minmax(360px, 0.92fr) minmax(360px, 0.72fr);
+  max-width: 1080px;
+}
+
+.portal-login-visual {
+  background:
+    linear-gradient(145deg, rgba(10, 42, 30, 0.96), rgba(13, 75, 50, 0.88)),
+    url("/maharet-yemek.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover, min(68%, 360px);
+  isolation: isolate;
+  min-height: 560px;
+  position: relative;
+}
+
+.portal-login-visual::after {
+  background: linear-gradient(135deg, rgba(8, 32, 23, 0.92), rgba(8, 32, 23, 0.68));
+  content: "";
+  inset: 0;
+  position: absolute;
+  z-index: -1;
+}
+
+.portal-login-logo {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 12px;
+  display: inline-flex;
+  height: 74px;
+  justify-content: center;
+  padding: 8px;
+  width: 74px;
+}
+
+.portal-login-logo img {
+  display: block;
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
+}
+
+.portal-login-visual h1 {
+  max-width: 560px;
+}
+
+.portal-login-visual p {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 1.02rem;
+}
+
+.login-proof-grid article {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(10px);
+}
+
+.login-proof-grid strong {
+  color: #ffffff;
+}
+
+.login-proof-grid span {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.portal-login-form {
+  background: linear-gradient(180deg, #ffffff 0%, #f7faf8 100%);
+}
+
+.portal-login-form .catering-kicker {
+  color: #0f3d2d;
+}
+
+.portal-login-form label > span {
+  color: #15251b;
+}
+
+.portal-login-form input {
+  background: #f8fbf9;
+  border-radius: 12px;
+}
+
+.portal-login-form .catering-primary-button {
+  border-radius: 12px;
+  min-height: 52px;
+}
+
+@media (max-width: 720px) {
+  .portal-login-card {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-login-visual {
+    min-height: auto;
   }
 }

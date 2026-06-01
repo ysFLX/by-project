@@ -8,25 +8,96 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
-if (! function_exists('makeAdminAccessToken')) {
-    function makeAdminAccessToken(): string
+if (! function_exists('makeSignedSessionToken')) {
+    function makeSignedSessionToken(array $claims, int $minutes = 720): string
     {
-        return hash('sha256', (string) config('app.key').(string) env('ADMIN_PASSWORD', 'admin123'));
+        $claims['exp'] = now()->addMinutes($minutes)->timestamp;
+        $payload = rtrim(strtr(base64_encode(json_encode($claims, JSON_THROW_ON_ERROR)), '+/', '-_'), '=');
+        $signature = hash_hmac('sha256', $payload, (string) config('app.key'));
+
+        return $payload.'.'.$signature;
+    }
+}
+
+if (! function_exists('readSignedSessionToken')) {
+    function readSignedSessionToken(?string $token): ?array
+    {
+        if (! $token || ! str_contains($token, '.')) {
+            return null;
+        }
+
+        [$payload, $signature] = explode('.', $token, 2);
+        $expectedSignature = hash_hmac('sha256', $payload, (string) config('app.key'));
+
+        if (! hash_equals($expectedSignature, $signature)) {
+            return null;
+        }
+
+        $decoded = base64_decode(strtr($payload, '-_', '+/'), true);
+        $claims = $decoded ? json_decode($decoded, true) : null;
+
+        if (! is_array($claims) || (int) ($claims['exp'] ?? 0) < now()->timestamp) {
+            return null;
+        }
+
+        return $claims;
+    }
+}
+
+if (! function_exists('makeSessionCookie')) {
+    function makeSessionCookie(string $name, string $value, int $minutes = 720)
+    {
+        return cookie($name, $value, $minutes, '/', null, request()->isSecure(), true, false, 'Lax');
+    }
+}
+
+if (! function_exists('forgetSessionCookie')) {
+    function forgetSessionCookie(string $name)
+    {
+        return cookie($name, '', -1, '/', null, request()->isSecure(), true, false, 'Lax');
     }
 }
 
 if (! function_exists('requestHasValidAdminToken')) {
     function requestHasValidAdminToken($request): bool
     {
-        $header = (string) $request->header('Authorization', '');
+        $claims = readSignedSessionToken((string) $request->cookie('maharet_admin_session', ''));
 
-        if (strpos($header, 'Bearer ') === 0 && hash_equals(makeAdminAccessToken(), substr($header, 7))) {
-            return true;
+        return is_array($claims) && ($claims['role'] ?? null) === 'admin';
+    }
+}
+
+if (! function_exists('authenticatedCompanyForRequest')) {
+    function authenticatedCompanyForRequest($request, ?string $companyCode = null)
+    {
+        $claims = readSignedSessionToken((string) $request->cookie('maharet_company_session', ''));
+
+        if (! is_array($claims) || ($claims['role'] ?? null) !== 'customer' || empty($claims['companyId'])) {
+            return null;
         }
 
-        $cookieToken = (string) $request->cookie('maharet_admin_session', '');
+        $company = DB::table('client_companies')
+            ->where('id', (int) $claims['companyId'])
+            ->where('active', true)
+            ->first();
 
-        return $cookieToken !== '' && hash_equals(makeAdminAccessToken(), $cookieToken);
+        if (! $company || ($company->role ?? 'customer') !== 'customer' || (bool) ($company->hidden ?? false)) {
+            return null;
+        }
+
+        if ((string) ($claims['passwordHash'] ?? '') !== hash('sha256', (string) ($company->password_hash ?? ''))) {
+            return null;
+        }
+
+        if ($companyCode !== null) {
+            $slug = Str::slug($companyCode);
+
+            if ($slug !== (string) $company->code && $slug !== (string) $company->username) {
+                return null;
+            }
+        }
+
+        return $company;
     }
 }
 
@@ -77,7 +148,7 @@ if (! function_exists('seedSystemAccounts')) {
             [
                 'code' => 'admin',
                 'username' => 'admin',
-                'password' => (string) env('OWNER_PASSWORD', env('ADMIN_PASSWORD', 'admin123')),
+                'password' => (string) env('OWNER_PASSWORD', ''),
                 'name' => 'Admin',
                 'role' => 'admin',
                 'hidden' => true,
@@ -85,7 +156,7 @@ if (! function_exists('seedSystemAccounts')) {
             [
                 'code' => 'maharet-yemek',
                 'username' => 'maharet-yemek',
-                'password' => (string) env('CATERING_PASSWORD', 'maharet123'),
+                'password' => (string) env('CATERING_PASSWORD', ''),
                 'name' => 'Maharet Yemek',
                 'role' => 'admin',
                 'hidden' => false,
@@ -93,6 +164,10 @@ if (! function_exists('seedSystemAccounts')) {
         ];
 
         foreach ($accounts as $account) {
+            if ($account['password'] === '') {
+                continue;
+            }
+
             $existing = DB::table('client_companies')
                 ->where(function ($query) use ($account) {
                     $query->where('username', $account['username'])->orWhere('code', $account['code']);
@@ -242,6 +317,127 @@ if (! function_exists('ensureCompanyPaymentsTable')) {
     }
 }
 
+if (! function_exists('ensureAppNotificationsTable')) {
+    function ensureAppNotificationsTable(): void
+    {
+        if (! Schema::hasTable('app_notifications')) {
+            Schema::create('app_notifications', function (\Illuminate\Database\Schema\Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('client_company_id')->nullable();
+                $table->string('audience')->default('company');
+                $table->string('type')->default('general');
+                $table->date('service_date')->nullable();
+                $table->string('title');
+                $table->text('message');
+                $table->timestamp('read_at')->nullable();
+                $table->timestamps();
+                $table->unique(['client_company_id', 'type', 'service_date'], 'app_notifications_company_type_date_unique');
+                $table->index(['audience', 'read_at']);
+                $table->index('service_date');
+            });
+
+            return;
+        }
+
+        if (! Schema::hasColumn('app_notifications', 'read_at')) {
+            Schema::table('app_notifications', function (\Illuminate\Database\Schema\Blueprint $table) {
+                $table->timestamp('read_at')->nullable()->after('message');
+            });
+        }
+
+        if (! Schema::hasColumn('app_notifications', 'admin_cleared_at')) {
+            Schema::table('app_notifications', function (\Illuminate\Database\Schema\Blueprint $table) {
+                $table->timestamp('admin_cleared_at')->nullable()->after('read_at');
+            });
+        }
+    }
+}
+
+if (! function_exists('serializeAppNotification')) {
+    function serializeAppNotification($notification): array
+    {
+        return [
+            'id' => (string) $notification->id,
+            'companyId' => $notification->client_company_id ? (string) $notification->client_company_id : null,
+            'companyName' => $notification->company_name ?? null,
+            'companyCode' => $notification->company_code ?? null,
+            'audience' => $notification->audience,
+            'type' => $notification->type,
+            'serviceDate' => $notification->service_date,
+            'title' => $notification->title,
+            'message' => $notification->message,
+            'readAt' => $notification->read_at,
+            'adminClearedAt' => $notification->admin_cleared_at ?? null,
+            'createdAt' => $notification->created_at,
+            'updatedAt' => $notification->updated_at,
+        ];
+    }
+}
+
+if (! function_exists('cleanupOldAppNotifications')) {
+    function cleanupOldAppNotifications(): void
+    {
+        ensureAppNotificationsTable();
+        $settings = getOperationalSettings();
+        $retentionHours = max(1, min(720, (int) ($settings['notificationRetentionHours'] ?? 24)));
+
+        DB::table('app_notifications')
+            ->where('created_at', '<', now()->subHours($retentionHours))
+            ->delete();
+    }
+}
+
+if (! function_exists('getCompaniesMissingMealRequest')) {
+    function getCompaniesMissingMealRequest(string $serviceDate)
+    {
+        ensureAccountColumns();
+
+        $reportedCompanyIds = DB::table('meal_requests')
+            ->whereDate('service_date', $serviceDate)
+            ->pluck('client_company_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        return DB::table('client_companies')
+            ->where('active', true)
+            ->where(function ($query) {
+                $query->whereNull('role')->orWhere('role', 'customer');
+            })
+            ->where(function ($query) {
+                $query->whereNull('hidden')->orWhere('hidden', false);
+            })
+            ->when(count($reportedCompanyIds) > 0, fn ($query) => $query->whereNotIn('id', $reportedCompanyIds))
+            ->orderBy('name')
+            ->get();
+    }
+}
+
+if (! function_exists('getCompaniesMissingMealEatenNotification')) {
+    function getCompaniesMissingMealEatenNotification(string $serviceDate)
+    {
+        ensureAccountColumns();
+
+        return DB::table('client_companies')
+            ->leftJoin('meal_requests', function ($join) use ($serviceDate) {
+                $join->on('meal_requests.client_company_id', '=', 'client_companies.id')
+                    ->whereDate('meal_requests.service_date', $serviceDate);
+            })
+            ->where('client_companies.active', true)
+            ->where(function ($query) {
+                $query->whereNull('client_companies.role')->orWhere('client_companies.role', 'customer');
+            })
+            ->where(function ($query) {
+                $query->whereNull('client_companies.hidden')->orWhere('client_companies.hidden', false);
+            })
+            ->where(function ($query) {
+                $query->whereNull('meal_requests.id')->orWhere('meal_requests.status', 'submitted');
+            })
+            ->select('client_companies.*')
+            ->orderBy('client_companies.name')
+            ->get();
+    }
+}
+
 if (! function_exists('ensureOperationalSettingsTable')) {
     function ensureOperationalSettingsTable(): void
     {
@@ -257,6 +453,7 @@ if (! function_exists('ensureOperationalSettingsTable')) {
         $defaults = [
             'meal_eaten_deadline' => '16:30',
             'meal_collected_deadline' => '18:00',
+            'notification_retention_hours' => '24',
         ];
 
         foreach ($defaults as $key => $value) {
@@ -278,12 +475,13 @@ if (! function_exists('getOperationalSettings')) {
         ensureOperationalSettingsTable();
 
         $values = DB::table('app_settings')
-            ->whereIn('key', ['meal_eaten_deadline', 'meal_collected_deadline'])
+            ->whereIn('key', ['meal_eaten_deadline', 'meal_collected_deadline', 'notification_retention_hours'])
             ->pluck('value', 'key');
 
         return [
             'eatenDeadline' => (string) ($values['meal_eaten_deadline'] ?? '16:30'),
             'collectedDeadline' => (string) ($values['meal_collected_deadline'] ?? '18:00'),
+            'notificationRetentionHours' => (int) ($values['notification_retention_hours'] ?? 24),
         ];
     }
 }
@@ -469,17 +667,10 @@ Route::post('/auth/login', function () {
                     'accountRole' => $accountRole,
                     'displayName' => $company->name,
                 ],
-            ])->cookie(
-                'maharet_admin_session',
-                makeAdminAccessToken(),
-                720,
-                '/',
-                null,
-                request()->isSecure(),
-                true,
-                false,
-                'Lax'
-            );
+            ])->cookie(makeSessionCookie('maharet_admin_session', makeSignedSessionToken([
+                'role' => 'admin',
+                'username' => $company->username,
+            ])));
         }
 
         return response()->json([
@@ -489,27 +680,24 @@ Route::post('/auth/login', function () {
                 'companyCode' => $company->code,
                 'displayName' => $company->name,
             ],
-        ]);
+        ])->cookie(makeSessionCookie('maharet_company_session', makeSignedSessionToken([
+            'role' => 'customer',
+            'companyId' => (int) $company->id,
+            'username' => $company->username,
+            'passwordHash' => hash('sha256', (string) $company->password_hash),
+        ])));
     } catch (Throwable $exception) {
         return response()->json([
-            'message' => 'Login hata: '.$exception->getMessage(),
-            'type' => $exception::class,
+            'message' => 'Login hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
         ], 500);
     }
-});
+})->middleware('throttle:10,1');
 
 Route::post('/auth/logout', function () {
-    return response()->json(['message' => 'Cikis yapildi.'])->cookie(
-        'maharet_admin_session',
-        '',
-        -1,
-        '/',
-        null,
-        request()->isSecure(),
-        true,
-        false,
-        'Lax'
-    );
+    return response()->json(['message' => 'Cikis yapildi.'])
+        ->cookie(forgetSessionCookie('maharet_admin_session'))
+        ->cookie(forgetSessionCookie('maharet_company_session'));
 });
 
 Route::get('/health', function () {
@@ -519,8 +707,7 @@ Route::get('/health', function () {
         return response()->json([
             'status' => 'error',
             'app' => config('app.name'),
-            'database' => config('database.default'),
-            'message' => $exception->getMessage(),
+            'message' => (config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
             'time' => now()->toISOString(),
         ], 503);
     }
@@ -528,7 +715,6 @@ Route::get('/health', function () {
     return response()->json([
         'status' => 'ok',
         'app' => config('app.name'),
-        'database' => config('database.default'),
         'time' => now()->toISOString(),
     ]);
 });
@@ -538,8 +724,8 @@ Route::get('/operation-settings', function () {
         return response()->json(['settings' => getOperationalSettings()]);
     } catch (Throwable $exception) {
         return response()->json([
-            'message' => 'Operasyon ayarlari okunamadi: '.$exception->getMessage(),
-            'type' => $exception::class,
+            'message' => 'Operasyon ayarlari okunamadi: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
         ], 500);
     }
 });
@@ -553,6 +739,7 @@ Route::put('/operation-settings', function () {
         $validated = request()->validate([
             'eatenDeadline' => ['required', 'string'],
             'collectedDeadline' => ['required', 'string'],
+            'notificationRetentionHours' => ['nullable', 'integer', 'min:1', 'max:720'],
         ]);
 
         $eatenDeadline = (string) $validated['eatenDeadline'];
@@ -572,6 +759,7 @@ Route::put('/operation-settings', function () {
         foreach ([
             'meal_eaten_deadline' => $eatenDeadline,
             'meal_collected_deadline' => $collectedDeadline,
+            'notification_retention_hours' => (string) ($validated['notificationRetentionHours'] ?? 24),
         ] as $key => $value) {
             DB::table('app_settings')->updateOrInsert(
                 ['key' => $key],
@@ -584,8 +772,8 @@ Route::put('/operation-settings', function () {
         return response()->json(['settings' => getOperationalSettings()]);
     } catch (Throwable $exception) {
         return response()->json([
-            'message' => 'Operasyon ayarlari kaydedilemedi: '.$exception->getMessage(),
-            'type' => $exception::class,
+            'message' => 'Operasyon ayarlari kaydedilemedi: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
         ], 500);
     }
 });
@@ -616,8 +804,8 @@ Route::get('/report-payments', function () {
         return response()->json(['payments' => $payments]);
     } catch (Throwable $exception) {
         return response()->json([
-            'message' => 'Odeme kayitlari okunamadi: '.$exception->getMessage(),
-            'type' => $exception::class,
+            'message' => 'Odeme kayitlari okunamadi: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
         ], 500);
     }
 });
@@ -669,8 +857,328 @@ Route::put('/report-payments', function () {
         ], 422);
     } catch (Throwable $exception) {
         return response()->json([
-            'message' => 'Odeme kaydi guncellenemedi: '.$exception->getMessage(),
-            'type' => $exception::class,
+            'message' => 'Odeme kaydi guncellenemedi: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
+        ], 500);
+    }
+});
+
+Route::get('/notifications', function () {
+    try {
+        ensureAppNotificationsTable();
+        cleanupOldAppNotifications();
+
+        $companyCode = request()->query('companyCode');
+        $serviceDate = request()->query('serviceDate');
+
+        $query = DB::table('app_notifications')
+            ->leftJoin('client_companies', 'client_companies.id', '=', 'app_notifications.client_company_id')
+            ->select([
+                'app_notifications.*',
+                'client_companies.name as company_name',
+                'client_companies.code as company_code',
+            ]);
+
+        if ($companyCode) {
+            $company = authenticatedCompanyForRequest(request(), (string) $companyCode);
+
+            if (! $company) {
+                return response()->json(['message' => 'Sirket girisi gerekli.'], 401);
+            }
+
+            $query->where('app_notifications.client_company_id', $company->id)
+                ->where('app_notifications.audience', 'company');
+        } else {
+            if (! requestHasValidAdminToken(request())) {
+                return response()->json(['message' => 'Admin girisi gerekli.'], 401);
+            }
+
+            $query->whereNull('app_notifications.admin_cleared_at');
+        }
+
+        if ($serviceDate) {
+            $query->whereDate('app_notifications.service_date', $serviceDate);
+        }
+
+        $notifications = $query
+            ->orderByRaw('app_notifications.read_at IS NULL DESC')
+            ->orderByDesc('app_notifications.created_at')
+            ->limit(100)
+            ->get()
+            ->map(fn ($notification) => serializeAppNotification($notification));
+
+        return response()->json([
+            'notifications' => $notifications,
+            'unreadCount' => $notifications->filter(fn ($notification) => $notification['readAt'] === null)->count(),
+        ]);
+    } catch (Throwable $exception) {
+        return response()->json([
+            'message' => 'Bildirim sorgu hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
+        ], 500);
+    }
+});
+
+Route::post('/notifications/meal-reminders', function () {
+    if (! requestHasValidAdminToken(request())) {
+        return response()->json(['message' => 'Admin girisi gerekli.'], 401);
+    }
+
+    try {
+        ensureAppNotificationsTable();
+        cleanupOldAppNotifications();
+
+        $validated = request()->validate([
+            'serviceDate' => ['required', 'date_format:Y-m-d'],
+        ]);
+
+        $serviceDate = $validated['serviceDate'];
+        $today = now('Europe/Istanbul')->toDateString();
+
+        if ($serviceDate !== $today) {
+            return response()->json(['message' => 'Hatirlatma sadece bugunun firmalarina gonderilebilir.'], 422);
+        }
+
+        $missingCompanies = getCompaniesMissingMealEatenNotification($serviceDate);
+        $now = now();
+        $createdCount = 0;
+
+        foreach ($missingCompanies as $company) {
+            $existingNotification = DB::table('app_notifications')
+                ->where('client_company_id', $company->id)
+                ->where('type', 'meal_eaten_missing')
+                ->whereDate('service_date', $serviceDate)
+                ->first();
+
+            if ($existingNotification) {
+                DB::table('app_notifications')->where('id', $existingNotification->id)->update([
+                    'audience' => 'company',
+                    'title' => 'Yemek yenildi bildirimi bekleniyor',
+                    'message' => 'Bugun yemek yenildi bilgisi henuz catering firmasina gonderilmedi. Lutfen yemek yenildi butonuna basarak catering firmasini bilgilendirin.',
+                    'read_at' => null,
+                    'admin_cleared_at' => null,
+                    'updated_at' => $now,
+                ]);
+            } else {
+                DB::table('app_notifications')->insert([
+                    'client_company_id' => $company->id,
+                    'audience' => 'company',
+                    'type' => 'meal_eaten_missing',
+                    'service_date' => $serviceDate,
+                    'title' => 'Yemek yenildi bildirimi bekleniyor',
+                    'message' => 'Bugun yemek yenildi bilgisi henuz catering firmasina gonderilmedi. Lutfen yemek yenildi butonuna basarak catering firmasini bilgilendirin.',
+                    'read_at' => null,
+                    'admin_cleared_at' => null,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+
+                $createdCount += 1;
+            }
+        }
+
+        return response()->json([
+            'message' => $missingCompanies->count().' firmaya yemek yenildi hatirlatmasi hazirlandi.',
+            'createdCount' => $createdCount,
+            'missingCount' => $missingCompanies->count(),
+            'companies' => $missingCompanies->map(fn ($company) => [
+                'id' => (string) $company->id,
+                'code' => $company->code,
+                'name' => $company->name,
+            ])->values(),
+        ]);
+    } catch (Throwable $exception) {
+        return response()->json([
+            'message' => 'Hatirlatma gonderme hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
+        ], 500);
+    }
+});
+
+Route::post('/notifications', function () {
+    if (! requestHasValidAdminToken(request())) {
+        return response()->json(['message' => 'Admin girisi gerekli.'], 401);
+    }
+
+    try {
+        ensureAppNotificationsTable();
+        cleanupOldAppNotifications();
+
+        $validated = request()->validate([
+            'companyIds' => ['required', 'array', 'min:1'],
+            'companyIds.*' => ['integer'],
+            'title' => ['required', 'string', 'max:255'],
+            'message' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $companyIds = collect($validated['companyIds'])
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        $companies = DB::table('client_companies')
+            ->whereIn('id', $companyIds)
+            ->where('active', true)
+            ->where(function ($query) {
+                $query->whereNull('role')->orWhere('role', 'customer');
+            })
+            ->where(function ($query) {
+                $query->whereNull('hidden')->orWhere('hidden', false);
+            })
+            ->get();
+
+        if ($companies->isEmpty()) {
+            return response()->json(['message' => 'Bildirim gonderilecek aktif firma bulunamadi.'], 422);
+        }
+
+        $now = now();
+
+        foreach ($companies as $company) {
+            DB::table('app_notifications')->insert([
+                'client_company_id' => $company->id,
+                'audience' => 'company',
+                'type' => 'general',
+                'service_date' => null,
+                'title' => $validated['title'],
+                'message' => $validated['message'],
+                'read_at' => null,
+                'admin_cleared_at' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
+
+        return response()->json([
+            'message' => $companies->count().' firmaya bildirim gonderildi.',
+            'createdCount' => $companies->count(),
+            'companies' => $companies->map(fn ($company) => [
+                'id' => (string) $company->id,
+                'code' => $company->code,
+                'name' => $company->name,
+            ])->values(),
+        ], 201);
+    } catch (\Illuminate\Validation\ValidationException $exception) {
+        return response()->json([
+            'message' => collect($exception->errors())->flatten()->first() ?? 'Bildirim bilgisi gecersiz.',
+            'errors' => $exception->errors(),
+        ], 422);
+    } catch (Throwable $exception) {
+        return response()->json([
+            'message' => 'Bildirim gonderme hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
+        ], 500);
+    }
+});
+
+Route::delete('/notifications', function () {
+    if (! requestHasValidAdminToken(request())) {
+        return response()->json(['message' => 'Admin girisi gerekli.'], 401);
+    }
+
+    try {
+        ensureAppNotificationsTable();
+
+        $scope = (string) request()->query('scope', request()->input('scope', 'admin'));
+
+        if (! in_array($scope, ['admin', 'customers'], true)) {
+            return response()->json(['message' => 'Gecersiz temizleme turu.'], 422);
+        }
+
+        if ($scope === 'admin') {
+            $count = DB::table('app_notifications')
+                ->whereNull('admin_cleared_at')
+                ->update([
+                    'admin_cleared_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+            return response()->json([
+                'message' => 'Catering bildirim listesi temizlendi.',
+                'deletedCount' => $count,
+            ]);
+        }
+
+        $count = DB::table('app_notifications')
+            ->where('audience', 'company')
+            ->delete();
+
+        return response()->json([
+            'message' => 'Musteri ekranlarindaki bildirimler temizlendi.',
+            'deletedCount' => $count,
+        ]);
+    } catch (Throwable $exception) {
+        return response()->json([
+            'message' => 'Bildirim temizleme hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
+        ], 500);
+    }
+});
+
+Route::delete('/notifications/{notification}', function (string $notification) {
+    if (! requestHasValidAdminToken(request())) {
+        return response()->json(['message' => 'Admin girisi gerekli.'], 401);
+    }
+
+    try {
+        ensureAppNotificationsTable();
+
+        $deleted = DB::table('app_notifications')
+            ->where('id', $notification)
+            ->delete();
+
+        if (! $deleted) {
+            return response()->json(['message' => 'Bildirim bulunamadi.'], 404);
+        }
+
+        return response()->json(['message' => 'Bildirim musteriden kaldirildi.']);
+    } catch (Throwable $exception) {
+        return response()->json([
+            'message' => 'Bildirim silme hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
+        ], 500);
+    }
+});
+
+Route::patch('/notifications/{notification}', function (string $notification) {
+    try {
+        ensureAppNotificationsTable();
+
+        $row = DB::table('app_notifications')->where('id', $notification)->first();
+
+        if (! $row) {
+            return response()->json(['message' => 'Bildirim bulunamadi.'], 404);
+        }
+
+        if (! requestHasValidAdminToken(request())) {
+            $companyCode = request()->input('companyCode');
+            $company = authenticatedCompanyForRequest(request(), (string) $companyCode);
+
+            if (! $company || (int) $company->id !== (int) $row->client_company_id) {
+                return response()->json(['message' => 'Bildirim icin yetki yok.'], 401);
+            }
+        }
+
+        DB::table('app_notifications')->where('id', $row->id)->update([
+            'read_at' => request()->boolean('read', true) ? now() : null,
+            'updated_at' => now(),
+        ]);
+
+        $updated = DB::table('app_notifications')
+            ->leftJoin('client_companies', 'client_companies.id', '=', 'app_notifications.client_company_id')
+            ->select([
+                'app_notifications.*',
+                'client_companies.name as company_name',
+                'client_companies.code as company_code',
+            ])
+            ->where('app_notifications.id', $row->id)
+            ->first();
+
+        return response()->json(['notification' => serializeAppNotification($updated)]);
+    } catch (Throwable $exception) {
+        return response()->json([
+            'message' => 'Bildirim guncelleme hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
         ], 500);
     }
 });
@@ -689,8 +1197,8 @@ Route::get('/menus', function () {
         return response()->json(['menus' => $menus]);
     } catch (Throwable $exception) {
         return response()->json([
-            'message' => 'Menu listesi hata: '.$exception->getMessage(),
-            'type' => $exception::class,
+            'message' => 'Menu listesi hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
         ], 500);
     }
 });
@@ -709,8 +1217,8 @@ Route::get('/menu-days', function () {
         return response()->json(['days' => $menuDays]);
     } catch (Throwable $exception) {
         return response()->json([
-            'message' => 'Menu gunleri hata: '.$exception->getMessage(),
-            'type' => $exception::class,
+            'message' => 'Menu gunleri hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
         ], 500);
     }
 });
@@ -779,8 +1287,8 @@ Route::post('/menu-days', function () {
         ], 422);
     } catch (Throwable $exception) {
         return response()->json([
-            'message' => 'Menu gunleri kaydetme hata: '.$exception->getMessage(),
-            'type' => $exception::class,
+            'message' => 'Menu gunleri kaydetme hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
         ], 500);
     }
 });
@@ -802,8 +1310,8 @@ Route::get('/menus/{menu}/pdf', function (string $menu) {
         ]);
     } catch (Throwable $exception) {
         return response()->json([
-            'message' => 'Menu PDF acma hata: '.$exception->getMessage(),
-            'type' => $exception::class,
+            'message' => 'Menu PDF acma hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
         ], 500);
     }
 });
@@ -939,8 +1447,8 @@ Route::post('/menus', function () {
         ], 422);
     } catch (Throwable $exception) {
         return response()->json([
-            'message' => 'Menu PDF yukleme hata: '.$exception->getMessage(),
-            'type' => $exception::class,
+            'message' => 'Menu PDF yukleme hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
         ], 500);
     }
 });
@@ -964,13 +1472,17 @@ Route::delete('/menus/{menu}', function (string $menu) {
         return response()->json(['message' => 'Menu PDF silindi.']);
     } catch (Throwable $exception) {
         return response()->json([
-            'message' => 'Menu PDF silme hata: '.$exception->getMessage(),
-            'type' => $exception::class,
+            'message' => 'Menu PDF silme hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
         ], 500);
     }
 });
 
 Route::get('/debug/schema', function () {
+    if (! requestHasValidAdminToken(request()) || ! config('app.debug')) {
+        return response()->json(['message' => 'Not found.'], 404);
+    }
+
     $tables = ['client_companies', 'company_people', 'meal_requests', 'meal_request_counters', 'meal_request_people'];
 
     return response()->json([
@@ -997,7 +1509,7 @@ Route::get('/debug/schema', function () {
                 return [
                     $table => [
                         'exists' => false,
-                        'error' => $exception->getMessage(),
+                        'error' => (config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
                     ],
                 ];
             }
@@ -1044,8 +1556,8 @@ Route::get('/client-companies', function () {
             return response()->json(['companies' => $companies]);
         } catch (Throwable $exception) {
             return response()->json([
-                'message' => 'Client companies hata: '.$exception->getMessage(),
-                'type' => $exception::class,
+                'message' => 'Client companies hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+                'type' => config('app.debug') ? $exception::class : null,
             ], 500);
         }
 });
@@ -1062,7 +1574,7 @@ Route::post('/client-companies', function () {
             'accountType' => ['nullable', 'string', 'in:individual,corporate'],
             'code' => ['nullable', 'string', 'max:120'],
             'username' => ['nullable', 'string', 'max:120'],
-            'password' => ['nullable', 'string', 'min:4', 'max:255'],
+            'password' => ['nullable', 'string', 'min:8', 'max:255'],
             'contactName' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
@@ -1141,8 +1653,8 @@ Route::post('/client-companies', function () {
         ], 201);
     } catch (Throwable $exception) {
         return response()->json([
-            'message' => 'Client company olusturma hata: '.$exception->getMessage(),
-            'type' => $exception::class,
+            'message' => 'Client company olusturma hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
         ], 500);
     }
 });
@@ -1174,7 +1686,7 @@ Route::put('/client-companies/{clientCompany}', function (string $clientCompany)
             'notes' => ['nullable', 'string', 'max:2000'],
             'mealUnitPrice' => ['nullable', 'numeric', 'min:0', 'max:999999'],
             'mealVatEnabled' => ['nullable', 'boolean'],
-            'password' => ['nullable', 'string', 'min:4', 'max:255'],
+            'password' => ['nullable', 'string', 'min:8', 'max:255'],
             'active' => ['nullable', 'boolean'],
         ]);
 
@@ -1238,8 +1750,8 @@ Route::put('/client-companies/{clientCompany}', function (string $clientCompany)
         ], 422);
     } catch (Throwable $exception) {
         return response()->json([
-            'message' => 'Sirket guncelleme hata: '.$exception->getMessage(),
-            'type' => $exception::class,
+            'message' => 'Sirket guncelleme hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
         ], 500);
     }
 });
@@ -1249,31 +1761,33 @@ Route::patch('/client-companies/{companyCode}/password', function (string $compa
 
         $validated = request()->validate([
             'currentPassword' => ['required', 'string', 'max:255'],
-            'password' => ['required', 'string', 'min:4', 'max:255'],
+            'password' => ['required', 'string', 'min:8', 'max:255'],
         ]);
 
-        $loginSlug = Str::slug($companyCode);
-        $company = DB::table('client_companies')
-            ->where(function ($query) use ($loginSlug) {
-                $query->where('code', $loginSlug)->orWhere('username', $loginSlug);
-            })
-            ->where('active', true)
-            ->first();
+        $company = authenticatedCompanyForRequest(request(), $companyCode);
 
-        if (! $company || ($company->role ?? 'customer') !== 'customer' || (bool) ($company->hidden ?? false)) {
-            return response()->json(['message' => 'Sirket uyeligi bulunamadi.'], 404);
+        if (! $company) {
+            return response()->json(['message' => 'Sirket girisi gerekli.'], 401);
         }
 
         if (! ($company->password_hash ?? null) || ! Illuminate\Support\Facades\Hash::check($validated['currentPassword'], $company->password_hash)) {
             return response()->json(['message' => 'Mevcut sifre hatali.'], 422);
         }
 
+        $passwordHash = Illuminate\Support\Facades\Hash::make($validated['password']);
+
         DB::table('client_companies')->where('id', $company->id)->update([
-            'password_hash' => Illuminate\Support\Facades\Hash::make($validated['password']),
+            'password_hash' => $passwordHash,
             'updated_at' => now(),
         ]);
 
-        return response()->json(['message' => 'Sifre guncellendi.']);
+        return response()->json(['message' => 'Sifre guncellendi.'])
+            ->cookie(makeSessionCookie('maharet_company_session', makeSignedSessionToken([
+                'role' => 'customer',
+                'companyId' => (int) $company->id,
+                'username' => $company->username,
+                'passwordHash' => hash('sha256', $passwordHash),
+            ])));
     } catch (\Illuminate\Validation\ValidationException $exception) {
         return response()->json([
             'message' => collect($exception->errors())->flatten()->first() ?? 'Sifre bilgileri gecersiz.',
@@ -1281,8 +1795,8 @@ Route::patch('/client-companies/{companyCode}/password', function (string $compa
         ], 422);
     } catch (Throwable $exception) {
         return response()->json([
-            'message' => 'Sifre guncelleme hata: '.$exception->getMessage(),
-            'type' => $exception::class,
+            'message' => 'Sifre guncelleme hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
         ], 500);
     }
 });
@@ -1329,8 +1843,8 @@ Route::delete('/client-companies/{clientCompany}', function (string $clientCompa
         return response()->json(['message' => 'Sirket uyeligi ve bagli kayitlari silindi.']);
     } catch (Throwable $exception) {
         return response()->json([
-            'message' => 'Sirket silme hata: '.$exception->getMessage(),
-            'type' => $exception::class,
+            'message' => 'Sirket silme hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
         ], 500);
     }
 });
@@ -1338,23 +1852,10 @@ Route::get('/client-companies/{companyCode}/people', function (string $companyCo
     try {
         ensureAccountColumns();
 
-        $company = DB::table('client_companies')
-            ->where(function ($query) use ($companyCode) {
-                $slug = Str::slug($companyCode);
-
-                $query->where('code', $slug)->orWhere('username', $slug);
-            })
-            ->where('active', true)
-            ->where(function ($query) {
-                $query->whereNull('role')->orWhere('role', 'customer');
-            })
-            ->where(function ($query) {
-                $query->whereNull('hidden')->orWhere('hidden', false);
-            })
-            ->first();
+        $company = authenticatedCompanyForRequest(request(), $companyCode);
 
         if (! $company) {
-            return response()->json(['message' => 'Sirket uyeligi bulunamadi.'], 404);
+            return response()->json(['message' => 'Sirket girisi gerekli.'], 401);
         }
 
         $people = DB::table('company_people')
@@ -1376,30 +1877,17 @@ Route::get('/client-companies/{companyCode}/people', function (string $companyCo
 
         return response()->json(['people' => $people]);
     } catch (Throwable $exception) {
-        return response()->json(['message' => 'Kisi listesi hata: '.$exception->getMessage()], 500);
+        return response()->json(['message' => 'Kisi listesi hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata')], 500);
     }
 });
 Route::post('/client-companies/{companyCode}/people', function (string $companyCode) {
     try {
         ensureAccountColumns();
 
-        $company = DB::table('client_companies')
-            ->where(function ($query) use ($companyCode) {
-                $slug = Str::slug($companyCode);
-
-                $query->where('code', $slug)->orWhere('username', $slug);
-            })
-            ->where('active', true)
-            ->where(function ($query) {
-                $query->whereNull('role')->orWhere('role', 'customer');
-            })
-            ->where(function ($query) {
-                $query->whereNull('hidden')->orWhere('hidden', false);
-            })
-            ->first();
+        $company = authenticatedCompanyForRequest(request(), $companyCode);
 
         if (! $company) {
-            return response()->json(['message' => 'Sirket uyeligi bulunamadi.'], 404);
+            return response()->json(['message' => 'Sirket girisi gerekli.'], 401);
         }
 
         $validated = request()->validate([
@@ -1433,30 +1921,17 @@ Route::post('/client-companies/{companyCode}/people', function (string $companyC
             ],
         ], 201);
     } catch (Throwable $exception) {
-        return response()->json(['message' => 'Kisi ekleme hata: '.$exception->getMessage()], 500);
+        return response()->json(['message' => 'Kisi ekleme hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata')], 500);
     }
 });
 Route::patch('/client-companies/{companyCode}/people/{person}', function (string $companyCode, string $person) {
     try {
         ensureAccountColumns();
 
-        $company = DB::table('client_companies')
-            ->where(function ($query) use ($companyCode) {
-                $slug = Str::slug($companyCode);
-
-                $query->where('code', $slug)->orWhere('username', $slug);
-            })
-            ->where('active', true)
-            ->where(function ($query) {
-                $query->whereNull('role')->orWhere('role', 'customer');
-            })
-            ->where(function ($query) {
-                $query->whereNull('hidden')->orWhere('hidden', false);
-            })
-            ->first();
+        $company = authenticatedCompanyForRequest(request(), $companyCode);
 
         if (! $company) {
-            return response()->json(['message' => 'Sirket uyeligi bulunamadi.'], 404);
+            return response()->json(['message' => 'Sirket girisi gerekli.'], 401);
         }
 
         $validated = request()->validate([
@@ -1491,30 +1966,17 @@ Route::patch('/client-companies/{companyCode}/people/{person}', function (string
             ],
         ]);
     } catch (Throwable $exception) {
-        return response()->json(['message' => 'Kisi guncelleme hata: '.$exception->getMessage()], 500);
+        return response()->json(['message' => 'Kisi guncelleme hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata')], 500);
     }
 });
 Route::delete('/client-companies/{companyCode}/people/{person}', function (string $companyCode, string $person) {
     try {
         ensureAccountColumns();
 
-        $company = DB::table('client_companies')
-            ->where(function ($query) use ($companyCode) {
-                $slug = Str::slug($companyCode);
-
-                $query->where('code', $slug)->orWhere('username', $slug);
-            })
-            ->where('active', true)
-            ->where(function ($query) {
-                $query->whereNull('role')->orWhere('role', 'customer');
-            })
-            ->where(function ($query) {
-                $query->whereNull('hidden')->orWhere('hidden', false);
-            })
-            ->first();
+        $company = authenticatedCompanyForRequest(request(), $companyCode);
 
         if (! $company) {
-            return response()->json(['message' => 'Sirket uyeligi bulunamadi.'], 404);
+            return response()->json(['message' => 'Sirket girisi gerekli.'], 401);
         }
 
         $updated = DB::table('company_people')
@@ -1531,29 +1993,17 @@ Route::delete('/client-companies/{companyCode}/people/{person}', function (strin
 
         return response()->json(['message' => 'Kisi pasife alindi.']);
     } catch (Throwable $exception) {
-        return response()->json(['message' => 'Kisi silme hata: '.$exception->getMessage()], 500);
+        return response()->json(['message' => 'Kisi silme hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata')], 500);
     }
 });
 Route::get('/client-companies/{companyCode}', function (string $companyCode) {
     try {
         ensureAccountColumns();
 
-        $slug = Str::slug($companyCode);
-        $company = DB::table('client_companies')
-            ->where(function ($query) use ($slug) {
-                $query->where('code', $slug)->orWhere('username', $slug);
-            })
-            ->where('active', true)
-            ->where(function ($query) {
-                $query->whereNull('role')->orWhere('role', 'customer');
-            })
-            ->where(function ($query) {
-                $query->whereNull('hidden')->orWhere('hidden', false);
-            })
-            ->first();
+        $company = authenticatedCompanyForRequest(request(), $companyCode);
 
         if (! $company) {
-            return response()->json(['message' => 'Sirket uyeligi bulunamadi.'], 404);
+            return response()->json(['message' => 'Sirket girisi gerekli.'], 401);
         }
 
         return response()->json([
@@ -1578,8 +2028,8 @@ Route::get('/client-companies/{companyCode}', function (string $companyCode) {
         ]);
     } catch (Throwable $exception) {
         return response()->json([
-            'message' => 'Sirket uyeligi sorgu hata: '.$exception->getMessage(),
-            'type' => $exception::class,
+            'message' => 'Sirket uyeligi sorgu hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
         ], 500);
     }
 });
@@ -1590,8 +2040,15 @@ Route::get('/meal-requests', function () {
 
         $serviceDate = request()->query('serviceDate', now()->toDateString());
         $companyCode = request()->query('companyCode');
+        $company = null;
 
-        if (! $companyCode && ! requestHasValidAdminToken(request())) {
+        if ($companyCode) {
+            $company = authenticatedCompanyForRequest(request(), (string) $companyCode);
+
+            if (! $company) {
+                return response()->json(['message' => 'Sirket girisi gerekli.'], 401);
+            }
+        } elseif (! requestHasValidAdminToken(request())) {
             return response()->json(['message' => 'Admin girisi gerekli.'], 401);
         }
 
@@ -1613,7 +2070,7 @@ Route::get('/meal-requests', function () {
                 'client_companies.name as company_name',
             ])
             ->whereDate('meal_requests.service_date', $serviceDate)
-            ->when($companyCode, fn ($query) => $query->where('client_companies.code', Str::slug((string) $companyCode)))
+            ->when($company, fn ($query) => $query->where('meal_requests.client_company_id', $company->id))
             ->orderByDesc('meal_requests.updated_at')
             ->get()
             ->map(function ($mealRequest) {
@@ -1649,13 +2106,15 @@ Route::get('/meal-requests', function () {
         return response()->json(['requests' => $requests]);
     } catch (Throwable $exception) {
         return response()->json([
-            'message' => 'Meal requests hata: '.$exception->getMessage(),
-            'type' => $exception::class,
+            'message' => 'Meal requests hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
         ], 500);
     }
 });
 Route::post('/meal-requests', function () {
     try {
+        ensureAppNotificationsTable();
+
         $validated = request()->validate([
             'companyCode' => ['required', 'string', 'max:120'],
             'serviceDate' => ['nullable', 'date_format:Y-m-d'],
@@ -1665,13 +2124,10 @@ Route::post('/meal-requests', function () {
             'note' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $company = DB::table('client_companies')
-            ->where('code', Str::slug($validated['companyCode']))
-            ->where('active', true)
-            ->first();
+        $company = authenticatedCompanyForRequest(request(), $validated['companyCode']);
 
         if (! $company) {
-            return response()->json(['message' => 'Aktif sirket uyeligi bulunamadi.'], 404);
+            return response()->json(['message' => 'Sirket girisi gerekli.'], 401);
         }
 
         $personIds = collect($validated['personIds'] ?? [])
@@ -1808,6 +2264,16 @@ Route::post('/meal-requests', function () {
             ->where('meal_requests.request_no', $requestNo)
             ->first();
 
+        DB::table('app_notifications')
+            ->where('client_company_id', $company->id)
+            ->whereIn('type', ['meal_missing', 'meal_eaten_missing'])
+            ->whereDate('service_date', $serviceDate)
+            ->whereNull('read_at')
+            ->update([
+                'read_at' => now(),
+                'updated_at' => now(),
+            ]);
+
         $people = DB::table('meal_request_people')
             ->join('company_people', 'company_people.id', '=', 'meal_request_people.company_person_id')
             ->where('meal_request_people.meal_request_id', $mealRequest->id)
@@ -1839,8 +2305,8 @@ Route::post('/meal-requests', function () {
         ], 201);
     } catch (Throwable $exception) {
         return response()->json([
-            'message' => 'Meal request olusturma hata: '.$exception->getMessage(),
-            'type' => $exception::class,
+            'message' => 'Meal request olusturma hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
         ], 500);
     }
 });
@@ -1865,6 +2331,14 @@ Route::patch('/meal-requests/{requestNo}', function (string $requestNo) {
 
         if (! $mealRequest) {
             return response()->json(['message' => 'Yemek talebi bulunamadi.'], 404);
+        }
+
+        if ($status === 'eaten' && ! requestHasValidAdminToken(request())) {
+            $company = authenticatedCompanyForRequest(request());
+
+            if (! $company || (int) $company->id !== (int) $mealRequest->client_company_id) {
+                return response()->json(['message' => 'Yemek talebi icin yetki yok.'], 401);
+            }
         }
 
         $settings = getOperationalSettings();
@@ -1910,6 +2384,20 @@ Route::patch('/meal-requests/{requestNo}', function (string $requestNo) {
         DB::table('meal_requests')
             ->where('id', $mealRequest->id)
             ->update($updates);
+
+        if ($status === 'eaten') {
+            ensureAppNotificationsTable();
+
+            DB::table('app_notifications')
+                ->where('client_company_id', $mealRequest->client_company_id)
+                ->where('type', 'meal_eaten_missing')
+                ->whereDate('service_date', $serviceDate)
+                ->whereNull('read_at')
+                ->update([
+                    'read_at' => now(),
+                    'updated_at' => now(),
+                ]);
+        }
 
         $updatedRequest = DB::table('meal_requests')
             ->join('client_companies', 'client_companies.id', '=', 'meal_requests.client_company_id')
@@ -1962,8 +2450,8 @@ Route::patch('/meal-requests/{requestNo}', function (string $requestNo) {
         ]);
     } catch (Throwable $exception) {
         return response()->json([
-            'message' => 'Meal request durum hata: '.$exception->getMessage(),
-            'type' => $exception::class,
+            'message' => 'Meal request durum hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata'),
+            'type' => config('app.debug') ? $exception::class : null,
         ], 500);
     }
 });

@@ -1,7 +1,8 @@
-import {
+﻿import {
   AlertTriangle,
   BadgeCheck,
   BarChart3,
+  Bell,
   Building2,
   CalendarDays,
   CheckCircle2,
@@ -33,13 +34,16 @@ import {
 } from "lucide-react";
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import * as pdfjs from "pdfjs-dist";
+import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import * as XLSX from "xlsx";
 import { FeedbackModal } from "../components/FeedbackModal";
 import { apiFetch } from "../services/api";
 import { setPageTitle } from "../services/page-title";
 import { clearSession } from "../services/session";
-import type { ClientCompany, MealRequest, MenuDay, OperationSettings, ReportPayment } from "../types/api";
+import type { AppNotification, ClientCompany, MealRequest, MenuDay, OperationSettings, ReportPayment } from "../types/api";
 
-type AdminView = "overview" | "collection" | "companies" | "menu" | "monthlyTracking" | "reports";
+type AdminView = "overview" | "collection" | "notifications" | "companies" | "menu" | "monthlyTracking" | "reports";
 type AccountType = "individual" | "corporate";
 type MonthlyTrackingDay = {
   date: string;
@@ -63,7 +67,8 @@ type ReportCompanyTotal = {
 const VAT_RATE = 0.2;
 const defaultOperationSettings: OperationSettings = {
   eatenDeadline: "16:30",
-  collectedDeadline: "18:00"
+  collectedDeadline: "18:00",
+  notificationRetentionHours: 24
 };
 
 const statusMeta = {
@@ -87,9 +92,10 @@ const statusMeta = {
 const adminViews = [
   { id: "overview", label: "Günlük takip", icon: LayoutDashboard },
   { id: "collection", label: "Yemek Toplama", icon: PackageCheck },
+  { id: "notifications", label: "Bildirimler", icon: Mail },
   { id: "companies", label: "Üye şirketler", icon: Building2 },
   { id: "menu", label: "Aylık menü", icon: ChefHat },
-  { id: "monthlyTracking", label: "Aylik yemek takibi", icon: ClipboardList },
+  { id: "monthlyTracking", label: "Aylık yemek takibi", icon: ClipboardList },
   { id: "reports", label: "Raporlar", icon: BarChart3 }
 ] satisfies { id: AdminView; label: string; icon: typeof LayoutDashboard }[];
 const ADMIN_VIEW_STORAGE_KEY = "maharet-admin-view";
@@ -148,6 +154,15 @@ function formatTime(value?: string | null) {
   }
 
   return new Intl.DateTimeFormat("tr-TR", {
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(value));
+}
+
+function formatNotificationTime(value: string) {
+  return new Intl.DateTimeFormat("tr-TR", {
+    day: "2-digit",
+    month: "2-digit",
     hour: "2-digit",
     minute: "2-digit"
   }).format(new Date(value));
@@ -305,8 +320,6 @@ function splitSheetMenuCell(value: unknown, monthKey: string) {
 }
 
 async function extractSpreadsheetMenu(file: File, monthKey: string) {
-  const loadXlsx = new Function("return import('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm')") as () => Promise<any>;
-  const XLSX = await loadXlsx();
   const data = await file.arrayBuffer();
   const workbook = XLSX.read(data, { type: "array", cellDates: true });
   const worksheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -345,9 +358,7 @@ async function extractSpreadsheetMenu(file: File, monthKey: string) {
 }
 
 async function extractPdfMenu(file: File, monthKey: string) {
-  const loadPdfJs = new Function("return import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs')") as () => Promise<any>;
-  const pdfjs = await loadPdfJs();
-  pdfjs.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs";
+  pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
   const data = await file.arrayBuffer();
   const pdf = await pdfjs.getDocument({ data }).promise;
@@ -457,6 +468,7 @@ export function CateringDashboard() {
   const [reportMonth, setReportMonth] = useState(currentMonthKey());
   const [reportRequests, setReportRequests] = useState<MealRequest[]>([]);
   const [reportPayments, setReportPayments] = useState<ReportPayment[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [menuMonth, setMenuMonth] = useState(currentMonthKey());
   const [menuDays, setMenuDays] = useState<Record<string, string>>({});
   const [operationSettings, setOperationSettings] = useState<OperationSettings>(defaultOperationSettings);
@@ -482,8 +494,12 @@ export function CateringDashboard() {
   const [editPassword, setEditPassword] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [companySearchTerm, setCompanySearchTerm] = useState("");
+  const [notificationTitle, setNotificationTitle] = useState("");
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [selectedNotificationCompanyIds, setSelectedNotificationCompanyIds] = useState<string[]>([]);
   const [lastUpdatedAt, setLastUpdatedAt] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isAdminNotificationTrayOpen, setIsAdminNotificationTrayOpen] = useState(false);
   const [companyToRemove, setCompanyToRemove] = useState<ClientCompany | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMonthlyLoading, setIsMonthlyLoading] = useState(false);
@@ -493,11 +509,14 @@ export function CateringDashboard() {
   const [isTemplateDownloading, setIsTemplateDownloading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSettingsSaving, setIsSettingsSaving] = useState(false);
+  const [isReminderSending, setIsReminderSending] = useState(false);
+  const [isCustomNotificationSending, setIsCustomNotificationSending] = useState(false);
   const [savingPricingCompanyId, setSavingPricingCompanyId] = useState("");
   const [savingPaymentCompanyId, setSavingPaymentCompanyId] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const selectedCompanyIdRef = useRef("");
+  const adminNotificationTrayRef = useRef<HTMLDivElement | null>(null);
   const generatedUsername = createLoginSlug(companyName);
   const generatedPassword = generatedUsername ? `${generatedUsername}!` : "";
   const newCompanyPassword = createPassword || generatedPassword;
@@ -519,15 +538,54 @@ export function CateringDashboard() {
   const submittedCount = requests.filter((request) => request.status === "submitted").length;
   const reportedCompanyCount = new Set(requests.map((request) => request.companyId)).size;
   const missingCompanyCount = Math.max(0, activeCompanyCount - reportedCompanyCount);
-  const trackingTotalHeadcount = trackingRequests.reduce((sum, request) => sum + request.headcount, 0);
-  const trackingSubmittedCount = trackingRequests.filter((request) => request.status === "submitted").length;
-  const trackingReportedCompanyCount = new Set(trackingRequests.map((request) => request.companyId)).size;
-  const trackingMissingCompanyCount = Math.max(0, activeCompanyCount - trackingReportedCompanyCount);
   const trackingMonth = trackingDate.slice(0, 7);
   const setTrackingMonth = (value: string) => setTrackingDate(`${value}-01`);
+  const trackingCompanyTotals = useMemo(() => {
+    const totals = new Map<string, { companyId: string; companyName: string; companyCode: string; headcount: number; dates: Set<string>; days: Map<string, number>; latestUpdatedAt: string; latestServiceDate: string }>();
+
+    trackingRequests.forEach((request) => {
+      const current = totals.get(request.companyId) ?? {
+        companyId: request.companyId,
+        companyName: request.companyName,
+        companyCode: request.companyCode,
+        headcount: 0,
+        dates: new Set<string>(),
+        days: new Map<string, number>(),
+        latestUpdatedAt: request.updatedAt,
+        latestServiceDate: request.serviceDate
+      };
+
+      current.headcount += request.headcount;
+      current.dates.add(request.serviceDate);
+      current.days.set(request.serviceDate, (current.days.get(request.serviceDate) ?? 0) + request.headcount);
+
+      if (new Date(request.updatedAt).getTime() > new Date(current.latestUpdatedAt).getTime()) {
+        current.latestUpdatedAt = request.updatedAt;
+        current.latestServiceDate = request.serviceDate;
+      }
+
+      totals.set(request.companyId, current);
+    });
+
+    return [...totals.values()]
+      .map((total) => ({
+        ...total,
+        orderDays: total.dates.size,
+        days: [...total.days.entries()]
+          .map(([date, headcount]) => ({ date, headcount }))
+          .sort((first, second) => first.date.localeCompare(second.date))
+      }))
+      .sort((first, second) => second.headcount - first.headcount || first.companyName.localeCompare(second.companyName, "tr-TR"));
+  }, [trackingRequests]);
+  const trackingTotalHeadcount = trackingCompanyTotals.reduce((sum, companyTotal) => sum + companyTotal.headcount, 0);
+  const trackingSubmittedCount = trackingRequests.filter((request) => request.status === "submitted").length;
+  const trackingReportedCompanyCount = trackingCompanyTotals.length;
+  const trackingMissingCompanyCount = Math.max(0, activeCompanyCount - trackingReportedCompanyCount);
+  const trackingReportedDayCount = new Set(trackingRequests.map((request) => request.serviceDate)).size;
+  const trackingEatenCount = trackingRequests.filter((request) => request.status === "eaten").length;
   const monthlyTrackingDays: MonthlyTrackingDay[] = [];
-  const monthlyTotalHeadcount = 0;
-  const monthlyReportedDayCount = 0;
+  const monthlyTotalHeadcount = trackingTotalHeadcount;
+  const monthlyReportedDayCount = trackingReportedDayCount;
   const menuCalendarCells = useMemo(() => getMenuCalendarCells(menuMonth), [menuMonth]);
   const reportTotalHeadcount = reportRequests.reduce((sum, request) => sum + request.headcount, 0);
   const reportPaymentsByCompany = useMemo(
@@ -599,6 +657,8 @@ export function CateringDashboard() {
     .filter((companyTotal) => companyTotal.paid)
     .reduce((sum, companyTotal) => sum + companyTotal.grossTotal, 0);
   const reportUnpaidTotal = Math.max(0, reportAmounts.grossTotal - reportPaidTotal);
+  const reportPaidCompanyTotals = reportCompanyTotals.filter((companyTotal) => companyTotal.paid);
+  const reportUnpaidCompanyTotals = reportCompanyTotals.filter((companyTotal) => !companyTotal.paid);
 
   const requestRows = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLocaleLowerCase("tr-TR");
@@ -651,6 +711,12 @@ export function CateringDashboard() {
   const collectionMissingCount = collectionRows.filter((row) => !row.request).length;
   const collectionNotifiedRows = collectionRows.filter((row) => row.request?.status === "eaten" || row.request?.status === "collected");
   const collectionPendingRows = collectionRows.filter((row) => !row.request || row.request.status === "submitted");
+  const todayMealReminderNotifications = notifications.filter(
+    (notification) => notification.type === "meal_eaten_missing" && notification.serviceDate === serviceDate
+  );
+  const unreadMealReminderCount = todayMealReminderNotifications.filter((notification) => !notification.readAt).length;
+  const unreadAdminNotificationCount = notifications.filter((notification) => !notification.readAt).length;
+  const selectedNotificationCompanies = companies.filter((company) => selectedNotificationCompanyIds.includes(company.id));
 
   const filteredCompanies = useMemo(() => {
     const normalizedSearch = companySearchTerm.trim().toLocaleLowerCase("tr-TR");
@@ -698,16 +764,18 @@ export function CateringDashboard() {
     setError("");
 
     try {
-      const [companiesPayload, requestsPayload, settingsPayload] = await Promise.all([
+      const [companiesPayload, requestsPayload, settingsPayload, notificationsPayload] = await Promise.all([
         apiFetch<{ companies: ClientCompany[] }>("/client-companies"),
         apiFetch<{ requests: MealRequest[] }>(`/meal-requests?serviceDate=${encodeURIComponent(serviceDate)}`),
-        apiFetch<{ settings: OperationSettings }>("/operation-settings")
+        apiFetch<{ settings: OperationSettings }>("/operation-settings"),
+        apiFetch<{ notifications: AppNotification[] }>("/notifications")
       ]);
 
       const nextCompanies = companiesPayload.companies;
       setCompanies(nextCompanies);
       setRequests(requestsPayload.requests);
       setOperationSettings(settingsPayload.settings);
+      setNotifications(notificationsPayload.notifications);
       setLastUpdatedAt(formatTime(new Date().toISOString()));
 
       const currentSelectedCompanyId = selectedCompanyIdRef.current;
@@ -720,7 +788,7 @@ export function CateringDashboard() {
         selectCompany(nextCompanies[0] ?? null);
       }
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Panel verileri yuklenemedi.");
+      setError(loadError instanceof Error ? loadError.message : "Panel verileri yüklenemedi.");
     } finally {
       setIsLoading(false);
     }
@@ -731,10 +799,14 @@ export function CateringDashboard() {
     setError("");
 
     try {
-      const payload = await apiFetch<{ requests: MealRequest[] }>(`/meal-requests?serviceDate=${encodeURIComponent(trackingDate)}`);
-      setTrackingRequests(payload.requests);
+      const payloads = await Promise.all(
+        getMonthDays(trackingMonth).map((day) =>
+          apiFetch<{ requests: MealRequest[] }>(`/meal-requests?serviceDate=${encodeURIComponent(day)}`)
+        )
+      );
+      setTrackingRequests(payloads.flatMap((payload) => payload.requests));
     } catch (monthlyError) {
-      setError(monthlyError instanceof Error ? monthlyError.message : "Gunluk yemek takibi yuklenemedi.");
+      setError(monthlyError instanceof Error ? monthlyError.message : "Aylık yemek takibi yüklenemedi.");
     } finally {
       setIsMonthlyLoading(false);
     }
@@ -757,7 +829,7 @@ export function CateringDashboard() {
       setReportRequests(payloads.flatMap((payload) => payload.requests));
       setReportPayments(paymentsPayload.payments);
     } catch (reportError) {
-      setError(reportError instanceof Error ? reportError.message : "Rapor verileri yuklenemedi.");
+      setError(reportError instanceof Error ? reportError.message : "Rapor verileri yüklenemedi.");
     } finally {
       setIsReportLoading(false);
     }
@@ -775,7 +847,7 @@ export function CateringDashboard() {
         )
       );
     } catch (menuError) {
-      setError(menuError instanceof Error ? menuError.message : "Menu listesi yuklenemedi.");
+      setError(menuError instanceof Error ? menuError.message : "Menü listesi yüklenemedi.");
     } finally {
       setIsMenuLoading(false);
     }
@@ -802,9 +874,9 @@ export function CateringDashboard() {
       });
 
       setMenuDays(Object.fromEntries(payload.days.map((day) => [day.date, day.items.join("\n")])));
-      setMessage("Aylik yemek tablosu musteri paneline kaydedildi.");
+      setMessage("Aylık yemek tablosu müşteri paneline kaydedildi.");
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Aylik yemek tablosu kaydedilemedi.");
+      setError(saveError instanceof Error ? saveError.message : "Aylık yemek tablosu kaydedilemedi.");
     } finally {
       setIsMenuUploading(false);
     }
@@ -826,7 +898,7 @@ export function CateringDashboard() {
       const days = await extractSpreadsheetMenu(menuFile, menuMonth);
 
       if (days.length === 0) {
-        setError("Excel icinde bu aya ait tarihli yemek satiri bulunamadi.");
+        setError("Excel içinde bu aya ait tarihli yemek satiri bulunamadi.");
         return;
       }
 
@@ -840,9 +912,9 @@ export function CateringDashboard() {
 
       setMenuDays(Object.fromEntries(payload.days.map((day) => [day.date, day.items.join("\n")])));
       setMenuFile(null);
-      setMessage("Excel menusu okundu ve musteri paneline tablo olarak aktarildi.");
+      setMessage("Excel menüsü okundu ve müşteri paneline tablo olarak aktarıldı.");
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "Excel menusu tabloya aktarilamadi.");
+      setError(uploadError instanceof Error ? uploadError.message : "Excel menüsü tabloya aktarilamadi.");
     } finally {
       setIsMenuUploading(false);
     }
@@ -854,8 +926,6 @@ export function CateringDashboard() {
     setIsTemplateDownloading(true);
 
     try {
-      const loadXlsx = new Function("return import('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm')") as () => Promise<any>;
-      const XLSX = await loadXlsx();
       const templateRows = [
         ["Tarih", "Yemek 1", "Yemek 2", "Yemek 3", "Yemek 4", "Yemek 5"],
         ...getMonthDays(menuMonth)
@@ -903,7 +973,7 @@ export function CateringDashboard() {
     if (adminView === "monthlyTracking") {
       loadMonthlyTracking();
     }
-  }, [adminView, trackingDate]);
+  }, [adminView, trackingMonth]);
 
   useEffect(() => {
     if (adminView === "menu") {
@@ -916,6 +986,18 @@ export function CateringDashboard() {
       loadReports();
     }
   }, [adminView, reportMonth]);
+
+  useEffect(() => {
+    function closeTrayOnOutsideClick(event: MouseEvent) {
+      if (!adminNotificationTrayRef.current?.contains(event.target as Node)) {
+        setIsAdminNotificationTrayOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", closeTrayOnOutsideClick);
+
+    return () => document.removeEventListener("mousedown", closeTrayOnOutsideClick);
+  }, []);
 
   function resetCreateForm() {
     setAccountType("corporate");
@@ -1050,9 +1132,9 @@ export function CateringDashboard() {
       setCompanies((currentCompanies) =>
         currentCompanies.map((currentCompany) => currentCompany.id === updatedCompany.id ? updatedCompany : currentCompany)
       );
-      setMessage(`${updatedCompany.name} fiyatlandirmasi guncellendi.`);
+      setMessage(`${updatedCompany.name} fiyatlandırması güncellendi.`);
     } catch (pricingError) {
-      setError(pricingError instanceof Error ? pricingError.message : "Firma fiyatlandirmasi guncellenemedi.");
+      setError(pricingError instanceof Error ? pricingError.message : "Firma fiyatlandırması güncellenemedi.");
     } finally {
       setIsSaving(false);
       setSavingPricingCompanyId("");
@@ -1078,9 +1160,9 @@ export function CateringDashboard() {
         const withoutCurrent = currentPayments.filter((currentPayment) => currentPayment.companyId !== payment.companyId);
         return [...withoutCurrent, payment];
       });
-      setMessage(payment.paid ? `${companyTotal.companyName} odemesi alindi olarak isaretlendi.` : `${companyTotal.companyName} odeme isareti geri alindi.`);
+      setMessage(payment.paid ? `${companyTotal.companyName} ödemesi alındı olarak işaretlendi.` : `${companyTotal.companyName} ödeme işareti geri alındı.`);
     } catch (paymentError) {
-      setError(paymentError instanceof Error ? paymentError.message : "Odeme durumu guncellenemedi.");
+      setError(paymentError instanceof Error ? paymentError.message : "Ödeme durumu güncellenemedi.");
     } finally {
       setSavingPaymentCompanyId("");
     }
@@ -1122,9 +1204,9 @@ export function CateringDashboard() {
 
       setRequests((current) => current.map((request) => (request.requestNo === requestNo ? updatedRequest : request)));
       setTrackingRequests((current) => current.map((request) => (request.requestNo === requestNo ? updatedRequest : request)));
-      setMessage(`${updatedRequest.companyName} icin yemek toplandi olarak isaretlendi.`);
+      setMessage(`${updatedRequest.companyName} için yemek toplandi olarak işaretlendi.`);
     } catch (statusError) {
-      setError(statusError instanceof Error ? statusError.message : "Talep durumu guncellenemedi.");
+      setError(statusError instanceof Error ? statusError.message : "Talep durumu güncellenemedi.");
     } finally {
       setIsSaving(false);
     }
@@ -1155,6 +1237,117 @@ export function CateringDashboard() {
       setError(settingsError instanceof Error ? settingsError.message : "Operasyon saatleri kaydedilemedi.");
     } finally {
       setIsSettingsSaving(false);
+    }
+  }
+
+  async function sendMealReminders() {
+    setIsReminderSending(true);
+    setMessage("");
+    setError("");
+
+    try {
+      const payload = await apiFetch<{ message: string; missingCount: number; createdCount: number }>("/notifications/meal-reminders", {
+        method: "POST",
+        body: { serviceDate }
+      });
+
+      setMessage(payload.message);
+      loadDashboard();
+    } catch (reminderError) {
+      setError(reminderError instanceof Error ? reminderError.message : "Hatırlatma gönderilemedi.");
+    } finally {
+      setIsReminderSending(false);
+    }
+  }
+
+  function toggleNotificationCompany(companyId: string) {
+    setSelectedNotificationCompanyIds((current) =>
+      current.includes(companyId) ? current.filter((id) => id !== companyId) : [...current, companyId]
+    );
+  }
+
+  async function sendCustomNotification(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsCustomNotificationSending(true);
+    setMessage("");
+    setError("");
+
+    try {
+      const payload = await apiFetch<{ message: string }>("/notifications", {
+        method: "POST",
+        body: {
+          companyIds: selectedNotificationCompanyIds.map(Number),
+          title: notificationTitle,
+          message: notificationMessage
+        }
+      });
+
+      setMessage(payload.message);
+      setNotificationTitle("");
+      setNotificationMessage("");
+      setSelectedNotificationCompanyIds([]);
+      loadDashboard();
+    } catch (notificationError) {
+      setError(notificationError instanceof Error ? notificationError.message : "Bildirim gönderilemedi.");
+    } finally {
+      setIsCustomNotificationSending(false);
+    }
+  }
+
+  async function acknowledgeAdminNotification(notification: AppNotification) {
+    try {
+      const { notification: updatedNotification } = await apiFetch<{ notification: AppNotification }>(`/notifications/${notification.id}`, {
+        method: "PATCH",
+        body: { read: true }
+      });
+
+      setNotifications((current) => current.map((item) => (item.id === updatedNotification.id ? updatedNotification : item)));
+    } catch (notificationError) {
+      setError(notificationError instanceof Error ? notificationError.message : "Bildirim kapatılamadı.");
+    }
+  }
+
+  async function clearNotifications(scope: "admin" | "customers") {
+    const confirmationMessage = scope === "admin"
+      ? "Catering bildirim listesini temizlemek istiyor musun?"
+      : "Müşterilerin ekranindaki tüm bildirimleri silmek istiyor musun?";
+
+    if (!window.confirm(confirmationMessage)) {
+      return;
+    }
+
+    setMessage("");
+    setError("");
+
+    try {
+      const payload = await apiFetch<{ message: string; deletedCount: number }>(`/notifications?scope=${scope}`, {
+        method: "DELETE"
+      });
+
+      setMessage(payload.message);
+      loadDashboard();
+    } catch (notificationError) {
+      setError(notificationError instanceof Error ? notificationError.message : "Bildirimler temizlenemedi.");
+    }
+  }
+
+  async function deleteCustomerNotification(notification: AppNotification) {
+    if (!window.confirm(`${notification.companyName ?? "Firma"} bildirimini müşteriden kaldırmak istiyor musun?`)) {
+      return;
+    }
+
+    setMessage("");
+    setError("");
+
+    try {
+      const payload = await apiFetch<{ message: string }>(`/notifications/${notification.id}`, {
+        method: "DELETE"
+      });
+
+      setMessage(payload.message);
+      setNotifications((current) => current.filter((item) => item.id !== notification.id));
+    } catch (notificationError) {
+      setError(notificationError instanceof Error ? notificationError.message : "Bildirim silinemedi.");
     }
   }
 
@@ -1199,30 +1392,59 @@ export function CateringDashboard() {
     );
   }
 
+  function renderReportCompanyRow(companyTotal: ReportCompanyTotal) {
+    return (
+      <div className={companyTotal.paid ? "billing-company-row paid" : "billing-company-row"} key={companyTotal.companyId}>
+        <strong>{companyTotal.companyName}</strong>
+        <span>{companyTotal.orderDays}</span>
+        <span>{companyTotal.headcount}</span>
+        <span>{formatCurrency(companyTotal.unitPrice)}</span>
+        <span>{formatCurrency(companyTotal.netTotal)}</span>
+        <span className={companyTotal.vatEnabled ? "invoice-active" : ""}>
+          {companyTotal.vatEnabled ? formatCurrency(companyTotal.vatTotal) : "KDV yok"}
+        </span>
+        <strong>{formatCurrency(companyTotal.grossTotal)}</strong>
+        <button
+          className={companyTotal.paid ? "billing-payment-button paid" : "billing-payment-button"}
+          type="button"
+          onClick={() => toggleReportPayment(companyTotal)}
+          disabled={savingPaymentCompanyId === companyTotal.companyId}
+        >
+          {savingPaymentCompanyId === companyTotal.companyId ? <Loader2 size={15} /> : <CheckCircle2 size={15} />}
+          {companyTotal.paid ? "Ödeme alındı" : "Ödeme alındı yap"}
+        </button>
+      </div>
+    );
+  }
+
   const pageTitle =
     adminView === "collection"
       ? "Yemek toplama"
       : adminView === "companies"
       ? "Üye şirket yönetimi"
+      : adminView === "notifications"
+      ? "Bildirim merkezi"
       : adminView === "menu"
         ? "Aylık menü planı"
         : adminView === "monthlyTracking"
-          ? "Gunluk siparis takibi"
+          ? "Aylık yemek takibi"
           : adminView === "reports"
           ? "Fatura raporları"
           : "Catering yönetim paneli";
 
   const pageDescription =
     adminView === "collection"
-      ? "Sirketlerin yemek yenildi onaylarini takip et, hazir olanlari toplandi olarak kapat."
+      ? "Şirketlerin yemek yenildi onaylarini takip et, hazir olanlari toplandi olarak kapat."
       : adminView === "companies"
       ? "Müşteri şirketleri, yetkili kişileri, adresleri ve iletişim bilgilerini tek yerden yönet."
+      : adminView === "notifications"
+      ? "Yemek yenildi hatırlatmalarını ve firma bazli duyurulari tek yerden gönder."
       : adminView === "menu"
         ? "Müşterinin göreceği aylık yemek listesini kontrol et."
         : adminView === "monthlyTracking"
-          ? "Secilen tarihte siparis veren firmalari ve gunun durumunu incele."
+          ? "Secilen ayda firmalarin toplam yemek adetlerini incele."
           : adminView === "reports"
-          ? "Firma fiyatlarini, fatura secimini ve aylik tahsilat toplamlarini yonet."
+          ? "Firma fiyatlarini, fatura secimini ve aylik tahsilat toplamlarini yönet."
           : "Üyelikleri oluştur, şirketlerin günlük yemek adetlerini takip et ve operasyonu tek ekrandan yönet.";
 
   return (
@@ -1236,7 +1458,9 @@ export function CateringDashboard() {
             setAdminView("overview");
           }}
         >
-          <span>MY</span>
+          <span className="brand-logo-mark">
+            <img src="/maharet-yemek.png" alt="" />
+          </span>
           <div>
             <strong>Maharet Yemek</strong>
           </div>
@@ -1280,6 +1504,42 @@ export function CateringDashboard() {
           </div>
 
           <div className="admin-toolbar">
+            <div className="customer-notification-tray admin-notification-tray" ref={adminNotificationTrayRef}>
+              <button className="customer-notification-button" type="button" onClick={() => setIsAdminNotificationTrayOpen((current) => !current)} aria-label="Bildirimleri ac">
+                <Bell size={20} />
+                {unreadAdminNotificationCount > 0 ? <span>{unreadAdminNotificationCount}</span> : null}
+              </button>
+              {isAdminNotificationTrayOpen ? (
+                <div className="customer-notification-menu">
+                  <div className="customer-notification-menu-head">
+                    <strong>Bildirimler</strong>
+                    <small>{operationSettings.notificationRetentionHours ?? 24} saat</small>
+                  </div>
+                  {notifications.length === 0 ? (
+                    <p className="empty-state compact">Yeni bildirim yok.</p>
+                  ) : (
+                    <div className="customer-notification-items">
+                      {notifications.map((notification) => (
+                        <article className={notification.readAt ? "read" : ""} key={notification.id}>
+                          <div>
+                            <strong>{notification.title}</strong>
+                            <small>{formatNotificationTime(notification.createdAt)}</small>
+                          </div>
+                          <p>{notification.companyName ? `${notification.companyName}: ${notification.message}` : notification.message}</p>
+                          {!notification.readAt ? (
+                            <button type="button" onClick={() => acknowledgeAdminNotification(notification)}>
+                              Okundu yap
+                            </button>
+                          ) : (
+                            <span>Okundu</span>
+                          )}
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : null}
+            </div>
             <button className="create-user-button compact" type="button" onClick={openCreateModal}>
               <Plus size={18} />
               Yeni kullanıcı
@@ -1327,7 +1587,7 @@ export function CateringDashboard() {
               <div>
                 <h2>Yemek Toplama</h2>
                 <p>
-                  {formatDateLabel(serviceDate)} icin {collectionReadyCount} firma yemek yenildi dedi, {collectionWaitingCount} firma bekliyor.
+                  {formatDateLabel(serviceDate)} için {collectionReadyCount} firma yemek yenildi dedi, {collectionWaitingCount} firma bekliyor.
                 </p>
               </div>
               <div className="admin-toolbar monthly-toolbar">
@@ -1354,6 +1614,24 @@ export function CateringDashboard() {
               </article>
             </div>
 
+            <div className="notification-command-panel">
+              <div>
+                <span className="catering-kicker">
+                  <Mail size={16} />
+                  Bildirim merkezi
+                </span>
+                <h3>Bildirmeyen firmalara hatırlatma</h3>
+                <p>
+                  Bugün yemek adedi girmeyen {collectionMissingCount} firma var. Gonderilen hatırlatmalar firma panelinde uyarı olarak görünur.
+                </p>
+                <small>{todayMealReminderNotifications.length} hatırlatma kaydi, {unreadMealReminderCount} okunmamis.</small>
+              </div>
+              <button className="catering-primary-button" type="button" onClick={sendMealReminders} disabled={isReminderSending || !isServiceDateToday || collectionMissingCount === 0}>
+                {isReminderSending ? <Loader2 size={17} /> : <Mail size={17} />}
+                Hatırlatma gönder
+              </button>
+            </div>
+
             <form className="collection-deadline-form" onSubmit={saveOperationSettings}>
               <label>
                 <span>Yemek yenildi son saati</span>
@@ -1376,7 +1654,7 @@ export function CateringDashboard() {
                 Saatleri kaydet
               </button>
               <small>
-                Bugun icin {operationSettings.eatenDeadline} sonrasi yenildi, {operationSettings.collectedDeadline} sonrasi toplandi otomatik tamamlanir.
+                Bugün için {operationSettings.eatenDeadline} sonrası yenildi, {operationSettings.collectedDeadline} sonrası toplandi otomatik tamamlanir.
               </small>
             </form>
 
@@ -1396,7 +1674,7 @@ export function CateringDashboard() {
                     <span>Yemek adedi</span>
                     <span>Durum</span>
                     <span>Saat</span>
-                    <span>Islem</span>
+                    <span>İşlem</span>
                   </div>
 
                   {collectionNotifiedRows.length === 0 ? (
@@ -1422,7 +1700,7 @@ export function CateringDashboard() {
                     <span>Yemek adedi</span>
                     <span>Durum</span>
                     <span>Saat</span>
-                    <span>Islem</span>
+                    <span>İşlem</span>
                   </div>
 
                   {collectionPendingRows.length === 0 ? (
@@ -1432,6 +1710,126 @@ export function CateringDashboard() {
                   )}
                 </div>
               </div>
+            </div>
+          </section>
+        ) : null}
+
+        {adminView === "notifications" ? (
+          <section className="admin-section-panel notification-center-panel">
+            <div className="notification-center-grid">
+              <article className="notification-command-panel notification-command-card">
+                <div>
+                  <span className="catering-kicker">
+                    <Mail size={16} />
+                    Otomatik hatırlatma
+                  </span>
+                  <h3>Yemek yenildi mi bildirimi</h3>
+                  <p>
+                    Bugün yemek yenildi bilgisi göndermeyen {collectionWaitingCount + collectionMissingCount} firma var. Bu buton tümüne modal bildirim gönderir.
+                  </p>
+                  <small>{todayMealReminderNotifications.length} kayit, {unreadMealReminderCount} okunmamis.</small>
+                </div>
+                <button className="catering-primary-button" type="button" onClick={sendMealReminders} disabled={isReminderSending || !isServiceDateToday || collectionWaitingCount + collectionMissingCount === 0}>
+                  {isReminderSending ? <Loader2 size={17} /> : <Mail size={17} />}
+                  Yemek yenildi hatirlat
+                </button>
+                <form className="notification-retention-form" onSubmit={saveOperationSettings}>
+                  <label>
+                    <span>Catering bildirimleri silinsin</span>
+                    <input
+                      min={1}
+                      max={720}
+                      type="number"
+                      value={operationSettings.notificationRetentionHours ?? 24}
+                      onChange={(event) => setOperationSettings((current) => ({ ...current, notificationRetentionHours: Number(event.target.value) }))}
+                    />
+                  </label>
+                  <small>Saat cinsinden. Ornek: 24 yazarsan bildirimler 24 saat sonra temizlenir.</small>
+                  <button className="catering-secondary-button" type="submit" disabled={isSettingsSaving}>
+                    {isSettingsSaving ? <Loader2 size={17} /> : <Save size={17} />}
+                    Sureyi kaydet
+                  </button>
+                </form>
+              </article>
+
+              <form className="notification-custom-form" onSubmit={sendCustomNotification}>
+                <div>
+                  <span className="catering-kicker">
+                    <Edit3 size={16} />
+                    Ozel bildirim
+                  </span>
+                  <h3>Firma secerek bildirim gönder</h3>
+                  <p>Genel duyuru, teslimat notu veya ödeme hatırlatması gibi mesajlari seçili firmalara gönder.</p>
+                </div>
+
+                <label>
+                  <span>Baslik</span>
+                  <input value={notificationTitle} onChange={(event) => setNotificationTitle(event.target.value)} placeholder="Örn: Bugünkü servis saati" />
+                </label>
+
+                <label>
+                  <span>Mesaj</span>
+                  <textarea value={notificationMessage} onChange={(event) => setNotificationMessage(event.target.value)} placeholder="Firmalara gönderilecek bildirimi yaz." />
+                </label>
+
+                <div className="notification-company-picker">
+                  <div className="notification-picker-head">
+                    <strong>Firmalar</strong>
+                    <button type="button" className="catering-secondary-button" onClick={() => setSelectedNotificationCompanyIds(selectedNotificationCompanyIds.length === companies.filter((company) => company.active).length ? [] : companies.filter((company) => company.active).map((company) => company.id))}>
+                      {selectedNotificationCompanyIds.length > 0 ? "Secimi temizle" : "Tumunu sec"}
+                    </button>
+                  </div>
+                  <div className="notification-company-list">
+                    {companies.filter((company) => company.active).map((company) => (
+                      <label key={company.id}>
+                        <input type="checkbox" checked={selectedNotificationCompanyIds.includes(company.id)} onChange={() => toggleNotificationCompany(company.id)} />
+                        <span>{company.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <button className="catering-primary-button" type="submit" disabled={isCustomNotificationSending || selectedNotificationCompanies.length === 0}>
+                  {isCustomNotificationSending ? <Loader2 size={17} /> : <Mail size={17} />}
+                  {selectedNotificationCompanies.length} firmaya gönder
+                </button>
+              </form>
+            </div>
+
+            <div className="notification-history-list">
+              <div className="panel-title-row">
+                <div>
+                  <h3>Son bildirimler</h3>
+                  <p>Firmalara giden son 100 bildirimi ve okunma durumunu takip et.</p>
+                </div>
+                <div className="notification-clean-actions">
+                  <button className="catering-secondary-button" type="button" onClick={() => clearNotifications("admin")}>
+                    Catering listesini temizle
+                  </button>
+                  <button className="admin-danger-button" type="button" onClick={() => clearNotifications("customers")}>
+                    Müşterilerden temizle
+                  </button>
+                </div>
+              </div>
+              {notifications.length === 0 ? (
+                <p className="empty-state compact">Henüz bildirim yok.</p>
+              ) : (
+                notifications.slice(0, 12).map((notification) => (
+                  <article key={notification.id}>
+                    <div>
+                      <strong>{notification.title}</strong>
+                      <span>{notification.companyName ?? "Firma"}</span>
+                    </div>
+                    <p>{notification.message}</p>
+                    <div className="notification-row-actions">
+                      <small>{notification.readAt ? "Okundu" : "Okunmadi"}</small>
+                      <button className="admin-danger-button compact" type="button" onClick={() => deleteCustomerNotification(notification)}>
+                        Müşteriden kaldir
+                      </button>
+                    </div>
+                  </article>
+                ))
+              )}
             </div>
           </section>
         ) : null}
@@ -1617,7 +2015,7 @@ export function CateringDashboard() {
                       </label>
                       <label>
                         <span>Yeni şifre</span>
-                        <input type="password" value={editPassword} onChange={(event) => setEditPassword(event.target.value)} placeholder="Değiştirmek için yaz" minLength={4} />
+                        <input type="password" value={editPassword} onChange={(event) => setEditPassword(event.target.value)} placeholder="Değiştirmek için yaz" minLength={8} />
                       </label>
                       <label>
                         <span>Adres</span>
@@ -1685,7 +2083,7 @@ export function CateringDashboard() {
               <div className="panel-title-row">
                 <div>
                   <h2>Yemek listesi tablosu</h2>
-                  <p>Her gune bir satira bir yemek olacak sekilde yaz. Bu tablo musteri panelinde bugunun yemegi alanini besler.</p>
+                  <p>Her güne bir satıra bir yemek olacak sekilde yaz. Bu tablo müşteri panelinde bugünün yemegi alanını besler.</p>
                 </div>
                 <button className="catering-primary-button" type="button" onClick={saveMenuDays} disabled={isMenuUploading}>
                   {isMenuUploading ? <Loader2 size={18} /> : <CheckCircle2 size={18} />}
@@ -1705,7 +2103,7 @@ export function CateringDashboard() {
                       <textarea
                         value={menuDays[day] ?? ""}
                         onChange={(event) => setMenuDays((current) => ({ ...current, [day]: event.target.value }))}
-                        placeholder="Orn: Mercimek corbasi&#10;Izgara kofte&#10;Pilav"
+                        placeholder="Örn: Mercimek corbasi&#10;Izgara kofte&#10;Pilav"
                       />
                     </label>
                   ) : (
@@ -1744,19 +2142,19 @@ export function CateringDashboard() {
           <section className="admin-section-panel monthly-tracking-panel">
             <div className="panel-title-row orders-panel-title">
               <div>
-                <h2>Gunluk siparis takibi</h2>
+                <h2>Aylık yemek takibi</h2>
                 <p>
                   {isMonthlyLoading
-                    ? "Secili gunun yemek bildirimleri yukleniyor."
-                    : `${formatDateLabel(trackingDate)} icin ${trackingReportedCompanyCount} firma ${trackingTotalHeadcount} porsiyon bildirdi.`}
+                    ? "Seçili ayın yemek bildirimleri yükleniyor."
+                    : `${formatMonthLabel(`${trackingMonth}-01`)} için ${trackingReportedCompanyCount} firma ${trackingTotalHeadcount} porsiyon bildirdi.`}
                 </p>
               </div>
               <div className="admin-toolbar monthly-toolbar">
                 <label className="dashboard-date-filter">
                   <CalendarDays size={17} />
-                  <input type="date" value={trackingDate} onChange={(event) => setTrackingDate(event.target.value)} />
+                  <input type="month" value={trackingMonth} onChange={(event) => setTrackingMonth(event.target.value)} />
                 </label>
-                <button className="admin-icon-button" type="button" onClick={loadMonthlyTracking} aria-label="Gunluk takibi yenile">
+                <button className="admin-icon-button" type="button" onClick={loadMonthlyTracking} aria-label="Aylık takibi yenile">
                   {isMonthlyLoading ? <Loader2 size={18} /> : <RefreshCcw size={18} />}
                 </button>
               </div>
@@ -1764,63 +2162,74 @@ export function CateringDashboard() {
 
             <div className="monthly-summary-grid">
               <article>
-                <span>Gun toplami</span>
+                <span>Ay toplamı</span>
                 <strong>{trackingTotalHeadcount}</strong>
                 <small>porsiyon</small>
               </article>
               <article>
-                <span>Siparis veren</span>
+                <span>Sipariş veren</span>
                 <strong>{trackingReportedCompanyCount}</strong>
-                <small>{activeCompanyCount} aktif firma icinde</small>
+                <small>{activeCompanyCount} aktif firma içinde</small>
               </article>
               <article>
-                <span>Beklenen</span>
+                <span>Bildirim olan gün</span>
+                <strong>{trackingReportedDayCount}</strong>
+                <small>{getMonthDays(trackingMonth).length} gün içinde</small>
+              </article>
+              <article>
+                <span>Bildirmeyen</span>
                 <strong>{trackingMissingCompanyCount}</strong>
-                <small>firma henuz bildirmedi</small>
+                <small>firma bu ay bildirmedi</small>
               </article>
             </div>
 
-            <div className="daily-status-grid">
+            <div className="daily-status-grid monthly-tracking-status">
               <article>
-                <span>Gunun durumu</span>
-                <strong>{trackingMissingCompanyCount === 0 && activeCompanyCount > 0 ? "Tamamlandi" : trackingReportedCompanyCount > 0 ? "Bildirim bekleniyor" : "Henuz bildirim yok"}</strong>
-                <small>{trackingSubmittedCount} yeni bildirim, {trackingRequests.filter((request) => request.status === "eaten").length} yenildi</small>
+                <span>Ayın durumu</span>
+                <strong>{trackingReportedCompanyCount > 0 ? "Bildirimler alındı" : "Henüz bildirim yok"}</strong>
+                <small>{trackingSubmittedCount} yeni bildirim, {trackingEatenCount} yenildi</small>
               </article>
             </div>
 
-            <div className="daily-company-orders">
-              <div className="meal-request-table-head">
+            <div className="daily-company-orders monthly-company-orders">
+              <div className="meal-request-table-head monthly-company-head">
                 <span>Firma</span>
+                <span>Gün</span>
                 <span>Yemek adedi</span>
-                <span>Durum</span>
-                <span>Saat</span>
+                <span>Son bildirim</span>
               </div>
 
-              {trackingRequests.length === 0 ? (
-                <p className="empty-state compact">Secili tarihte siparis veren firma yok.</p>
+              {trackingCompanyTotals.length === 0 ? (
+                <p className="empty-state compact">Seçili ay için sipariş veren firma yok.</p>
               ) : (
-                trackingRequests.map((request) => {
-                  const StatusIcon = statusMeta[request.status].icon;
-
-                  return (
-                    <div className={`meal-request-row admin-order-row status-${request.status}`} key={request.requestNo}>
-                      <div className="order-company-cell">
-                        <strong>{request.companyName}</strong>
-                        <small>{request.requestNo} · {request.companyCode}</small>
-                        {request.note ? <em>{request.note}</em> : null}
-                      </div>
-                      <div className="order-count-cell">
-                        <strong>{request.headcount}</strong>
-                        <span>yemek</span>
-                      </div>
-                      <span className={`order-status-pill tone-${statusMeta[request.status].tone}`}>
-                        <StatusIcon size={15} />
-                        {statusMeta[request.status].label}
-                      </span>
-                      <small className="order-time-cell">{formatTime(request.updatedAt)}</small>
+                trackingCompanyTotals.map((companyTotal) => (
+                  <div className="monthly-company-row" key={companyTotal.companyId}>
+                    <div className="order-company-cell">
+                      <strong>{companyTotal.companyName}</strong>
+                      <small>{companyTotal.companyCode}</small>
                     </div>
-                  );
-                })
+                    <div className="monthly-stat-cell">
+                      <strong>{companyTotal.orderDays}</strong>
+                      <span>gun</span>
+                    </div>
+                    <div className="monthly-stat-cell highlight">
+                      <strong>{companyTotal.headcount}</strong>
+                      <span>yemek</span>
+                    </div>
+                    <div className="monthly-last-update">
+                      <strong>{formatDateLabel(companyTotal.latestServiceDate)}</strong>
+                      <small>{formatTime(companyTotal.latestUpdatedAt)}</small>
+                    </div>
+                    <div className="monthly-day-strip" aria-label={`${companyTotal.companyName} sipariş günleri`}>
+                      {companyTotal.days.map((day) => (
+                        <span title={`${formatDateLabel(day.date)} - ${day.headcount} yemek`} key={`${companyTotal.companyId}-${day.date}`}>
+                          <strong>{Number(day.date.slice(-2))} Mayıs</strong>
+                          <em>{day.headcount} yemek</em>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))
               )}
             </div>
 
@@ -1829,7 +2238,7 @@ export function CateringDashboard() {
                 <h3>Bildirmeyen firmalar</h3>
                 <div>
                   {companies
-                    .filter((company) => company.active && !trackingRequests.some((request) => request.companyId === company.id))
+                    .filter((company) => company.active && !trackingCompanyTotals.some((companyTotal) => companyTotal.companyId === company.id))
                     .map((company) => (
                       <span key={company.id}>{company.name}</span>
                     ))}
@@ -1843,11 +2252,11 @@ export function CateringDashboard() {
           <section className="admin-section-panel monthly-tracking-panel">
             <div className="panel-title-row orders-panel-title">
               <div>
-                <h2>Aylik yemek takibi</h2>
+                <h2>Aylık yemek takibi</h2>
                 <p>
                   {isMonthlyLoading
-                    ? "Ay icindeki yemek bildirimleri yukleniyor."
-                    : `${monthlyReportedDayCount} gunde toplam ${monthlyTotalHeadcount} porsiyon bildirildi.`}
+                    ? "Ay içindeki yemek bildirimleri yükleniyor."
+                    : `${monthlyReportedDayCount} günde toplam ${monthlyTotalHeadcount} porsiyon bildirildi.`}
                 </p>
               </div>
               <div className="admin-toolbar monthly-toolbar">
@@ -1855,7 +2264,7 @@ export function CateringDashboard() {
                   <CalendarDays size={17} />
                   <input type="month" value={trackingMonth} onChange={(event) => setTrackingMonth(event.target.value)} />
                 </label>
-                <button className="admin-icon-button" type="button" onClick={loadMonthlyTracking} aria-label="Aylik takibi yenile">
+                <button className="admin-icon-button" type="button" onClick={loadMonthlyTracking} aria-label="Aylık takibi yenile">
                   {isMonthlyLoading ? <Loader2 size={18} /> : <RefreshCcw size={18} />}
                 </button>
               </div>
@@ -1917,7 +2326,7 @@ export function CateringDashboard() {
                   Finans kontrol merkezi
                 </span>
                 <h2>Fatura ve tahsilat raporu</h2>
-                <p>Firma fiyatlarini, KDV secimini ve ay sonu tahsilatini ayni ekrandan yonet.</p>
+                <p>Firma fiyatlarini, KDV secimini ve ay sonu tahsilatini ayni ekrandan yönet.</p>
               </div>
               <div className="admin-toolbar monthly-toolbar">
                 <label className="dashboard-date-filter">
@@ -1929,6 +2338,18 @@ export function CateringDashboard() {
                 </button>
               </div>
             </div>
+
+            <div className="billing-dashboard-grid">
+              <article className="billing-total-card">
+                <span>Bekleyen tahsilat</span>
+                <strong>{formatCurrency(reportUnpaidTotal)}</strong>
+                <small>Bu ay henüz ödeme alındı işaretlenmeyen toplam</small>
+                <div className="billing-total-breakdown">
+                  <span>Toplam: <strong>{formatCurrency(reportAmounts.grossTotal)}</strong></span>
+                  <span>Alinan: <strong>{formatCurrency(reportPaidTotal)}</strong></span>
+                  <span>Kalan: <strong>{formatCurrency(reportUnpaidTotal)}</strong></span>
+                </div>
+              </article>
 
             <div className="billing-summary-grid">
               <article>
@@ -1947,7 +2368,7 @@ export function CateringDashboard() {
                 <small>{reportInvoiceCompanyCount} firmada %{VAT_RATE * 100}</small>
               </article>
               <article>
-                <span>Alinan odeme</span>
+                <span>Alinan ödeme</span>
                 <strong>{formatCurrency(reportPaidTotal)}</strong>
                 <small>{reportCompanyTotals.filter((companyTotal) => companyTotal.paid).length} firma odedi</small>
               </article>
@@ -1957,57 +2378,82 @@ export function CateringDashboard() {
                 <small>Toplam: {formatCurrency(reportAmounts.grossTotal)}</small>
               </article>
             </div>
+            </div>
 
             <div className="billing-workspace">
               <article className="billing-ledger-panel">
                 <div className="billing-subhead">
                   <div>
-                    <h3>Aylik firma ozeti</h3>
-                    <p>Secili ayda bildirim yapan firmalar ve hesaplanan tahsilat.</p>
+                    <h3>Tahsilat listesi</h3>
+                    <p>Ödemesi bekleyen firmalar önce, kapanan tahsilatlar ayrı listede.</p>
                   </div>
                   <strong>{reportCompanyTotals.length} firma</strong>
                 </div>
 
+                <div className="billing-ledger-sections">
+                  <section className="billing-ledger-section due">
+                    <div className="billing-section-title">
+                      <div>
+                        <h4>Ödeme bekleyen şirketler</h4>
+                        <p>Ay sonu takibinde öncelikli liste.</p>
+                      </div>
+                      <strong>{formatCurrency(reportUnpaidTotal)}</strong>
+                    </div>
+
                 <div className="billing-company-table">
                   <div className="billing-company-head">
                     <span>Firma</span>
-                    <span>Gun</span>
+                    <span>Gün</span>
                     <span>Porsiyon</span>
                     <span>Birim</span>
                     <span>Ara toplam</span>
                     <span>KDV</span>
                     <span>Toplam</span>
-                    <span>Odeme</span>
+                    <span>Ödeme</span>
                   </div>
 
                   {isReportLoading ? (
-                    <p className="empty-state compact">Rapor verileri yukleniyor.</p>
+                    <p className="empty-state compact">Rapor verileri yükleniyor.</p>
                   ) : reportCompanyTotals.length === 0 ? (
-                    <p className="empty-state compact">Secili ay icin henuz yemek bildirimi yok.</p>
+                    <p className="empty-state compact">Seçili ay için henüz yemek bildirimi yok.</p>
+                  ) : reportUnpaidCompanyTotals.length === 0 ? (
+                    <p className="empty-state compact">Bu ay için bekleyen tahsilat yok.</p>
                   ) : (
-                    reportCompanyTotals.map((companyTotal) => (
-                      <div className="billing-company-row" key={companyTotal.companyId}>
-                        <strong>{companyTotal.companyName}</strong>
-                        <span>{companyTotal.orderDays}</span>
-                        <span>{companyTotal.headcount}</span>
-                        <span>{formatCurrency(companyTotal.unitPrice)}</span>
-                        <span>{formatCurrency(companyTotal.netTotal)}</span>
-                        <span className={companyTotal.vatEnabled ? "invoice-active" : ""}>
-                          {companyTotal.vatEnabled ? formatCurrency(companyTotal.vatTotal) : "KDV yok"}
-                        </span>
-                        <strong>{formatCurrency(companyTotal.grossTotal)}</strong>
-                        <button
-                          className={companyTotal.paid ? "billing-payment-button paid" : "billing-payment-button"}
-                          type="button"
-                          onClick={() => toggleReportPayment(companyTotal)}
-                          disabled={savingPaymentCompanyId === companyTotal.companyId}
-                        >
-                          {savingPaymentCompanyId === companyTotal.companyId ? <Loader2 size={15} /> : <CheckCircle2 size={15} />}
-                          {companyTotal.paid ? "Odeme alindi" : "Odeme alindi yap"}
-                        </button>
-                      </div>
-                    ))
+                    reportUnpaidCompanyTotals.map((companyTotal) => renderReportCompanyRow(companyTotal))
                   )}
+                </div>
+                  </section>
+
+                  <section className="billing-ledger-section paid">
+                    <div className="billing-section-title">
+                      <div>
+                        <h4>Ödemesi alınan şirketler</h4>
+                        <p>Kapanan tahsilatlar burada tutulur.</p>
+                      </div>
+                      <strong>{formatCurrency(reportPaidTotal)}</strong>
+                    </div>
+
+                    <div className="billing-company-table">
+                      <div className="billing-company-head">
+                        <span>Firma</span>
+                        <span>Gün</span>
+                        <span>Porsiyon</span>
+                        <span>Birim</span>
+                        <span>Ara toplam</span>
+                        <span>KDV</span>
+                        <span>Toplam</span>
+                        <span>Ödeme</span>
+                      </div>
+
+                      {isReportLoading ? (
+                        <p className="empty-state compact">Rapor verileri yükleniyor.</p>
+                      ) : reportPaidCompanyTotals.length === 0 ? (
+                        <p className="empty-state compact">Henüz ödeme alındı işaretlenen firma yok.</p>
+                      ) : (
+                        reportPaidCompanyTotals.map((companyTotal) => renderReportCompanyRow(companyTotal))
+                      )}
+                    </div>
+                  </section>
                 </div>
               </article>
 
@@ -2022,7 +2468,7 @@ export function CateringDashboard() {
 
                 <div className="billing-pricing-list">
                   {reportPricingCompanies.length === 0 ? (
-                    <p className="empty-state compact">Fiyatlandirma icin aktif firma bulunamadi.</p>
+                    <p className="empty-state compact">Fiyatlandirma için aktif firma bulunamadi.</p>
                   ) : reportPricingCompanies.map((company) => {
                     const companyTotal = reportTotalsByCompany.get(company.id);
 
@@ -2114,7 +2560,7 @@ export function CateringDashboard() {
                 </label>
                 <label>
                   <span>Şifre</span>
-                  <input value={newCompanyPassword} onChange={(event) => setCreatePassword(event.target.value)} placeholder="Kullanıcı adının sonuna ! eklenir" minLength={4} />
+                  <input value={newCompanyPassword} onChange={(event) => setCreatePassword(event.target.value)} placeholder="Kullanıcı adının sonuna ! eklenir" minLength={8} />
                 </label>
                 <label>
                   <span>Yetkili kişi</span>

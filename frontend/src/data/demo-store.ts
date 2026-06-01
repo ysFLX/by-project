@@ -1,4 +1,4 @@
-export type DemoCompany = {
+﻿export type DemoCompany = {
   id: string;
   code: string;
   username?: string;
@@ -120,27 +120,27 @@ const seedRequests: DemoMealRequest[] = [
 const seedUsers: DemoUser[] = [
   {
     username: "admin",
-    password: "admin123",
+    password: "demo-admin-2026",
     role: "admin",
     displayName: "Maharet Yemek"
   },
   {
     username: "aytek",
-    password: "123456",
+    password: "demo-aytek-2026",
     role: "customer",
     companyCode: "aytek",
     displayName: "Aytek Yazilim"
   },
   {
     username: "kuzey",
-    password: "123456",
+    password: "demo-kuzey-2026",
     role: "customer",
     companyCode: "kuzey-lojistik",
     displayName: "Kuzey Lojistik"
   },
   {
     username: "orion",
-    password: "123456",
+    password: "demo-orion-2026",
     role: "customer",
     companyCode: "orion-tekstil",
     displayName: "Orion Tekstil"
@@ -295,7 +295,7 @@ export function createDemoCompany(input: {
   const password = input.password.trim();
 
   if (!name) {
-    throw new Error("Sirket adi gerekli.");
+    throw new Error("Şirket adi gerekli.");
   }
 
   if (!username) {
@@ -303,7 +303,7 @@ export function createDemoCompany(input: {
   }
 
   if (password.length < 4) {
-    throw new Error("Sifre en az 4 karakter olmali.");
+    throw new Error("Şifre en az 4 karakter olmalı.");
   }
 
   if (state.users.some((user) => user.username === username) || state.companies.some((company) => company.code === username)) {
@@ -353,13 +353,13 @@ export function updateDemoCompany(
   const company = state.companies.find((item) => item.id === companyId);
 
   if (!company) {
-    throw new Error("Sirket bulunamadi.");
+    throw new Error("Şirket bulunamadi.");
   }
 
   const name = input.name.trim();
 
   if (!name) {
-    throw new Error("Sirket adi gerekli.");
+    throw new Error("Şirket adi gerekli.");
   }
 
   company.name = name;
@@ -391,7 +391,7 @@ export function deleteDemoCompany(companyId: string) {
   const company = state.companies.find((item) => item.id === companyId);
 
   if (!company) {
-    throw new Error("Sirket bulunamadi.");
+    throw new Error("Şirket bulunamadi.");
   }
 
   state.companies = state.companies.filter((item) => item.id !== companyId);
@@ -420,13 +420,13 @@ export function upsertDemoMealRequest(input: { companyCode: string; serviceDate:
   const company = state.companies.find((item) => item.code === normalizeCode(input.companyCode) && item.active);
 
   if (!company) {
-    throw new Error("Bu uyelik koduyla kayitli sirket bulunamadi.");
+    throw new Error("Bu uyelik koduyla kayitli şirket bulunamadi.");
   }
 
   const headcount = Number.isFinite(input.headcount) ? Math.max(1, Math.floor(input.headcount)) : 0;
 
   if (headcount < 1) {
-    throw new Error("Kisi sayisi en az 1 olmali.");
+    throw new Error("Kişi sayısı en az 1 olmalı.");
   }
 
   const existingRequest = state.requests.find((request) => request.companyId === company.id && request.serviceDate === input.serviceDate);

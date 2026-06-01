@@ -95,7 +95,9 @@ export function Home() {
     <main className="catering-home-shell">
       <nav className="catering-home-nav" aria-label="Ana navigasyon">
         <a className="catering-brand" href="/">
-          <span>MY</span>
+          <span className="brand-logo-mark">
+            <img src="/maharet-yemek.png" alt="" />
+          </span>
           <div>
             <strong>Maharet Yemek</strong>
             <small>Kurumsal yemek operasyonu</small>

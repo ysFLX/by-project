@@ -67,6 +67,24 @@ CREATE TABLE IF NOT EXISTS `company_payments` (
   KEY `company_payments_month_index` (`month`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `app_notifications` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `client_company_id` BIGINT UNSIGNED NULL,
+  `audience` VARCHAR(255) NOT NULL DEFAULT 'company',
+  `type` VARCHAR(255) NOT NULL DEFAULT 'general',
+  `service_date` DATE NULL,
+  `title` VARCHAR(255) NOT NULL,
+  `message` TEXT NOT NULL,
+  `read_at` TIMESTAMP NULL,
+  `admin_cleared_at` TIMESTAMP NULL,
+  `created_at` TIMESTAMP NULL,
+  `updated_at` TIMESTAMP NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `app_notifications_company_type_date_unique` (`client_company_id`, `type`, `service_date`),
+  KEY `app_notifications_audience_read_at_index` (`audience`, `read_at`),
+  KEY `app_notifications_service_date_index` (`service_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 DELIMITER //
 
 DROP PROCEDURE IF EXISTS maharet_add_column_if_missing//
@@ -126,6 +144,8 @@ DELIMITER ;
 CALL maharet_fix_auto_increment_id('client_companies');
 CALL maharet_fix_auto_increment_id('meal_requests');
 CALL maharet_fix_auto_increment_id('company_payments');
+CALL maharet_fix_auto_increment_id('app_notifications');
+CALL maharet_add_column_if_missing('app_notifications', 'admin_cleared_at', '`admin_cleared_at` TIMESTAMP NULL AFTER `read_at`');
 
 CALL maharet_add_column_if_missing('client_companies', 'username', '`username` VARCHAR(255) NULL AFTER `code`');
 CALL maharet_add_column_if_missing('client_companies', 'password_hash', '`password_hash` VARCHAR(255) NULL AFTER `username`');
@@ -157,7 +177,8 @@ CALL maharet_add_index_if_missing('meal_requests', 'meal_requests_status_index',
 INSERT IGNORE INTO `meal_request_counters` (`key`, `next_value`) VALUES ('meal_request', 1);
 INSERT IGNORE INTO `app_settings` (`key`, `value`, `created_at`, `updated_at`) VALUES
   ('meal_eaten_deadline', '16:30', NOW(), NOW()),
-  ('meal_collected_deadline', '18:00', NOW(), NOW());
+  ('meal_collected_deadline', '18:00', NOW(), NOW()),
+  ('notification_retention_hours', '24', NOW(), NOW());
 
 DROP PROCEDURE IF EXISTS maharet_add_column_if_missing;
 DROP PROCEDURE IF EXISTS maharet_add_index_if_missing;

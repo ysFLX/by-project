@@ -68,6 +68,7 @@ export type MenuDay = {
 export type OperationSettings = {
   eatenDeadline: string;
   collectedDeadline: string;
+  notificationRetentionHours?: number;
 };
 
 export type ReportPayment = {
@@ -75,4 +76,19 @@ export type ReportPayment = {
   month: string;
   paid: boolean;
   paidAt?: string | null;
+};
+
+export type AppNotification = {
+  id: string;
+  companyId?: string | null;
+  companyName?: string | null;
+  companyCode?: string | null;
+  audience: "admin" | "company" | string;
+  type: "meal_missing" | "meal_eaten_missing" | "general" | string;
+  serviceDate?: string | null;
+  title: string;
+  message: string;
+  readAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
 };

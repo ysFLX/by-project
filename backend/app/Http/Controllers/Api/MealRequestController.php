@@ -34,7 +34,7 @@ class MealRequestController extends Controller
 
             return response()->json(['requests' => $requests]);
         } catch (\Throwable $exception) {
-            return response()->json(['message' => 'Meal requests hata: '.$exception->getMessage()], 500);
+            return response()->json(['message' => 'Meal requests hata: '.(config('app.debug') ? $exception->getMessage() : 'Beklenmeyen hata')], 500);
         }
     }
 
